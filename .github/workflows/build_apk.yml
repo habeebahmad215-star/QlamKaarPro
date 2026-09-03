@@ -24,39 +24,29 @@ jobs:
           flutter-version: '3.19.x'
           channel: 'stable'
 
-      - name: Save user files temporarily
+      - name: Save code and prepare Jameel font
         run: |
-          mkdir -p /tmp/user_code
+          mkdir -p /tmp/user_code/assets
           cp -r lib /tmp/user_code/
           cp pubspec.yaml /tmp/user_code/
-          mkdir -p assets
-          # Unzip any zip file found in root
+          # Zip ko un-zip karo aur .ttf file dhoondh kar asaan naam de do
           for f in *.zip; do
             if [ -f "$f" ]; then
-              unzip -o "$f" -d assets/
+              unzip -o "$f" -d /tmp/fonts/
             fi
           done
-          # Copy extracted assets to temp
-          if [ -d "assets" ]; then
-            cp -r assets /tmp/user_code/
-          fi
+          # Kisi bhi font file ko dhoondh kar jameel.ttf bana do
+          find /tmp/fonts -type f -iname "*.ttf" -exec cp {} /tmp/user_code/assets/jameel.ttf \;
 
       - name: Create fresh Flutter project
-        run: |
-          flutter create . --org com.qalamkaar.pro --project-name qalamkaarpro --platforms=android
+        run: flutter create . --org com.qalamkaar.pro --project-name qalamkaarpro --platforms=android
 
-      - name: Restore user code and assets into fresh project
+      - name: Restore user code and font
         run: |
           rm -rf lib
           cp -r /tmp/user_code/lib .
           cp /tmp/user_code/pubspec.yaml .
-          mkdir -p assets
-          if [ -d "/tmp/user_code/assets" ]; then
-            cp -r /tmp/user_code/assets/* assets/ 2>/dev/null || true
-          fi
-          # List files in assets to verify during build logs
-          echo "Files inside assets folder:"
-          ls -la assets/
+          cp -r /tmp/user_code/assets .
 
       - name: Get dependencies
         run: flutter pub get
@@ -64,7 +54,7 @@ jobs:
       - name: Build APK
         run: flutter build apk --release
 
-      - name: Upload APK Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: QalamKaarPro-APK
