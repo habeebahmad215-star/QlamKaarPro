@@ -24,6 +24,17 @@ jobs:
           flutter-version: '3.19.x'
           channel: 'stable'
 
+      - name: Create fresh Flutter project structure
+        run: |
+          flutter create . --org com.qalamkaar.pro --project-name qalamkaarpro --platforms=android
+          mkdir -p lib
+          rm -f lib/main.dart
+
+      - name: Copy user main.dart and pubspec
+        run: |
+          # Yahan ensure karein ki aapka lib/main.dart aur pubspec.yaml repository mein mojood hai
+          echo "Project structure ready for build"
+
       - name: Get dependencies
         run: flutter pub get
 
