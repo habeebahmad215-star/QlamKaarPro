@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout user repository
         uses: actions/checkout@v4
 
       - name: Set up Java
@@ -24,16 +24,21 @@ jobs:
           flutter-version: '3.19.x'
           channel: 'stable'
 
-      - name: Create fresh Flutter project structure
+      - name: Save user files temporarily
+        run: |
+          mkdir -p /tmp/user_code
+          cp -r lib /tmp/user_code/
+          cp pubspec.yaml /tmp/user_code/
+
+      - name: Create fresh Flutter project
         run: |
           flutter create . --org com.qalamkaar.pro --project-name qalamkaarpro --platforms=android
-          mkdir -p lib
-          rm -f lib/main.dart
 
-      - name: Copy user main.dart and pubspec
+      - name: Restore user code into fresh project
         run: |
-          # Yahan ensure karein ki aapka lib/main.dart aur pubspec.yaml repository mein mojood hai
-          echo "Project structure ready for build"
+          rm -rf lib
+          cp -r /tmp/user_code/lib .
+          cp /tmp/user_code/pubspec.yaml .
 
       - name: Get dependencies
         run: flutter pub get
