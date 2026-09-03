@@ -1,5 +1,5 @@
 name: qalamkaarpro
-description: "A new Flutter project for professional Urdu and graphic designing."
+description: "A new Flutter project for"
 publish_to: "none"
 version: 1.0.0+1
 
@@ -18,7 +18,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-    fonts:
+
+  fonts:
     - family: JameelNoori
       fonts:
         - asset: assets/JameelNooriNastaleeq.ttf
