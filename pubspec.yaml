@@ -18,4 +18,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  
+
+  fonts:
+    - family: JameelNoori
+      fonts:
+        - asset: assets/jameel.ttf
