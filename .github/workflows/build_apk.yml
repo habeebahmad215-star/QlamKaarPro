@@ -29,16 +29,26 @@ jobs:
           mkdir -p /tmp/user_code
           cp -r lib /tmp/user_code/
           cp pubspec.yaml /tmp/user_code/
+          # Agar zip file ka naam kuch aur hai toh yahan check kar sakte hain, filhal sabhi zip/fonts handle honge
+          mkdir -p assets
+          # Unzip any uploaded zip file in repository
+          for f in *.zip; do
+            if [ -f "$f" ]; then
+              unzip -o "$f" -d assets/
+            fi
+          done
 
       - name: Create fresh Flutter project
         run: |
           flutter create . --org com.qalamkaar.pro --project-name qalamkaarpro --platforms=android
 
-      - name: Restore user code into fresh project
+      - name: Restore user code and assets into fresh project
         run: |
           rm -rf lib
           cp -r /tmp/user_code/lib .
           cp /tmp/user_code/pubspec.yaml .
+          mkdir -p assets
+          cp -r /tmp/user_code/assets/* assets/ 2>/dev/null || true
 
       - name: Get dependencies
         run: flutter pub get
