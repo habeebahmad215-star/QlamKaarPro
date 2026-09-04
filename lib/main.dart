@@ -17,62 +17,165 @@ class QalamKaarProApp extends StatelessWidget {
       title: 'QalamKaar Pro',
       theme: ThemeData(
         primaryColor: const Color(0xFF8B5CF6),
-        scaffoldBackgroundColor: const Color(0xFFF3F4F6),
+        scaffoldBackgroundColor: const Color(0xFFF8F9FA),
       ),
-      // 📱 NAYI SCREEN SET KI GAYI HAI
       home: const HomeScreen(),
     );
   }
 }
 
-// ================= NAYI HOME SCREEN =================
+// ================= ZABARDAST NAYI HOME SCREEN =================
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('QalamKaar Pro'),
-        backgroundColor: const Color(0xFF8B5CF6),
-        foregroundColor: Colors.white,
-        elevation: 0,
+      backgroundColor: const Color(0xFFF3F4F6),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // 🎨 1. Top Header Section (Gradient & Logo)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 60, bottom: 30, left: 20, right: 20),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF6D28D9), Color(0xFF8B5CF6)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(35),
+                  bottomRight: Radius.circular(35),
+                ),
+              ),
+              child: Column(
+                children: [
+                  // App Logo Placeholder
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(color: Colors.black26, blurRadius: 15, offset: Offset(0, 8))
+                      ],
+                    ),
+                    child: const Icon(Icons.draw, size: 55, color: Color(0xFF6D28D9)),
+                  ),
+                  const SizedBox(height: 15),
+                  // App Name in Urdu
+                  const Text(
+                    'قلمکار پرو',
+                    style: TextStyle(fontFamily: 'JameelNoori', fontSize: 55, color: Colors.white, height: 1.2),
+                  ),
+                  // Tagline
+                  const Text(
+                    'Professional Urdu Designer',
+                    style: TextStyle(color: Colors.white70, fontSize: 13, letterSpacing: 2.0, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 25),
+
+            // 👑 2. Premium VIP Banner
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [Color(0xFFD4AF37), Color(0xFFF59E0B)]),
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(color: Colors.amber.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.workspace_premium, color: Colors.white, size: 40),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('QalamKaar Premium', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text('Unlock 1,000+ VIP Backgrounds', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 25),
+
+            // 📱 3. Main Grid Layout (Library Style)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                crossAxisSpacing: 15,
+                mainAxisSpacing: 15,
+                children: [
+                  _buildMenuCard(context, 'نیا ڈیزائن', 'New Design', Icons.add_to_photos, const Color(0xFF8B5CF6), true),
+                  _buildMenuCard(context, 'آن لائن ڈیزائن', 'Templates', Icons.cloud_download, const Color(0xFF10B981), false),
+                  _buildMenuCard(context, 'میرے ڈیزائن', 'My Folder', Icons.folder_special, const Color(0xFFF59E0B), false),
+                  _buildMenuCard(context, 'رہنمائی', 'Tutorials', Icons.play_circle_fill, const Color(0xFFEF4444), false),
+                ],
+              ),
+            ),
+            const SizedBox(height: 30),
+          ],
+        ),
       ),
-      body: Center(
+    );
+  }
+
+  // Grid Card Builder
+  Widget _buildMenuCard(BuildContext context, String urduText, String engText, IconData icon, Color color, bool isNewDesign) {
+    return InkWell(
+      onTap: () {
+        if (isNewDesign) {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const ProWorkspaceScreen()));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$engText abhi jald aa raha hai!')));
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 5))
+          ],
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              'خوش آمدید',
-              style: TextStyle(fontFamily: 'JameelNoori', fontSize: 50, color: Color(0xFF8B5CF6)),
+            Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(color: color.withOpacity(0.12), shape: BoxShape.circle),
+              child: Icon(icon, color: color, size: 35),
             ),
-            const SizedBox(height: 10),
-            const Text('Professional Urdu Designer', style: TextStyle(color: Colors.grey, fontSize: 16)),
-            const SizedBox(height: 50),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ProWorkspaceScreen()),
-                );
-              },
-              icon: const Icon(Icons.brush),
-              label: const Text('Naya Design (New Design)', style: TextStyle(fontSize: 18)),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                backgroundColor: const Color(0xFF8B5CF6),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
+            const SizedBox(height: 12),
+            Text(urduText, style: const TextStyle(fontFamily: 'JameelNoori', fontSize: 28, color: Colors.black87, height: 1.0)),
+            Text(engText, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
           ],
         ),
       ),
     );
   }
 }
-// ===================================================
+// ==============================================================
 
+// Pura purana Editor Code yahan se shuru hota hai (bina kisi badlaav ke)
 class DesignElement {
   String id;
   double x, y;
@@ -88,7 +191,6 @@ class DesignElement {
   bool isItalic;
   TextAlign textAlign;
   String fontFamily;
-  
   bool isBorder;
   bool isShape;
   Color elementColor;
@@ -103,10 +205,8 @@ class DesignElement {
     this.textColor = Colors.black, this.hasStroke = false, 
     this.hasShadow = false, this.opacity = 1.0,
     this.isBold = false, this.isItalic = false, this.textAlign = TextAlign.center,
-    this.fontFamily = 'JameelNoori',
-    this.isBorder = false, this.isShape = false,
-    this.elementColor = const Color(0xFFD4AF37),
-    this.width = 0, this.height = 0,
+    this.fontFamily = 'JameelNoori', this.isBorder = false, this.isShape = false,
+    this.elementColor = const Color(0xFFD4AF37), this.width = 0, this.height = 0,
     this.borderWidth = 5.0, this.borderStyle = 'royal_islamic',
   });
 
@@ -471,7 +571,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // ================= NAYA TEXT SIZE SLIDER =================
   void showSizeSliderModal(DesignElement sel) {
     showModalBottomSheet(
       context: context, backgroundColor: Colors.white,
@@ -511,7 +610,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       },
     );
   }
-  // ==========================================================
 
   void showLayersPanel() {
     showModalBottomSheet(
@@ -906,10 +1004,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
             children: [
               if (sel.isText) ...[
                 _buildEditBtn(Icons.font_download, 'Font', () => showFontPickerModal(sel)),
-                
-                // 🛠️ YAHAN SLIDER WALA BUTTON SET HUA HAI
                 _buildEditBtn(Icons.text_fields, 'Size', () => showSizeSliderModal(sel)),
-                
                 _buildEditBtn(Icons.palette, 'Color', () { saveState(); setState(() => sel.textColor = sel.textColor == Colors.black ? Colors.red : Colors.black); }),
                 _buildEditBtn(Icons.border_color, 'Stroke', () { saveState(); setState(() => sel.hasStroke = !sel.hasStroke); }),
                 _buildEditBtn(Icons.brightness_6, 'Shadow', () { saveState(); setState(() => sel.hasShadow = !sel.hasShadow); }),
