@@ -21,7 +21,7 @@ class QalamKaarProApp extends StatelessWidget {
   }
 }
 
-// ================= HOME SCREEN =================
+// ================= 1. HOME SCREEN (PREMIUM UI) =================
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
@@ -140,7 +140,7 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// ================= WORKSPACE ELEMENTS =================
+// ================= 2. WORKSPACE ELEMENTS (Full Features) =================
 class DesignElement {
   String id; double x, y; String content; Uint8List? imageBytes;
   bool isText; double fontSize; Color textColor; bool hasStroke; bool hasShadow; double opacity;
@@ -168,7 +168,12 @@ class DesignElement {
   }
 }
 
-// ================= MAIN EDITOR SCREEN =================
+class DesignPage {
+  String title; List<DesignElement> elements; Color pageColor;
+  DesignPage({required this.title, required this.elements, required this.pageColor});
+}
+
+// ================= 3. MAIN EDITOR SCREEN =================
 class ProWorkspaceScreen extends StatefulWidget {
   const ProWorkspaceScreen({Key? key}) : super(key: key);
   @override
@@ -176,14 +181,40 @@ class ProWorkspaceScreen extends StatefulWidget {
 }
 
 class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
-  List<DesignElement> elements = [];
+  List<DesignPage> pages = [
+    DesignPage(title: 'Page 1', elements: [DesignElement(id: 'demo1', x: 80, y: 150, content: 'مدرسہ اسلامیہ نصیرالعلوم')], pageColor: Colors.white)
+  ];
+  int currentPageIndex = 0;
   List<List<DesignElement>> undoStack = [];
+  List<List<DesignElement>> redoStack = [];
   String? selectedId;
-  Color pageColor = Colors.white;
+  double canvasRatio = 1 / 1.414; 
+  List<String> availableFonts = ['JameelNoori', 'Amiri', 'Bombay', 'Mehr'];
   final ImagePicker _picker = ImagePicker();
+
+  List<DesignElement> get elements => pages[currentPageIndex].elements;
+  set elements(List<DesignElement> val) => pages[currentPageIndex].elements = val;
+
+  Color get pageColor => pages[currentPageIndex].pageColor;
+  set pageColor(Color val) => pages[currentPageIndex].pageColor = val;
 
   void saveState() {
     undoStack.add(elements.map((e) => e.clone()).toList());
+    redoStack.clear(); 
+  }
+
+  void undoAction() {
+    if (undoStack.isNotEmpty) {
+      redoStack.add(elements.map((e) => e.clone()).toList());
+      setState(() { elements = undoStack.removeLast(); selectedId = null; });
+    }
+  }
+
+  void redoAction() {
+    if (redoStack.isNotEmpty) {
+      undoStack.add(elements.map((e) => e.clone()).toList());
+      setState(() { elements = redoStack.removeLast(); selectedId = null; });
+    }
   }
 
   // ==== TEXT COMPOSER (Green Button Wala Page) ====
@@ -268,7 +299,49 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     return InkWell(onTap: onTap, child: Column(children: [Icon(icon, color: Colors.grey.shade600), const SizedBox(height: 4), Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey))]));
   }
 
-  // ==== ACTIONS & TOOLS ====
+  // ==== "ADD NEW" GRID MODAL ====
+  void showAddNewModal() {
+    showModalBottomSheet(
+      context: context, backgroundColor: Colors.transparent, isScrollControlled: true,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.65, decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))), padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)))),
+            const SizedBox(height: 20),
+            Expanded(
+              child: GridView.count(
+                crossAxisCount: 3, crossAxisSpacing: 15, mainAxisSpacing: 15,
+                children: [
+                  _buildGridItem(Icons.image, 'Gallery Pic', Colors.blue.shade100, Colors.blue, addImageFromGallery),
+                  _buildGridItem(Icons.collections, 'Stock Images', Colors.indigo.shade100, Colors.indigo, () => Navigator.pop(context)),
+                  _buildGridItem(Icons.folder, 'My Folder', Colors.teal.shade100, Colors.teal, () => Navigator.pop(context)),
+                  _buildGridItem(Icons.text_fields, 'Add Text', Colors.orange.shade100, Colors.orange, () { Navigator.pop(context); _showTextComposerDialog(); }),
+                  _buildGridItem(Icons.border_outer, 'Borders', Colors.amber.shade100, Colors.amber.shade800, () => showGenericStockModal('Borders', 'royal_islamic', Icons.border_outer)),
+                  _buildGridItem(Icons.category, 'Shapes', Colors.pink.shade100, Colors.pink, () => showGenericStockModal('Shapes', 'shape_rect', Icons.category)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGridItem(IconData icon, String label, Color bgColor, Color iconColor, [VoidCallback? onTap]) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(18)), child: Icon(icon, color: iconColor, size: 28)),
+          const SizedBox(height: 8), Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+        ],
+      ),
+    );
+  }
+
+  // ==== ACTIONS & RESTORED MODALS (Layers, Sliders) ====
   Future<void> addImageFromGallery() async {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -327,63 +400,210 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  void showAddNewModal() {
+  void deleteSelected() {
+    if (selectedId != null) { saveState(); setState(() { elements.removeWhere((e) => e.id == selectedId); selectedId = null; }); }
+  }
+
+  void duplicateSelected() {
+    if (selectedId != null) {
+      saveState(); DesignElement sel = elements.firstWhere((e) => e.id == selectedId);
+      setState(() { var newEl = sel.clone()..id = Random().nextInt(10000).toString()..x += 20..y += 20; elements.add(newEl); selectedId = newEl.id; });
+    }
+  }
+
+  void bringForward() {
+    if (selectedId == null) return;
+    saveState(); int idx = elements.indexWhere((e) => e.id == selectedId);
+    if (idx < elements.length - 1) setState(() { var item = elements.removeAt(idx); elements.insert(idx + 1, item); });
+  }
+
+  void sendBackward() {
+    if (selectedId == null) return;
+    saveState(); int idx = elements.indexWhere((e) => e.id == selectedId);
+    if (idx > 0) setState(() { var item = elements.removeAt(idx); elements.insert(idx - 1, item); });
+  }
+
+  void _toggleAlignment(DesignElement sel) {
+    saveState();
+    setState(() { sel.textAlign = (sel.textAlign == TextAlign.right) ? TextAlign.center : (sel.textAlign == TextAlign.center ? TextAlign.left : TextAlign.right); });
+  }
+
+  // ==== RESTORED ADVANCED PANELS ====
+  void showLayersPanel() {
     showModalBottomSheet(
-      context: context, backgroundColor: Colors.transparent, isScrollControlled: true,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.65, decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))), padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)))),
-            const SizedBox(height: 20),
-            Expanded(
-              child: GridView.count(
-                crossAxisCount: 3, crossAxisSpacing: 15, mainAxisSpacing: 15,
+      context: context, backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              height: 400, decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))), padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildGridItem(Icons.image, 'Gallery Pic', Colors.blue.shade100, Colors.blue, addImageFromGallery),
-                  _buildGridItem(Icons.collections, 'Stock Images', Colors.indigo.shade100, Colors.indigo, () => Navigator.pop(context)),
-                  _buildGridItem(Icons.folder, 'My Folder', Colors.teal.shade100, Colors.teal, () => Navigator.pop(context)),
-                  _buildGridItem(Icons.text_fields, 'Add Text', Colors.orange.shade100, Colors.orange, () { Navigator.pop(context); _showTextComposerDialog(); }),
-                  _buildGridItem(Icons.border_outer, 'Borders', Colors.amber.shade100, Colors.amber.shade800, () => showGenericStockModal('Borders', 'royal_islamic', Icons.border_outer)),
-                  _buildGridItem(Icons.category, 'Shapes', Colors.pink.shade100, Colors.pink, () => showGenericStockModal('Shapes', 'shape_rect', Icons.category)),
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Layers (پرتیں)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]),
+                  const Divider(),
+                  Expanded(
+                    child: elements.isEmpty 
+                      ? const Center(child: Text('No elements yet.', style: TextStyle(color: Colors.grey)))
+                      : ListView.builder(
+                          itemCount: elements.length,
+                          itemBuilder: (context, index) {
+                            int actualIndex = elements.length - 1 - index;
+                            DesignElement e = elements[actualIndex];
+                            bool isSel = selectedId == e.id;
+                            return Card(
+                              color: isSel ? const Color(0xFFF3E8FF) : Colors.white, elevation: 0, margin: const EdgeInsets.only(bottom: 8),
+                              shape: RoundedRectangleBorder(side: BorderSide(color: isSel ? const Color(0xFF8B5CF6) : Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
+                              child: ListTile(
+                                leading: CircleAvatar(radius: 16, backgroundColor: e.isText ? e.textColor : Colors.blueGrey, child: Icon(e.isText ? Icons.title : (e.isBorder ? Icons.filter_frames : Icons.category), size: 16, color: Colors.white)),
+                                title: Text(e.isText ? e.content.replaceAll('\n', ' ') : (e.isBorder ? e.content : 'Shape'), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(icon: const Icon(Icons.arrow_upward, size: 20, color: Colors.black54), onPressed: () {
+                                      if (actualIndex < elements.length - 1) { saveState(); setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex + 1, item); }); setModalState((){}); }
+                                    }),
+                                    IconButton(icon: const Icon(Icons.arrow_downward, size: 20, color: Colors.black54), onPressed: () {
+                                      if (actualIndex > 0) { saveState(); setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex - 1, item); }); setModalState((){}); }
+                                    }),
+                                  ],
+                                ),
+                                onTap: () { setState(() => selectedId = e.id); setModalState((){}); },
+                              ),
+                            );
+                          },
+                        ),
+                  ),
                 ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void showPagesPanel() {
+    showModalBottomSheet(
+      context: context, backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              height: 400, decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))), padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Pages (صفحات)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]),
+                  const Divider(),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: pages.length,
+                      itemBuilder: (context, index) {
+                        bool isCurrent = currentPageIndex == index;
+                        return Card(
+                          color: isCurrent ? const Color(0xFFF3E8FF) : Colors.white, elevation: 0, margin: const EdgeInsets.only(bottom: 8),
+                          shape: RoundedRectangleBorder(side: BorderSide(color: isCurrent ? const Color(0xFF8B5CF6) : Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
+                          child: ListTile(
+                            leading: Icon(Icons.description, color: isCurrent ? const Color(0xFF8B5CF6) : Colors.grey),
+                            title: Text(pages[index].title, style: TextStyle(fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal)),
+                            trailing: pages.length > 1 ? IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20), onPressed: () { setState(() { pages.removeAt(index); if (currentPageIndex >= pages.length) currentPageIndex = pages.length - 1; }); setModalState(() {}); }) : null,
+                            onTap: () { setState(() { currentPageIndex = index; selectedId = null; }); Navigator.pop(context); },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)),
+                      onPressed: () {
+                        setState(() { pages.add(DesignPage(title: 'Page ${pages.length + 1}', elements: [DesignElement(id: Random().nextInt(10000).toString(), x: 60, y: 100, content: 'نیا صفحہ')], pageColor: Colors.white)); currentPageIndex = pages.length - 1; selectedId = null; });
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Add New Page', style: TextStyle(color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void showSizeSliderModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              height: 180, padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Text Size: ${sel.fontSize.toInt()}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]),
+                  Slider(value: sel.fontSize, min: 10.0, max: 150.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.fontSize = val); setModalState((){}); }),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void showSpacingSliderModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              height: 180, padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Line Spacing', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]),
+                  Slider(value: sel.lineHeight, min: 0.5, max: 3.5, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.lineHeight = val); setModalState((){}); }),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void showFontPickerModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => Container(
+        height: 350, padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Select Font (فونٹ)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Divider(),
+            Expanded(
+              child: ListView.builder(
+                itemCount: availableFonts.length,
+                itemBuilder: (context, index) {
+                  String fontName = availableFonts[index];
+                  return ListTile(
+                    title: Text('حبیب احمد خان - $fontName', style: TextStyle(fontFamily: fontName, fontSize: 24)),
+                    trailing: sel.fontFamily == fontName ? const Icon(Icons.check_circle, color: Color(0xFF8B5CF6)) : null,
+                    onTap: () { saveState(); setState(() => sel.fontFamily = fontName); Navigator.pop(context); },
+                  );
+                },
               ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  Widget _buildGridItem(IconData icon, String label, Color bgColor, Color iconColor, [VoidCallback? onTap]) {
-    return InkWell(
-      onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(18)), child: Icon(icon, color: iconColor, size: 28)),
-          const SizedBox(height: 8), Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-        ],
-      ),
-    );
-  }
-
-  void deleteSelected() {
-    if (selectedId != null) {
-      saveState();
-      setState(() { elements.removeWhere((e) => e.id == selectedId); selectedId = null; });
-    }
-  }
-
-  void duplicateSelected() {
-    if (selectedId != null) {
-      saveState();
-      DesignElement sel = elements.firstWhere((e) => e.id == selectedId);
-      setState(() {
-        var newEl = sel.clone()..id = Random().nextInt(10000).toString()..x += 20..y += 20;
-        elements.add(newEl); selectedId = newEl.id;
-      });
-    }
   }
 
   @override
@@ -395,11 +615,22 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFE5E7EB),
       appBar: AppBar(
-        backgroundColor: Colors.white, elevation: 0,
+        backgroundColor: Colors.white, elevation: 0, titleSpacing: 0,
         leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.black), onPressed: () => Navigator.pop(context)),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            _buildTopBtn(Icons.layers, 'Layers', showLayersPanel),
+            const SizedBox(width: 10),
+            _buildTopBtn(Icons.auto_stories, 'Pages', showPagesPanel),
+            const SizedBox(width: 10),
+            _buildTopBtn(Icons.undo, 'Undo', undoAction), 
+            const SizedBox(width: 10),
+            _buildTopBtn(Icons.redo, 'Redo', redoAction),
+            const SizedBox(width: 10),
+          ],
+        ),
         actions: [
-          IconButton(icon: const Icon(Icons.undo, color: Colors.black), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.redo, color: Colors.black), onPressed: () {}),
           Container(margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), padding: const EdgeInsets.symmetric(horizontal: 15), decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(8)), alignment: Alignment.center, child: const Text('Save Pro', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)))
         ],
       ),
@@ -408,7 +639,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         onTap: () => setState(() => selectedId = null), 
         child: Center(
           child: AspectRatio(
-            aspectRatio: 1 / 1.414,
+            aspectRatio: canvasRatio,
             child: Container(
               margin: const EdgeInsets.all(16),
               decoration: BoxDecoration(color: pageColor, boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)]),
@@ -419,7 +650,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   
                   List<Shadow> textShadows = [];
                   if (e.hasShadow) textShadows.add(const Shadow(color: Colors.black54, offset: Offset(3, 3), blurRadius: 5));
-                  if (e.hasStroke) textShadows.addAll([const Shadow(color: Colors.white, offset: Offset(-1.5, -1.5)), const Shadow(color: Colors.white, offset: Offset(1.5, 1.5))]);
+                  if (e.hasStroke) {
+                    Color strokeCol = e.textColor == Colors.black ? Colors.white : Colors.black;
+                    textShadows.addAll([Shadow(color: strokeCol, offset: const Offset(-1.5, -1.5)), Shadow(color: strokeCol, offset: const Offset(1.5, 1.5))]);
+                  }
 
                   Widget contentWidget;
                   if (e.isBorder) {
@@ -442,7 +676,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       onPanStart: (d) => saveState(),
                       onPanUpdate: (d) => setState(() { selectedId = e.id; e.x += d.delta.dx; e.y += d.delta.dy; }),
                       child: isSel 
-                        // 🔥 DEMO VIDEO WALA SELECTION BOX & FLOATING MENU
+                        // 🔥 DEMO VIDEO WALA SELECTION BOX & FLOATING MENU (RESTORED COMPLETELY)
                         ? Container(
                             padding: const EdgeInsets.all(20),
                             child: Stack(
@@ -450,7 +684,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                               children: [
                                 Container(
                                   padding: const EdgeInsets.all(5),
-                                  decoration: BoxDecoration(border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5)),
+                                  decoration: BoxDecoration(border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5), color: Colors.purple.withOpacity(0.05)),
                                   child: Opacity(opacity: e.opacity, child: contentWidget),
                                 ),
                                 const Positioned(top: -20, left: 0, right: 0, child: Center(child: CircleAvatar(radius: 12, backgroundColor: Colors.white, child: Icon(Icons.refresh, size: 14, color: Colors.black)))),
@@ -466,13 +700,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            const Icon(Icons.open_with, size: 20, color: Colors.black54),
+                                            InkWell(onTap: bringForward, child: const Icon(Icons.arrow_upward, size: 20, color: Colors.black54)),
+                                            const SizedBox(width: 15),
+                                            InkWell(onTap: sendBackward, child: const Icon(Icons.arrow_downward, size: 20, color: Colors.black54)),
                                             const SizedBox(width: 15),
                                             InkWell(onTap: duplicateSelected, child: const Icon(Icons.copy, size: 20, color: Colors.black54)),
                                             const SizedBox(width: 15),
                                             InkWell(onTap: deleteSelected, child: const Icon(Icons.delete_outline, size: 20, color: Colors.black54)),
-                                            const SizedBox(width: 15),
-                                            const Icon(Icons.menu, size: 20, color: Colors.black54),
                                           ],
                                         ),
                                       ),
@@ -495,7 +729,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // ==== BOTTOM TOOLBARS ====
+  // ==== BOTTOM TOOLBARS (WITH ALL SLIDERS) ====
   Widget _buildDefaultBottomBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -529,11 +763,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
             child: Row(
               children: [
                 const SizedBox(width: 10),
-                _buildToolBtn(Icons.delete_outline, 'Delete', deleteSelected),
-                if (sel.isText) _buildToolBtn(Icons.text_fields, 'Size', () { saveState(); setState(() => sel.fontSize = sel.fontSize == 45 ? 65 : 45); }),
+                if (sel.isText) _buildToolBtn(Icons.text_fields, 'Size', () => showSizeSliderModal(sel)),
+                if (sel.isText) _buildToolBtn(Icons.format_align_left, 'Align', () => _toggleAlignment(sel)),
+                if (sel.isText) _buildToolBtn(Icons.height, 'Spacing', () => showSpacingSliderModal(sel)),
                 if (sel.isText) _buildToolBtn(Icons.border_color, 'Stroke', () { saveState(); setState(() => sel.hasStroke = !sel.hasStroke); }),
                 if (sel.isText) _buildToolBtn(Icons.brightness_6, 'Shadow', () { saveState(); setState(() => sel.hasShadow = !sel.hasShadow); }),
-                _buildToolBtn(Icons.copy, 'Duplicate', duplicateSelected),
                 _buildToolBtn(Icons.opacity, 'Opacity', () { saveState(); setState(() => sel.opacity = sel.opacity == 1.0 ? 0.5 : 1.0); }),
               ],
             ),
@@ -554,9 +788,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
               ),
               const Expanded(child: SizedBox()),
               if (sel.isText) _buildToolBtn(Icons.edit, 'Edit', () => _showTextComposerDialog(existingElement: sel)),
-              if (sel.isText) _buildToolBtn(Icons.font_download, 'Font'),
+              if (sel.isText) _buildToolBtn(Icons.font_download, 'Font', () => showFontPickerModal(sel)),
               if (sel.isText || sel.isBorder || sel.isShape) _buildToolBtn(Icons.palette, 'Color', () { saveState(); setState(() => sel.isText ? sel.textColor = sel.textColor == Colors.black ? Colors.red : Colors.black : sel.elementColor = sel.elementColor == const Color(0xFFD4AF37) ? const Color(0xFF047857) : const Color(0xFFD4AF37)); }),
-              _buildToolBtn(Icons.gradient, 'Gradient'),
             ],
           ),
         )
@@ -564,6 +797,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
+  Widget _buildTopBtn(IconData icon, String label, [VoidCallback? onTap]) {
+    return InkWell(onTap: onTap, child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, color: Colors.grey.shade800, size: 22), Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey))]));
+  }
   Widget _buildToolBtn(IconData icon, String label, [VoidCallback? onTap]) {
     return InkWell(onTap: onTap, child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, color: Colors.grey.shade700, size: 24), const SizedBox(height: 4), Text(label, style: TextStyle(fontSize: 10, color: Colors.grey.shade700))])));
   }
