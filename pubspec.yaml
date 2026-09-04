@@ -1,15 +1,16 @@
 name: qalamkaarpro
-description: "A new Flutter project for"
-publish_to: "none"
+description: Professional Urdu Designer App.
+publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  image_picker: ^1.0.4
+  image_picker: ^1.1.2
+  image_gallery_saver: ^2.0.3
 
 dev_dependencies:
   flutter_test:
@@ -18,7 +19,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
+  assets:
+    - assets/
   fonts:
     - family: JameelNoori
       fonts:
