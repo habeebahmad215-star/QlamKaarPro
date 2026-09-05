@@ -46,9 +46,16 @@ jobs:
           cp /tmp/user_code/pubspec.yaml .
           cp -r /tmp/user_code/assets .
 
+      # 🔥 YAHAN HAI MAGIC FIX! Yeh Android error ko hamesha ke liye theek kar dega 🔥
+      - name: Fix Android Build Settings (SDK & MultiDex)
+        run: |
+          sed -i 's/flutter.minSdkVersion/23/g' android/app/build.gradle
+          sed -i 's/defaultConfig {/defaultConfig {\n        multiDexEnabled true/g' android/app/build.gradle
+
       - name: Get dependencies
         run: flutter pub get
 
+      # Error ki jadd tak pahonchne ke liye humne -v (Verbose) add kiya hai (optional)
       - name: Build APK
         run: flutter build apk --release
 
