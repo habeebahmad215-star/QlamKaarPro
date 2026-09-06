@@ -57,6 +57,7 @@ class DesignElement {
   Color? textBgColor; double textBgRadius; double wordSpacing; List<Color>? textGradient;
   bool hasStroke; Color strokeColor; double strokeWidth;
   bool hasShadow; Color shadowColor; double shadowBlur; double shadowOffsetX; double shadowOffsetY;
+  String? groupId; // 🔥 NAYA: Group Link ID
 
   DesignElement({
     required this.id, required this.x, required this.y, required this.content, this.imageBytes,
@@ -75,6 +76,7 @@ class DesignElement {
     this.hasStroke = false, this.strokeColor = Colors.white, this.strokeWidth = 3.0,
     this.hasShadow = false, this.shadowColor = Colors.black54, this.shadowBlur = 5.0, 
     this.shadowOffsetX = 3.0, this.shadowOffsetY = 3.0,
+    this.groupId, // 🔥 NAYA
   });
 
   Map<String, dynamic> toJson() => {
@@ -94,6 +96,7 @@ class DesignElement {
     'textGradient': textGradient?.map((c) => c.value).toList(),
     'hasStroke': hasStroke, 'strokeColor': strokeColor.value, 'strokeWidth': strokeWidth,
     'hasShadow': hasShadow, 'shadowColor': shadowColor.value, 'shadowBlur': shadowBlur, 'shadowOffsetX': shadowOffsetX, 'shadowOffsetY': shadowOffsetY,
+    'groupId': groupId, // 🔥 NAYA
   };
 
   factory DesignElement.fromJson(Map<String, dynamic> json) {
@@ -133,6 +136,7 @@ class DesignElement {
       hasStroke: json['hasStroke'] as bool? ?? false, strokeColor: Color((json['strokeColor'] as num?)?.toInt() ?? 0xFFFFFFFF), strokeWidth: (json['strokeWidth'] as num?)?.toDouble() ?? 3.0,
       hasShadow: json['hasShadow'] as bool? ?? false, shadowColor: Color((json['shadowColor'] as num?)?.toInt() ?? 0x8A000000), 
       shadowBlur: (json['shadowBlur'] as num?)?.toDouble() ?? 5.0, shadowOffsetX: (json['shadowOffsetX'] as num?)?.toDouble() ?? 3.0, shadowOffsetY: (json['shadowOffsetY'] as num?)?.toDouble() ?? 3.0,
+      groupId: json['groupId']?.toString(), // 🔥 NAYA
     );
   }
 
