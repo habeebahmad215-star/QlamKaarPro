@@ -19,7 +19,6 @@ import '../widgets/custom_widgets.dart';
 
 class ProWorkspaceScreen extends StatefulWidget {
   final ProjectModel? project;
-  // 🔥 NAYA: Smart Shortcuts ke liye commands 🔥
   final String? initialAction; 
   
   const ProWorkspaceScreen({Key? key, this.project, this.initialAction}) : super(key: key);
@@ -120,22 +119,22 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     } else {
       projectId = DateTime.now().millisecondsSinceEpoch.toString();
       projectName = 'Design_$projectId';
-      pages = [DesignPage(title: 'Page 1', elements: [DesignElement(id: 'demo1', x: 40, y: 150, content: 'مدرسہ اسلامیہ نصیرالعلوم', width: 280)], pageColor: Colors.white)];
+      // 🔥 FIX 1: By default aane wala Madarsa ka text hata diya gaya hai. Canvas ab blank aayega. 🔥
+      pages = [DesignPage(title: 'Page 1', elements: [], pageColor: Colors.white)];
     }
 
-    // 🔥 NAYA: Initial Action Check (Home Screen se command aayi hai ya nahi) 🔥
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.initialAction != null) {
         if (widget.initialAction == 'text_editor') {
           _showTextComposerDialog();
         } else if (widget.initialAction == 'images') {
-          addImageFromGallery();
+          addImageFromGallery(fromModal: false); // 🔥 FIX 2: Home screen se open ho toh screen band na ho 🔥
         } else if (widget.initialAction == 'backgrounds') {
           _showCanvasBgGradientModal();
         } else if (widget.initialAction == 'layers') {
           showLayersPanel();
         } else if (widget.initialAction == 'elements') {
-          showGenericStockModal('Shapes', 'shape_rect', Icons.category);
+          showGenericStockModal('Shapes', 'shape_rect', Icons.category, fromModal: false); // 🔥 FIX 2 🔥
         }
       }
     });
@@ -313,14 +312,15 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   }
 
   void showAddNewModal() { 
-    showModalBottomSheet(context: context, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (context) => Container(height: MediaQuery.of(context).size.height * 0.65, decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))), padding: const EdgeInsets.all(20), child: Column(children: [Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)))), const SizedBox(height: 20), Expanded(child: GridView.count(crossAxisCount: 3, crossAxisSpacing: 15, mainAxisSpacing: 15, children: [_buildGridItem(Icons.image, 'Gallery Pic', Colors.blue.shade100, Colors.blue, addImageFromGallery), _buildGridItem(Icons.gradient, 'Backgrounds', Colors.indigo.shade100, Colors.indigo, () { Navigator.pop(context); _showCanvasBgGradientModal(); }), _buildGridItem(Icons.folder, 'My Folder', Colors.teal.shade100, Colors.teal, () { Navigator.pop(context); Navigator.pop(context); }), _buildGridItem(Icons.text_fields, 'Add Text', Colors.orange.shade100, Colors.orange, () { Navigator.pop(context); _showTextComposerDialog(); }), _buildGridItem(Icons.border_outer, 'Borders', Colors.amber.shade100, Colors.amber.shade800, () => showGenericStockModal('Borders', 'royal_islamic', Icons.border_outer)), _buildGridItem(Icons.category, 'Shapes', Colors.pink.shade100, Colors.pink, () => showGenericStockModal('Shapes', 'shape_rect', Icons.category))]))]))); 
+    showModalBottomSheet(context: context, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (context) => Container(height: MediaQuery.of(context).size.height * 0.65, decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))), padding: const EdgeInsets.all(20), child: Column(children: [Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)))), const SizedBox(height: 20), Expanded(child: GridView.count(crossAxisCount: 3, crossAxisSpacing: 15, mainAxisSpacing: 15, children: [_buildGridItem(Icons.image, 'Gallery Pic', Colors.blue.shade100, Colors.blue, () => addImageFromGallery(fromModal: true)), _buildGridItem(Icons.gradient, 'Backgrounds', Colors.indigo.shade100, Colors.indigo, () { Navigator.pop(context); _showCanvasBgGradientModal(); }), _buildGridItem(Icons.folder, 'My Folder', Colors.teal.shade100, Colors.teal, () { Navigator.pop(context); Navigator.pop(context); }), _buildGridItem(Icons.text_fields, 'Add Text', Colors.orange.shade100, Colors.orange, () { Navigator.pop(context); _showTextComposerDialog(); }), _buildGridItem(Icons.border_outer, 'Borders', Colors.amber.shade100, Colors.amber.shade800, () => showGenericStockModal('Borders', 'royal_islamic', Icons.border_outer, fromModal: true)), _buildGridItem(Icons.category, 'Shapes', Colors.pink.shade100, Colors.pink, () => showGenericStockModal('Shapes', 'shape_rect', Icons.category, fromModal: true))]))]))); 
   }
 
   Widget _buildGridItem(IconData icon, String label, Color bgColor, Color iconColor, [VoidCallback? onTap]) { 
     return InkWell(onTap: onTap, child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(18)), child: Icon(icon, color: iconColor, size: 28)), const SizedBox(height: 8), Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold), textAlign: TextAlign.center)])); 
   }
 
-  Future<void> addImageFromGallery() async { 
+  // 🔥 FIX 2: Added fromModal parameter to prevent unwanted popping 🔥
+  Future<void> addImageFromGallery({bool fromModal = false}) async { 
     try { 
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery); 
       if (image != null) { 
@@ -328,9 +328,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         saveState(); 
         setState(() => elements.add(DesignElement(id: Random().nextInt(10000).toString(), x: 80, y: 80, content: '', imageBytes: bytes, isText: false, width: 250, height: 250))); 
       } 
-    } catch (e) {} 
-    // Agar modal khula hai toh usko close karein (yeh widget tree me thoda flexible hai)
-    if(Navigator.canPop(context)) Navigator.pop(context); 
+    } catch (e) {
+      debugPrint("Gallery Error: $e");
+    } 
+    // Sirf tab pichli screen band karo agar yeh Add New Modal (Menu) se khula tha
+    if(fromModal && Navigator.canPop(context)) {
+      Navigator.pop(context); 
+    }
   }
 
   Future<void> _setCanvasBackground() async { 
@@ -356,9 +360,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     } catch (e) {} 
   }
 
-  void showGenericStockModal(String categoryTitle, String styleName, IconData categoryIcon) { 
-    // Agar existing modal open ho to band karein
-    if(Navigator.canPop(context)) Navigator.pop(context); 
+  // 🔥 FIX 2: Added fromModal parameter 🔥
+  void showGenericStockModal(String categoryTitle, String styleName, IconData categoryIcon, {bool fromModal = false}) { 
+    if(fromModal && Navigator.canPop(context)) Navigator.pop(context); 
     List<Map<String, dynamic>> stockList = []; 
     List<Color> themeColors = [const Color(0xFFD4AF37), const Color(0xFF8B5CF6), const Color(0xFF047857), const Color(0xFF1E3A8A)]; 
     for (int i = 1; i <= 50; i++) stockList.add({'title': '$categoryTitle #$i', 'style': styleName, 'color': themeColors[(i - 1) % themeColors.length], 'icon': categoryIcon}); 
