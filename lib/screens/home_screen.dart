@@ -5,7 +5,8 @@ import 'dart:convert';
 import '../models/design_models.dart';
 import 'pro_workspace_screen.dart';
 import 'my_folder_screen.dart';
-import 'templates_screen.dart'; // 👉 Is line ki wajah se error aata hai agar file ka naam match na kare
+import 'templates_screen.dart';
+import 'ai_design_screen.dart'; // 🔥 NAYA: AI Screen file yahan jodi gayi hai 🔥
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -291,7 +292,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   }),
                   
                   _buildPremiumGridTool('Tools', Icons.build_rounded, const Color(0xFF64748B), const Color(0xFFF8FAFC), _showComingSoon),
-                  _buildPremiumGridTool('AI Design', Icons.smart_toy_rounded, const Color(0xFF6366F1), const Color(0xFFEEF2FF), _showComingSoon, isNew: true),
+                  
+                  // 🔥 NAYA: AI Design button ab AI Design Screen open karega 🔥
+                  _buildPremiumGridTool('AI Design', Icons.smart_toy_rounded, const Color(0xFF6366F1), const Color(0xFFEEF2FF), () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AiDesignScreen()));
+                  }, isNew: true),
+                  
                   _buildPremiumGridTool('Pro Effects', Icons.auto_fix_high_rounded, const Color(0xFF14B8A6), const Color(0xFFF0FDFA), _showComingSoon),
                 ],
               ),
