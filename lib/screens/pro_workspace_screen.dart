@@ -165,11 +165,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void undoAction() { if (undoStack.isNotEmpty) { redoStack.add(elements.map((e) => e.clone()).toList()); setState(() { elements = undoStack.removeLast(); selectedId = null; }); } }
   void redoAction() { if (redoStack.isNotEmpty) { undoStack.add(elements.map((e) => e.clone()).toList()); setState(() { elements = redoStack.removeLast(); selectedId = null; }); } }
 
-  // 🔥 SHARP & CLEAN MODALS 🔥
   void _showExportMenu() { 
     showModalBottomSheet(
       context: context, backgroundColor: Colors.white, 
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), // Sharp radius
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), 
       builder: (context) => Container(height: 320, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Export Design', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))]), 
         Divider(color: Colors.grey.shade200), const SizedBox(height: 10), 
@@ -380,12 +379,324 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void sendBackward() { if (selectedId == null) return; saveState(); int idx = elements.indexWhere((e) => e.id == selectedId); if (idx > 0) setState(() { var item = elements.removeAt(idx); elements.insert(idx - 1, item); }); }
   void _toggleAlignment(DesignElement sel) { saveState(); setState(() { sel.textAlign = (sel.textAlign == TextAlign.right) ? TextAlign.center : (sel.textAlign == TextAlign.center ? TextAlign.left : TextAlign.right); }); }
 
+  // 🔥 FORMATTED & SAFE COLOR / GRADIENT MODALS 🔥
+  void _showCanvasBgColorModal() {
+    TextEditingController hexCtrl = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setModalState) {
+          return Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            child: Container(
+              height: 400,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Canvas Color', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                      IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))
+                    ]
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: hexCtrl,
+                            style: const TextStyle(fontSize: 12),
+                            decoration: InputDecoration(
+                              hintText: 'Hex: #FF0000',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0)
+                            )
+                          )
+                        ),
+                        const SizedBox(width: 10),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF8B5CF6),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
+                          ),
+                          onPressed: () {
+                            String hex = hexCtrl.text.replaceAll('#', '');
+                            if(hex.length == 6) hex = 'FF$hex';
+                            if(hex.length == 8) {
+                              saveState();
+                              setState(() {
+                                pageColor = Color(int.parse('0x$hex'));
+                                bgImageBytes = null;
+                                bgGradient = null;
+                              });
+                              setModalState(() {});
+                              Navigator.pop(context);
+                            }
+                          },
+                          child: const Text('Apply', style: TextStyle(color: Colors.white, fontSize: 12))
+                        )
+                      ]
+                    )
+                  ),
+                  Divider(color: Colors.grey.shade200),
+                  Expanded(
+                    child: GridView.builder(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 6, crossAxisSpacing: 12, mainAxisSpacing: 12
+                      ),
+                      itemCount: _proColorPalette.length,
+                      itemBuilder: (context, index) {
+                        Color c = _proColorPalette[index];
+                        bool isSelected = pageColor.value == c.value;
+                        return GestureDetector(
+                          onTap: () {
+                            saveState();
+                            setState(() {
+                              pageColor = c;
+                              bgImageBytes = null;
+                              bgGradient = null;
+                            });
+                            setModalState(() {});
+                            Navigator.pop(context);
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: c,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.grey.shade300, width: 1.0),
+                              boxShadow: isSelected ? [BoxShadow(color: c.withOpacity(0.5), blurRadius: 4)] : null
+                            ),
+                            child: isSelected ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white, size: 16) : null
+                          )
+                        );
+                      }
+                    )
+                  )
+                ]
+              )
+            )
+          );
+        });
+      }
+    );
+  }
+
+  void _showColorPickerModal(DesignElement sel) {
+    TextEditingController hexCtrl = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setModalState) {
+          Color currentColor = sel.isText ? sel.textColor : sel.elementColor;
+          return Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            child: Container(
+              height: 400,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Color Picker', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                      IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))
+                    ]
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: hexCtrl,
+                            style: const TextStyle(fontSize: 12),
+                            decoration: InputDecoration(
+                              hintText: 'Hex: #FF0000',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 10)
+                            )
+                          )
+                        ),
+                        const SizedBox(width: 10),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF8B5CF6),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
+                          ),
+                          onPressed: () {
+                            String hex = hexCtrl.text.replaceAll('#', '');
+                            if(hex.length == 6) hex = 'FF$hex';
+                            if(hex.length == 8) {
+                              saveState();
+                              setState(() {
+                                if(sel.isText) {
+                                  sel.textColor = Color(int.parse('0x$hex'));
+                                  sel.textGradient = null;
+                                } else {
+                                  sel.elementColor = Color(int.parse('0x$hex'));
+                                }
+                              });
+                              setModalState(() {});
+                              Navigator.pop(context);
+                            }
+                          },
+                          child: const Text('Apply', style: TextStyle(color: Colors.white, fontSize: 12))
+                        )
+                      ]
+                    )
+                  ),
+                  Divider(color: Colors.grey.shade200),
+                  Expanded(
+                    child: GridView.builder(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 6, crossAxisSpacing: 10, mainAxisSpacing: 10
+                      ),
+                      itemCount: _proColorPalette.length,
+                      itemBuilder: (context, index) {
+                        Color c = _proColorPalette[index];
+                        bool isSelected = currentColor.value == c.value;
+                        return GestureDetector(
+                          onTap: () {
+                            saveState();
+                            setState(() {
+                              if (sel.isText) {
+                                sel.textColor = c;
+                                sel.textGradient = null;
+                              } else {
+                                sel.elementColor = c;
+                              }
+                            });
+                            setModalState(() {});
+                            Navigator.pop(context);
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: c,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.grey.shade300, width: 1.0),
+                              boxShadow: isSelected ? [BoxShadow(color: c.withOpacity(0.3), blurRadius: 4)] : null
+                            ),
+                            child: isSelected ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white, size: 16) : null
+                          )
+                        );
+                      }
+                    )
+                  )
+                ]
+              )
+            )
+          );
+        });
+      }
+    );
+  }
+
+  void _showGradientPickerModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setModalState) {
+          return Container(
+            height: 500,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Text Gradient', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                    IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))
+                  ]
+                ),
+                Divider(color: Colors.grey.shade200),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade200)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Custom Gradient:', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11)),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          InkWell(onTap: () => _pickCustomGradColor(sel, 1, setModalState), child: Container(width: 35, height: 35, decoration: BoxDecoration(color: sel.customGradColor1 ?? Colors.red, shape: BoxShape.circle, border: Border.all(color: Colors.black12)))),
+                          const Icon(Icons.add, size: 16),
+                          InkWell(onTap: () => _pickCustomGradColor(sel, 2, setModalState), child: Container(width: 35, height: 35, decoration: BoxDecoration(color: sel.customGradColor2 ?? Colors.blue, shape: BoxShape.circle, border: Border.all(color: Colors.black12)))),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                            onPressed: () {
+                              if(sel.customGradColor1 != null && sel.customGradColor2 != null) {
+                                saveState();
+                                setState(() => sel.textGradient = [sel.customGradColor1!, sel.customGradColor2!]);
+                                setModalState((){});
+                                Navigator.pop(context);
+                              }
+                            },
+                            child: const Text('Apply', style: TextStyle(color: Colors.white, fontSize: 11))
+                          )
+                        ]
+                      )
+                    ]
+                  )
+                ),
+                const SizedBox(height: 8),
+                ListTile(
+                  leading: const Icon(Icons.block, size: 20),
+                  title: const Text('Clear Gradient', style: TextStyle(fontSize: 13)),
+                  dense: true,
+                  onTap: () {
+                    saveState();
+                    setState(() { sel.textGradient = null; });
+                    Navigator.pop(context);
+                  }
+                ),
+                Expanded(
+                  child: GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 2.0),
+                    itemCount: _proGradientPalette.length,
+                    itemBuilder: (context, index) {
+                      List<Color> g = _proGradientPalette[index];
+                      return GestureDetector(
+                        onTap: () {
+                          saveState();
+                          setState(() { sel.textGradient = g; });
+                          setModalState((){});
+                          Navigator.pop(context);
+                        },
+                        child: Container(decoration: BoxDecoration(gradient: LinearGradient(colors: g), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade200)))
+                      );
+                    }
+                  )
+                )
+              ]
+            )
+          );
+        });
+      }
+    );
+  }
+
   void _pickCustomGradColor(DesignElement sel, int colorNum, StateSetter parentSetState) { showModalBottomSheet(context: context, builder: (ctx) => Container(height: 300, padding: const EdgeInsets.all(20), child: Column(children: [const Text('Pick a Color', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)), const SizedBox(height: 10), Expanded(child: GridView.builder(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 8, mainAxisSpacing: 8), itemCount: _proColorPalette.length, itemBuilder: (ctx, index) { return InkWell(onTap: () { if(colorNum == 1) sel.customGradColor1 = _proColorPalette[index]; else sel.customGradColor2 = _proColorPalette[index]; parentSetState((){}); Navigator.pop(ctx); }, child: Container(decoration: BoxDecoration(color: _proColorPalette[index], shape: BoxShape.circle, border: Border.all(color: Colors.black12)))); }))]))); }
-  void _showCanvasBgColorModal() { TextEditingController hexCtrl = TextEditingController(); showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Padding(padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom), child: Container(height: 400, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Canvas Color', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))]), Padding(padding: const EdgeInsets.only(bottom: 10), child: Row(children: [Expanded(child: TextField(controller: hexCtrl, style: const TextStyle(fontSize: 12), decoration: InputDecoration(hintText: 'Hex: #FF0000', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0)))), const SizedBox(width: 10), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), onPressed: () { String hex = hexCtrl.text.replaceAll('#', ''); if(hex.length == 6) hex = 'FF$hex'; if(hex.length == 8) { saveState(); setState((){ pageColor = Color(int.parse('0x$hex')); bgImageBytes = null; bgGradient = null; }); setModalState((){}); Navigator.pop(context); } }, child: const Text('Apply', style: TextStyle(color: Colors.white, fontSize: 12)))]))), Divider(color: Colors.grey.shade200), Expanded(child: GridView.builder(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 10, mainAxisSpacing: 10), itemCount: _proColorPalette.length, itemBuilder: (context, index) { Color c = _proColorPalette[index]; bool isSelected = pageColor.value == c.value; return GestureDetector(onTap: () { saveState(); setState(() { pageColor = c; bgImageBytes = null; bgGradient = null; }); setModalState((){}); Navigator.pop(context); }, child: Container(decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300, width: 1.0), boxShadow: isSelected ? [BoxShadow(color: c.withOpacity(0.5), blurRadius: 4)] : null), child: isSelected ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white, size: 16) : null)); }))]))); }); }); }
+
+  // 🔥 SHORTER MODALS 🔥
   void _showCanvasBgGradientModal() { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 400, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Canvas Gradient', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))]), Divider(color: Colors.grey.shade200), Expanded(child: GridView.builder(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 2.0), itemCount: _proGradientPalette.length, itemBuilder: (context, index) { List<Color> g = _proGradientPalette[index]; return GestureDetector(onTap: () { saveState(); setState(() { bgGradient = g; bgImageBytes = null; pageColor = Colors.white; }); setModalState((){}); Navigator.pop(context); }, child: Container(decoration: BoxDecoration(gradient: LinearGradient(colors: g), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade200)))); }))])); }); }); }
   void _showTextBgPickerModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 400, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Text Background', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))]), Divider(color: Colors.grey.shade200), ListTile(leading: const Icon(Icons.block, size: 20), title: const Text('Remove Background', style: TextStyle(fontSize: 13)), dense: true, onTap: () { saveState(); setState(() { sel.textBgColor = null; }); Navigator.pop(context); }), Expanded(child: GridView.builder(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 10, mainAxisSpacing: 10), itemCount: _proColorPalette.length, itemBuilder: (context, index) { Color c = _proColorPalette[index]; bool isSelected = sel.textBgColor?.value == c.value; return GestureDetector(onTap: () { saveState(); setState(() { sel.textBgColor = c; }); setModalState((){}); }, child: Container(decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300, width: 1.0)), child: isSelected ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white, size: 16) : null)); }))])); }); }); }
-  void _showGradientPickerModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 500, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Text Gradient', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))]), Divider(color: Colors.grey.shade200), Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade200)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Custom Gradient:', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11)), const SizedBox(height: 8), Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [InkWell(onTap: () => _pickCustomGradColor(sel, 1, setModalState), child: Container(width: 35, height: 35, decoration: BoxDecoration(color: sel.customGradColor1 ?? Colors.red, shape: BoxShape.circle, border: Border.all(color: Colors.black12)))), const Icon(Icons.add, size: 16), InkWell(onTap: () => _pickCustomGradColor(sel, 2, setModalState), child: Container(width: 35, height: 35, decoration: BoxDecoration(color: sel.customGradColor2 ?? Colors.blue, shape: BoxShape.circle, border: Border.all(color: Colors.black12)))), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), onPressed: () { if(sel.customGradColor1 != null && sel.customGradColor2 != null) { saveState(); setState(() => sel.textGradient = [sel.customGradColor1!, sel.customGradColor2!]); setModalState((){}); Navigator.pop(context); } }, child: const Text('Apply', style: TextStyle(color: Colors.white, fontSize: 11)))])])), const SizedBox(height: 8), ListTile(leading: const Icon(Icons.block, size: 20), title: const Text('Clear Gradient', style: TextStyle(fontSize: 13)), dense: true, onTap: () { saveState(); setState(() { sel.textGradient = null; }); Navigator.pop(context); }), Expanded(child: GridView.builder(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 2.0), itemCount: _proGradientPalette.length, itemBuilder: (context, index) { List<Color> g = _proGradientPalette[index]; return GestureDetector(onTap: () { saveState(); setState(() { sel.textGradient = g; }); setModalState((){}); Navigator.pop(context); }, child: Container(decoration: BoxDecoration(gradient: LinearGradient(colors: g), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade200)))); }))])); }); }); }
-  void _showColorPickerModal(DesignElement sel) { TextEditingController hexCtrl = TextEditingController(); showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { Color currentColor = sel.isText ? sel.textColor : sel.elementColor; return Padding(padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom), child: Container(height: 400, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Color Picker', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))]), Padding(padding: const EdgeInsets.only(bottom: 10), child: Row(children: [Expanded(child: TextField(controller: hexCtrl, style: const TextStyle(fontSize: 12), decoration: InputDecoration(hintText: 'Hex: #FF0000', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), contentPadding: const EdgeInsets.symmetric(horizontal: 10)))), const SizedBox(width: 10), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), onPressed: () { String hex = hexCtrl.text.replaceAll('#', ''); if(hex.length == 6) hex = 'FF$hex'; if(hex.length == 8) { saveState(); setState((){ if(sel.isText){ sel.textColor = Color(int.parse('0x$hex')); sel.textGradient = null; } else { sel.elementColor = Color(int.parse('0x$hex')); } }); setModalState((){}); Navigator.pop(context); } }, child: const Text('Apply', style: TextStyle(color: Colors.white, fontSize: 12)))]))), Divider(color: Colors.grey.shade200), Expanded(child: GridView.builder(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 10, mainAxisSpacing: 10), itemCount: _proColorPalette.length, itemBuilder: (context, index) { Color c = _proColorPalette[index]; bool isSelected = currentColor.value == c.value; return GestureDetector(onTap: () { saveState(); setState(() { if (sel.isText) { sel.textColor = c; sel.textGradient = null; } else { sel.elementColor = c; } }); setModalState((){}); Navigator.pop(context); }, child: Container(decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300, width: 1.0), boxShadow: isSelected ? [BoxShadow(color: c.withOpacity(0.3), blurRadius: 4)] : null), child: isSelected ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white, size: 16) : null)); }))]))); }); }); }
   void _showAdvancedStrokeModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 400, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Stroke', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))]), SwitchListTile(title: const Text('Enable Stroke', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)), activeColor: const Color(0xFF8B5CF6), dense: true, contentPadding: EdgeInsets.zero, value: sel.hasStroke, onChanged: (val) { saveState(); setState(() => sel.hasStroke = val); setModalState((){}); }), Divider(color: Colors.grey.shade200), if (sel.hasStroke) ...[Row(children: [const Text('Width:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey)), Expanded(child: Slider(value: sel.strokeWidth, min: 1.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.strokeWidth = val); setModalState((){}); }))]), const Text('Color:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey)), const SizedBox(height: 8), Expanded(child: GridView.builder(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 8, mainAxisSpacing: 8), itemCount: _proColorPalette.length, itemBuilder: (context, index) { Color c = _proColorPalette[index]; bool isSel = sel.strokeColor.value == c.value; return GestureDetector(onTap: () { saveState(); setState(() => sel.strokeColor = c); setModalState((){}); }, child: Container(decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300, width: 1.0)), child: isSel ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white, size: 16) : null)); }))] ])); }); }); }
   void _showAdvancedShadowModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 500, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Shadow', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))]), SwitchListTile(title: const Text('Enable Shadow', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)), activeColor: const Color(0xFF8B5CF6), dense: true, contentPadding: EdgeInsets.zero, value: sel.hasShadow, onChanged: (val) { saveState(); setState(() => sel.hasShadow = val); setModalState((){}); }), Divider(color: Colors.grey.shade200), if (sel.hasShadow) ...[Row(children: [const Text('Blur:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey)), Expanded(child: Slider(value: sel.shadowBlur, min: 0.0, max: 30.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.shadowBlur = val); setModalState((){}); }))]), Row(children: [const Text('X:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey)), Expanded(child: Slider(value: sel.shadowOffsetX, min: -20.0, max: 20.0, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.shadowOffsetX = val); setModalState((){}); }))]), Row(children: [const Text('Y:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey)), Expanded(child: Slider(value: sel.shadowOffsetY, min: -20.0, max: 20.0, activeColor: Colors.green, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.shadowOffsetY = val); setModalState((){}); }))]), const Text('Color:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey)), const SizedBox(height: 8), Expanded(child: GridView.builder(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 8, mainAxisSpacing: 8), itemCount: _proColorPalette.length, itemBuilder: (context, index) { Color c = _proColorPalette[index]; bool isSel = sel.shadowColor.value == c.value; return GestureDetector(onTap: () { saveState(); setState(() => sel.shadowColor = c); setModalState((){}); }, child: Container(decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300, width: 1.0)), child: isSel ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white, size: 16) : null)); }))] ])); }); }); }
   void _show3DBlockModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 400, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('3D Depth', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))]), Divider(color: Colors.grey.shade200), Row(children: [const Text('Depth:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey)), Expanded(child: Slider(value: sel.text3dDepth, min: 0.0, max: 30.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.text3dDepth = val); setModalState((){}); }))]), const Text('Color:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey)), const SizedBox(height: 8), Expanded(child: GridView.builder(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 8, mainAxisSpacing: 8), itemCount: _proColorPalette.length, itemBuilder: (context, index) { Color c = _proColorPalette[index]; bool isSel = sel.text3dColor.value == c.value; return GestureDetector(onTap: () { saveState(); setState(() => sel.text3dColor = c); setModalState((){}); }, child: Container(decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300, width: 1.0)), child: isSel ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white, size: 16) : null)); })) ])); }); }); }
@@ -398,586 +709,3 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void showSizeSliderModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 160, padding: const EdgeInsets.all(20), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Size: ${sel.fontSize.toInt()}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))]), Slider(value: sel.fontSize, min: 10.0, max: 150.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.fontSize = val); setModalState((){}); })])); }); }); }
   void showRotationModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 180, padding: const EdgeInsets.all(20), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Rotate', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))]), const SizedBox(height: 4), Slider(value: sel.angle, min: -pi, max: pi, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.angle = val); setModalState((){}); }), Text('${(sel.angle * 180 / pi).toInt()}°', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14))])); }); }); }
   void show3DModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 250, padding: const EdgeInsets.all(20), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Perspective', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))]), const SizedBox(height: 4), Row(children: [const Text('X:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)), Expanded(child: Slider(value: sel.pitch, min: -pi/2, max: pi/2, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.pitch = val); setModalState((){}); }))]), Row(children: [const Text('Y:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)), Expanded(child: Slider(value: sel.yaw, min: -pi/2, max: pi/2, activeColor: Colors.green, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.yaw = val); setModalState((){}); }))]), ElevatedButton(onPressed: () { saveState(); setState((){ sel.pitch=0; sel.yaw=0; }); setModalState((){}); }, style: ElevatedButton.styleFrom(elevation: 0, backgroundColor: Colors.grey.shade100, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: const Text('Reset', style: TextStyle(color: Colors.black87, fontSize: 12, fontWeight: FontWeight.w700))) ])); }); }); }
-  
-  void showNudgeModal(DesignElement sel) { 
-    showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (context) { 
-      return StatefulBuilder(builder: (context, setModalState) { 
-        void move(double dx, double dy) { 
-          saveState(); 
-          setState(() { 
-            sel.x += dx; sel.y += dy; 
-            if (sel.groupId != null) {
-              for (var other in elements) {
-                if (other.id != sel.id && other.groupId == sel.groupId && !other.isLocked) {
-                  other.x += dx; other.y += dy;
-                }
-              }
-            }
-          }); 
-          setModalState((){}); 
-        } 
-        return Container(height: 240, padding: const EdgeInsets.all(20), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Nudge', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))]), const SizedBox(height: 4), Row(mainAxisAlignment: MainAxisAlignment.center, children: [IconButton(icon: const Icon(Icons.arrow_upward, size: 28, color: Color(0xFF8B5CF6)), onPressed: () => move(0, -2))]), Row(mainAxisAlignment: MainAxisAlignment.center, children: [IconButton(icon: const Icon(Icons.arrow_back, size: 28, color: Color(0xFF8B5CF6)), onPressed: () => move(-2, 0)), const SizedBox(width: 40), IconButton(icon: const Icon(Icons.arrow_forward, size: 28, color: Color(0xFF8B5CF6)), onPressed: () => move(2, 0))]), Row(mainAxisAlignment: MainAxisAlignment.center, children: [IconButton(icon: const Icon(Icons.arrow_downward, size: 28, color: Color(0xFF8B5CF6)), onPressed: () => move(0, 2))]),])); 
-      }); 
-    }); 
-  }
-
-  void _showCurveModal(DesignElement sel) { 
-    showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (context) { 
-      return StatefulBuilder(builder: (context, setModalState) { 
-        return Container(height: 240, padding: const EdgeInsets.all(20), child: Column(children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Curve', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))]), 
-          const SizedBox(height: 4), 
-          Row(children: [const Text('Bend:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey)), Expanded(child: Slider(value: sel.textCurveRadius, min: -150.0, max: 150.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.textCurveRadius = val); setModalState((){}); }))]), 
-          Row(children: [const Text('Space:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey)), Expanded(child: Slider(value: sel.letterSpacing, min: -5.0, max: 20.0, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.letterSpacing = val); setModalState((){}); }))]), 
-          ElevatedButton(onPressed: () { saveState(); setState(() => sel.textCurveRadius = 0.0); setModalState((){}); }, style: ElevatedButton.styleFrom(elevation: 0, backgroundColor: Colors.grey.shade100, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: const Text('Reset', style: TextStyle(color: Colors.black87, fontSize: 12, fontWeight: FontWeight.w700))) 
-        ])); 
-      }); 
-    }); 
-  }
-
-  void _showBlendModeModal(DesignElement sel) { 
-    showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (context) { 
-      return StatefulBuilder(builder: (context, setModalState) { 
-        return Container(height: 320, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Blend Modes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))]), 
-          Divider(color: Colors.grey.shade200), 
-          Expanded(child: ListView.builder(itemCount: _blendModes.length, itemBuilder: (context, index) { 
-            String bName = _blendModes[index].toString().replaceAll('BlendMode.', '').toUpperCase(); 
-            return ListTile(title: Text(bName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)), dense: true, trailing: sel.blendModeIndex == index ? const Icon(Icons.check_circle, color: Color(0xFF8B5CF6), size: 18) : null, onTap: () { saveState(); setState(() => sel.blendModeIndex = index); Navigator.pop(context); }); 
-          }))
-        ])); 
-      }); 
-    }); 
-  }
-
-  Future<void> _importCustomFont() async { try { FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['ttf', 'otf']); if (result != null && result.files.single.path != null) { String filePath = result.files.single.path!; String fontName = result.files.single.name.replaceAll('.ttf', '').replaceAll('.otf', ''); var fontLoader = FontLoader(fontName); fontLoader.addFont(Future.value(ByteData.view(File(filePath).readAsBytesSync().buffer))); await fontLoader.load(); setState(() { if (!customFonts.contains(fontName)) customFonts.add(fontName); }); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Font "$fontName" imported! 🎉', style: const TextStyle(fontWeight: FontWeight.w700)))); } } catch (e) { debugPrint("Font Import Error: $e"); } }
-  void showFontPickerModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 420, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Fonts', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), onPressed: () async { await _importCustomFont(); setModalState(() {}); }, icon: const Icon(Icons.add, color: Colors.white, size: 14), label: const Text('Add Font', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700))) ]), Divider(color: Colors.grey.shade200), Expanded(child: ListView(children: [if (customFonts.isNotEmpty) ...[const Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4), child: Text('My Fonts', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w800))), ...customFonts.map((fontName) => ListTile(title: Text(fontName, style: TextStyle(fontFamily: fontName, fontSize: 20)), trailing: sel.fontFamily == fontName ? const Icon(Icons.check_circle, color: Color(0xFF8B5CF6), size: 18) : null, dense: true, onTap: () { saveState(); setState(() => sel.fontFamily = fontName); Navigator.pop(context); })).toList(), Divider(color: Colors.grey.shade200)], const Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4), child: Text('Default Fonts', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w800))), ...availableFonts.map((fontName) => ListTile(title: Text('اردو فونٹ - $fontName', style: TextStyle(fontFamily: fontName, fontSize: 20)), trailing: sel.fontFamily == fontName ? const Icon(Icons.check_circle, color: Color(0xFF8B5CF6), size: 18) : null, dense: true, onTap: () { saveState(); setState(() => sel.fontFamily = fontName); Navigator.pop(context); })).toList(),])),])); }); }); }
-
-  void _showAlignmentModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (context) { return Container(height: 240, padding: const EdgeInsets.all(20), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Align', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))]), Divider(color: Colors.grey.shade200), Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [_buildAlignButton(Icons.align_horizontal_left, 'Left', () { saveState(); setState(() => sel.x = 10); Navigator.pop(context); }), _buildAlignButton(Icons.align_horizontal_center, 'Center', () { saveState(); setState(() => sel.x = (MediaQuery.of(context).size.width - 40 - (sel.width > 0 ? sel.width : 280)) / 2); Navigator.pop(context); }), _buildAlignButton(Icons.align_horizontal_right, 'Right', () { saveState(); setState(() => sel.x = MediaQuery.of(context).size.width - 40 - (sel.width > 0 ? sel.width : 280) - 10); Navigator.pop(context); }),]), const SizedBox(height: 16), Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [_buildAlignButton(Icons.align_vertical_top, 'Top', () { saveState(); setState(() => sel.y = 10); Navigator.pop(context); }), _buildAlignButton(Icons.align_vertical_center, 'Middle', () { saveState(); setState(() => sel.y = (MediaQuery.of(context).size.height * 0.5) / 2); Navigator.pop(context); }), _buildAlignButton(Icons.align_vertical_bottom, 'Bottom', () { saveState(); setState(() => sel.y = (MediaQuery.of(context).size.height * 0.6) - 100); Navigator.pop(context); }),]),])); }); }
-  Widget _buildAlignButton(IconData icon, String label, VoidCallback onTap) { return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(8), child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade200)), child: Column(children: [Icon(icon, color: const Color(0xFF8B5CF6), size: 20), const SizedBox(height: 4), Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.black54))]),),); }
-  void _showResizeModal() { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (context) { return Container(height: 280, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Canvas Size', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))]), Divider(color: Colors.grey.shade200), Expanded(child: ListView(children: [ListTile(leading: const Icon(Icons.crop_square, size: 20), title: const Text('1:1 (Logo / DP)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)), dense: true, onTap: (){ saveState(); setState(()=> canvasRatio = 1.0); Navigator.pop(context); }), ListTile(leading: const Icon(Icons.crop_16_9, size: 20), title: const Text('16:9 (YouTube)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)), dense: true, onTap: (){ saveState(); setState(()=> canvasRatio = 16/9); Navigator.pop(context); }), ListTile(leading: const Icon(Icons.crop_portrait, size: 20), title: const Text('9:16 (Story / Reel)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)), dense: true, onTap: (){ saveState(); setState(()=> canvasRatio = 9/16); Navigator.pop(context); }), ListTile(leading: const Icon(Icons.description, size: 20), title: const Text('1:1.414 (A4 Print)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)), dense: true, onTap: (){ saveState(); setState(()=> canvasRatio = 1/1.414); Navigator.pop(context); }),]))])); }); }
-
-  @override
-  Widget build(BuildContext context) {
-    bool hasSelection = selectedId != null;
-    DesignElement? sel;
-    if (hasSelection) sel = elements.firstWhere((e) => e.id == selectedId);
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F6), // Clean lighter background
-      appBar: AppBar(
-        backgroundColor: Colors.white, elevation: 0, titleSpacing: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 22), onPressed: () => Navigator.pop(context), padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 40)),
-        title: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(children: [
-            _buildTopBtn(Icons.layers, 'Layers', showLayersPanel), const SizedBox(width: 4),
-            _buildTopBtn(Icons.auto_stories, 'Pages', showPagesPanel), const SizedBox(width: 4),
-            _buildTopBtn(Icons.undo, 'Undo', undoAction), const SizedBox(width: 4),
-            _buildTopBtn(Icons.redo, 'Redo', redoAction), const SizedBox(width: 4),
-          ]),
-        ),
-        actions: [
-          InkWell(
-            onTap: _saveProjectLocally,
-            borderRadius: BorderRadius.circular(6),
-            child: Container(margin: const EdgeInsets.symmetric(vertical: 14), padding: const EdgeInsets.symmetric(horizontal: 10), decoration: BoxDecoration(border: Border.all(color: const Color(0xFF8B5CF6), width: 1.2), borderRadius: BorderRadius.circular(6)), alignment: Alignment.center, child: Row(children: const [Icon(Icons.save, color: Color(0xFF8B5CF6), size: 14), SizedBox(width: 4), Text('Save', style: TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.w700, fontSize: 10))])),
-          ),
-          const SizedBox(width: 8),
-          InkWell(
-            onTap: _showExportMenu,
-            borderRadius: BorderRadius.circular(6),
-            child: Container(margin: const EdgeInsets.symmetric(vertical: 14), padding: const EdgeInsets.symmetric(horizontal: 10), decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(6)), alignment: Alignment.center, child: Row(children: const [Icon(Icons.download, color: Colors.white, size: 14), SizedBox(width: 4), Text('Export', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 10))])),
-          ),
-          const SizedBox(width: 12),
-        ],
-      ),
-      
-      body: Column(
-        children: [
-          if (!_isExporting)
-            Container(
-              padding: const EdgeInsets.only(left: 15, top: 10, bottom: 5),
-              alignment: Alignment.centerLeft,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  InkWell(
-                    onTap: () => setState(() => _isCanvasLocked = !_isCanvasLocked),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade200)), child: Icon(_isCanvasLocked ? Icons.lock : Icons.lock_open, color: _isCanvasLocked ? Colors.redAccent : Colors.black54, size: 16)),
-                  ),
-                  const SizedBox(width: 8),
-                  InkWell(
-                    onTap: () => _transformController.value = Matrix4.identity(),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade200)), child: const Icon(Icons.zoom_out_map, color: Colors.black54, size: 16)),
-                  ),
-                ],
-              ),
-            ),
-            
-          Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() => selectedId = null), 
-              child: Center(
-                child: InteractiveViewer(
-                  transformationController: _transformController,
-                  panEnabled: !_isCanvasLocked && !hasSelection,
-                  scaleEnabled: !_isCanvasLocked && !hasSelection, 
-                  minScale: 0.2, maxScale: 5.0, 
-                  boundaryMargin: const EdgeInsets.all(double.infinity),
-                  child: AspectRatio(
-                    aspectRatio: canvasRatio,
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        double canvasW = constraints.maxWidth;
-                        double canvasH = constraints.maxHeight;
-
-                        return Container(
-                          margin: const EdgeInsets.all(16),
-                          decoration: const BoxDecoration(boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)]),
-                          child: RepaintBoundary(
-                            key: _canvasKey,
-                            child: Container(
-                              color: bgImageBytes != null || bgGradient != null ? null : (pageColor == Colors.transparent ? null : pageColor), 
-                              decoration: bgImageBytes != null 
-                                  ? BoxDecoration(image: DecorationImage(image: MemoryImage(bgImageBytes!), fit: BoxFit.cover))
-                                  : (bgGradient != null ? BoxDecoration(gradient: LinearGradient(colors: bgGradient!)) : (pageColor == Colors.transparent ? const BoxDecoration(image: DecorationImage(image: AssetImage('assets/transparent_pattern.png'), repeat: ImageRepeat.repeat)) : null)),
-                              child: Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  if (_showGrid && !_isExporting)
-                                    Positioned.fill(
-                                      child: IgnorePointer(
-                                        child: Stack(
-                                          children: [
-                                            Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [Container(height: 1, color: Colors.blue.withOpacity(0.3)), Container(height: 1, color: Colors.blue.withOpacity(0.3))]),
-                                            Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [Container(width: 1, color: Colors.blue.withOpacity(0.3)), Container(width: 1, color: Colors.blue.withOpacity(0.3))]),
-                                            Center(child: Container(width: double.infinity, height: 1, color: Colors.red.withOpacity(0.5))),
-                                            Center(child: Container(width: 1, height: double.infinity, color: Colors.red.withOpacity(0.5))),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-
-                                  if (!_isExporting)
-                                    Positioned.fill(child: Container(margin: const EdgeInsets.all(15), decoration: BoxDecoration(border: Border.all(color: Colors.redAccent.withOpacity(0.3), width: 1.5)), child: Align(alignment: Alignment.topRight, child: Padding(padding: const EdgeInsets.all(4.0), child: Text('Safe Area', style: TextStyle(color: Colors.redAccent.withOpacity(0.5), fontSize: 10)))))),
-                                  
-                                  ...elements.map((e) {
-                                    if (e.isHidden) return const SizedBox.shrink();
-
-                                    bool isSel = e.id == selectedId;
-                                    
-                                    Matrix4 matrix = Matrix4.identity()
-                                      ..setEntry(3, 2, 0.002) 
-                                      ..rotateX(e.pitch)
-                                      ..rotateY(e.yaw)
-                                      ..rotateZ(e.angle);
-                                    
-                                    if (e.flipX) matrix.rotateY(pi);
-                                    if (e.flipY) matrix.rotateX(pi);
-
-                                    List<BoxShadow> boxShadows = [];
-                                    if (e.hasShadow && !e.isText && !e.isBorder) {
-                                      boxShadows.add(BoxShadow(color: e.shadowColor, blurRadius: e.shadowBlur, offset: Offset(e.shadowOffsetX, e.shadowOffsetY)));
-                                    }
-                                    Border? universalBorder;
-                                    if (e.hasStroke && !e.isText && !e.isBorder) {
-                                      universalBorder = Border.all(color: e.strokeColor, width: e.strokeWidth);
-                                    }
-
-                                    if (e.isBorder) {
-                                      return Positioned.fill(
-                                        child: GestureDetector(
-                                          onTap: () { if(!e.isLocked) setState(() => selectedId = e.id); }, 
-                                          child: Transform(
-                                            transform: matrix, alignment: Alignment.center,
-                                            child: Container(margin: const EdgeInsets.all(8), decoration: BoxDecoration(border: Border.all(color: e.elementColor, width: e.borderWidth), borderRadius: BorderRadius.circular(10), color: isSel && !_isExporting ? Colors.purple.withOpacity(0.05) : Colors.transparent))
-                                          )
-                                        )
-                                      );
-                                    }
-
-                                    Widget contentWidget;
-                                    double currentWidth = e.width > 50 ? e.width : 280.0; 
-                                    double currentHeight = e.height > 20 ? e.height : (e.isShape ? 90 : 150);
-
-                                    if (e.isShape) {
-                                      contentWidget = Container(width: currentWidth, height: currentHeight, decoration: BoxDecoration(color: e.elementColor, boxShadow: boxShadows.isNotEmpty ? boxShadows : null, border: universalBorder, borderRadius: BorderRadius.circular(e.cornerRadius)));
-                                    } else if (e.imageBytes != null) {
-                                      Widget img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, fit: BoxFit.fill);
-                                      if (e.isTinted) {
-                                        img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, fit: BoxFit.fill, color: e.elementColor, colorBlendMode: BlendMode.srcIn);
-                                      } else {
-                                        if (e.imageFilter == 1) img = ColorFiltered(colorFilter: const ColorFilter.matrix(grayscaleMatrix), child: img);
-                                        else if (e.imageFilter == 2) img = ColorFiltered(colorFilter: const ColorFilter.matrix(sepiaMatrix), child: img);
-                                        else if (e.imageFilter == 3) img = ColorFiltered(colorFilter: const ColorFilter.matrix(invertMatrix), child: img);
-                                      }
-
-                                      if (e.blendModeIndex != 0) {
-                                        img = ColorFiltered(colorFilter: ColorFilter.mode(Colors.transparent, _blendModes[e.blendModeIndex]), child: img);
-                                      }
-
-                                      Widget clippedImg = img;
-                                      if (e.clipShape == 1) {
-                                        clippedImg = Container(clipBehavior: Clip.antiAlias, decoration: const BoxDecoration(shape: BoxShape.circle), child: img);
-                                      } else if (e.clipShape == 2) {
-                                        clippedImg = ClipPath(clipper: TriangleClipper(), child: img);
-                                      } else if (e.clipShape == 3) {
-                                        clippedImg = ClipPath(clipper: StarClipper(), child: img);
-                                      } else if (e.clipShape == 4) {
-                                        clippedImg = ClipPath(clipper: HexagonClipper(), child: img);
-                                      }
-
-                                      contentWidget = Container(
-                                        width: currentWidth, 
-                                        height: e.clipShape == 1 ? currentWidth : currentHeight, 
-                                        decoration: BoxDecoration(borderRadius: e.clipShape == 0 ? BorderRadius.circular(e.cornerRadius) : null, boxShadow: boxShadows.isNotEmpty ? boxShadows : null, border: universalBorder), 
-                                        child: clippedImg
-                                      );
-                                    } else {
-                                      List<Shadow> textShadows = [];
-                                      if (e.hasShadow) { textShadows.add(Shadow(color: e.shadowColor, blurRadius: e.shadowBlur, offset: Offset(e.shadowOffsetX, e.shadowOffsetY))); }
-
-                                      Widget buildTextWidget(Color c, [List<Shadow>? shadow]) {
-                                        TextStyle st = TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, letterSpacing: e.letterSpacing, color: c, fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal, height: e.lineHeight, wordSpacing: e.wordSpacing, shadows: shadow);
-                                        if (e.textCurveRadius != 0) {
-                                          return CurvedTextWidget(text: e.content, radius: e.textCurveRadius, style: st, letterSpacing: e.letterSpacing);
-                                        }
-                                        return Text(e.content, textAlign: e.textAlign, softWrap: true, textDirection: TextDirection.rtl, style: st.copyWith(letterSpacing: e.letterSpacing));
-                                      }
-
-                                      List<Widget> blockLayers = [];
-                                      if (e.text3dDepth > 0) {
-                                        for (double i = e.text3dDepth; i > 0; i -= 1.0) {
-                                          blockLayers.add(Transform.translate(offset: Offset(i, i), child: buildTextWidget(e.text3dColor)));
-                                        }
-                                      }
-                                      
-                                      Widget mainTxt = buildTextWidget(e.textGradient != null ? Colors.white : e.textColor, textShadows.isNotEmpty ? textShadows : null);
-                                      if (e.textGradient != null) { mainTxt = ShaderMask(shaderCallback: (bounds) => LinearGradient(colors: e.textGradient!).createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height)), child: mainTxt); }
-                                      if (e.textTextureBytes != null) { mainTxt = TextureTextWrapper(textureBytes: e.textTextureBytes, child: mainTxt); }
-                                      
-                                      blockLayers.add(mainTxt);
-                                      Widget txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: blockLayers);
-
-                                      if (e.hasStroke) {
-                                        TextStyle stStroke = TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, letterSpacing: e.letterSpacing, foreground: Paint()..style = PaintingStyle.stroke..strokeWidth = e.strokeWidth..color = e.strokeColor, fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal, height: e.lineHeight, wordSpacing: e.wordSpacing);
-                                        Widget strokeTxt = e.textCurveRadius != 0 ? CurvedTextWidget(text: e.content, radius: e.textCurveRadius, style: stStroke, letterSpacing: e.letterSpacing) : Text(e.content, textAlign: e.textAlign, softWrap: true, textDirection: TextDirection.rtl, style: stStroke.copyWith(letterSpacing: e.letterSpacing));
-                                        txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [strokeTxt, txt]);
-                                      }
-                                      if (e.textBgColor != null) { txt = Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), decoration: BoxDecoration(color: e.textBgColor, borderRadius: BorderRadius.circular(e.textBgRadius)), child: txt); }
-                                      contentWidget = e.textCurveRadius != 0 ? txt : SizedBox(width: currentWidth, child: txt);
-                                    }
-
-                                    if (_isExporting) { 
-                                      return Positioned(left: e.x, top: e.y, child: Transform(transform: matrix, alignment: Alignment.center, child: Opacity(opacity: e.opacity, child: Padding(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15), child: contentWidget)))); 
-                                    }
-
-                                    return Positioned(
-                                      left: e.x, top: e.y,
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          if (e.isLocked) {
-                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Layer is Locked.', style: TextStyle(fontWeight: FontWeight.w600)), duration: Duration(seconds: 1)));
-                                          } else {
-                                            setState(() => selectedId = e.id);
-                                          }
-                                        },
-                                        onScaleStart: (details) {
-                                          if (!e.isLocked) {
-                                            saveState();
-                                            setState(() {
-                                              selectedId = e.id;
-                                              _initialRotation = e.angle;
-                                              _initialWidth = e.width > 50 ? e.width : 280.0;
-                                              _initialHeight = e.height > 20 ? e.height : (e.isShape ? 90 : 150);
-                                              _initialFontSize = e.fontSize;
-                                              _initialX = e.x;
-                                              _initialY = e.y;
-                                              _initialFocalPoint = details.focalPoint;
-                                              
-                                              _initialGroupStates.clear();
-                                              if (e.groupId != null) {
-                                                for (var other in elements) {
-                                                  if (other.groupId == e.groupId) {
-                                                    _initialGroupStates[other.id] = {'x': other.x, 'y': other.y};
-                                                  }
-                                                }
-                                              }
-                                            });
-                                          }
-                                        },
-                                        onScaleUpdate: (details) {
-                                          if (!e.isLocked) {
-                                            setState(() {
-                                              selectedId = e.id;
-                                              
-                                              Offset delta = details.focalPoint - _initialFocalPoint;
-                                              e.x = _initialX + delta.dx;
-                                              e.y = _initialY + delta.dy;
-
-                                              double snapCenterX = e.x + currentWidth / 2 + 20; 
-                                              double snapCenterY = e.y + (e.isText && e.textCurveRadius == 0 ? 100 : currentHeight) / 2 + 15;
-                                              
-                                              _snapV = (snapCenterX - canvasW/2).abs() < 12;
-                                              _snapH = (snapCenterY - canvasH/2).abs() < 12;
-
-                                              double snapShiftX = 0, snapShiftY = 0;
-                                              if (_snapV) {
-                                                 snapShiftX = (canvasW/2 - currentWidth/2 - 20) - e.x;
-                                                 e.x += snapShiftX;
-                                              }
-                                              if (_snapH) {
-                                                 snapShiftY = (canvasH/2 - (e.isText && e.textCurveRadius == 0 ? 100 : currentHeight)/2 - 15) - e.y;
-                                                 e.y += snapShiftY;
-                                              }
-
-                                              if (e.groupId != null) {
-                                                for (var other in elements) {
-                                                  if (other.id != e.id && other.groupId == e.groupId && !other.isLocked) {
-                                                    var initStates = _initialGroupStates[other.id];
-                                                    if (initStates != null) {
-                                                      other.x = initStates['x'] + delta.dx + snapShiftX;
-                                                      other.y = initStates['y'] + delta.dy + snapShiftY;
-                                                    }
-                                                  }
-                                                }
-                                              }
-
-                                              if (details.scale != 1.0) {
-                                                if (e.isText) {
-                                                  double newSize = _initialFontSize * details.scale;
-                                                  if (newSize > 10.0 && newSize < 300.0) e.fontSize = newSize;
-                                                } else {
-                                                  double newW = _initialWidth * details.scale;
-                                                  double newH = _initialHeight * details.scale;
-                                                  if (newW > 20 && newH > 20) {
-                                                    e.width = newW;
-                                                    e.height = newH;
-                                                  }
-                                                }
-                                              }
-
-                                              if (details.rotation != 0.0) {
-                                                e.angle = _initialRotation + details.rotation;
-                                              }
-                                            });
-                                          }
-                                        },
-                                        onScaleEnd: (details) {
-                                          setState(() { _snapV = false; _snapH = false; });
-                                        },
-                                        child: Transform(
-                                          transform: matrix, alignment: Alignment.center,
-                                          child: isSel 
-                                            ? Padding(
-                                                padding: const EdgeInsets.all(5),
-                                                child: Column(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    Stack(
-                                                      clipBehavior: Clip.none,
-                                                      children: [
-                                                        Container(padding: const EdgeInsets.all(5), decoration: BoxDecoration(border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5), color: Colors.purple.withOpacity(0.05)), child: Opacity(opacity: e.opacity, child: contentWidget)),
-                                                        
-                                                        Positioned(
-                                                          top: -15, left: 0, right: 0, 
-                                                          child: Center(
-                                                            child: GestureDetector(
-                                                              onPanUpdate: (d) {
-                                                                setState(() { e.angle += d.delta.dx * 0.02; });
-                                                              },
-                                                              child: Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)]), child: const Icon(Icons.rotate_right, size: 14, color: Colors.black87))
-                                                            )
-                                                          )
-                                                        ),
-                                                        
-                                                        if (!e.isText && !e.isShape) Positioned(right: -15, top: 0, bottom: 0, child: GestureDetector(onPanUpdate: (d) { setState(() { double w = currentWidth + d.delta.dx; if (w > 50) e.width = w; }); }, child: Container(width: 30, color: Colors.transparent, alignment: Alignment.center, child: Container(width: 6, height: 20, decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)))))),
-                                                        if (!e.isText && !e.isShape) Positioned(left: -15, top: 0, bottom: 0, child: GestureDetector(onPanUpdate: (d) { setState(() { double newW = currentWidth - d.delta.dx; if (newW > 50) { e.width = newW; e.x += d.delta.dx; } }); }, child: Container(width: 30, color: Colors.transparent, alignment: Alignment.center, child: Container(width: 6, height: 20, decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)))))),
-                                                        if (!e.isText) Positioned(bottom: -15, left: 0, right: 0, child: GestureDetector(onPanUpdate: (d) { setState(() { double h = currentHeight + d.delta.dy; if (h > 20) e.height = h; }); }, child: Container(height: 30, color: Colors.transparent, alignment: Alignment.center, child: Container(height: 6, width: 20, decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)))))),
-                                                        
-                                                        Positioned(
-                                                          bottom: -15, right: -15, 
-                                                          child: GestureDetector(
-                                                            onPanUpdate: (d) { 
-                                                              setState(() { 
-                                                                if (e.isText) {
-                                                                  double newSize = e.fontSize + (d.delta.dx + d.delta.dy) * 0.4;
-                                                                  if (newSize > 10 && newSize < 300) e.fontSize = newSize;
-                                                                } else {
-                                                                  double ratio = currentWidth / currentHeight; 
-                                                                  double newW = currentWidth + d.delta.dx; 
-                                                                  if (newW > 50) { e.width = newW; e.height = newW / ratio; } 
-                                                                }
-                                                              }); 
-                                                            }, 
-                                                            child: Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: const Color(0xFF8B5CF6), shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)]), child: const Icon(Icons.open_in_full, size: 12, color: Colors.white))
-                                                          )
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    const SizedBox(height: 12),
-                                                    Material(
-                                                      color: Colors.transparent, elevation: 6, borderRadius: BorderRadius.circular(12),
-                                                      child: Container(
-                                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-                                                        child: Row(
-                                                          mainAxisSize: MainAxisSize.min,
-                                                          children: [
-                                                            InkWell(onTap: bringForward, borderRadius: BorderRadius.circular(6), child: const Padding(padding: EdgeInsets.all(4), child: Icon(Icons.arrow_upward, size: 18, color: Colors.black87))), const SizedBox(width: 10),
-                                                            InkWell(onTap: sendBackward, borderRadius: BorderRadius.circular(6), child: const Padding(padding: EdgeInsets.all(4), child: Icon(Icons.arrow_downward, size: 18, color: Colors.black87))), const SizedBox(width: 10),
-                                                            InkWell(onTap: duplicateSelected, borderRadius: BorderRadius.circular(6), child: const Padding(padding: EdgeInsets.all(4), child: Icon(Icons.copy, size: 18, color: Colors.black87))), const SizedBox(width: 10),
-                                                            InkWell(onTap: deleteSelected, borderRadius: BorderRadius.circular(6), child: const Padding(padding: EdgeInsets.all(4), child: Icon(Icons.delete_outline, size: 18, color: Colors.redAccent))),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              )
-                                            : Padding(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15), child: Opacity(opacity: e.opacity, child: contentWidget)),
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-
-                                  if (_snapV && !_isExporting) Positioned(left: canvasW/2, top: 0, bottom: 0, child: Container(width: 1.5, color: Colors.redAccent.withOpacity(0.8))),
-                                  if (_snapH && !_isExporting) Positioned(top: canvasH/2, left: 0, right: 0, child: Container(height: 1.5, color: Colors.redAccent.withOpacity(0.8))),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(child: Container(decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, -2))]), child: hasSelection ? _buildSelectedToolBar(sel!) : _buildDefaultBottomBar())),
-    );
-  }
-
-  // 🔥 CLEAN & SHARP BOTTOM BARS 🔥
-  Widget _buildDefaultBottomBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      child: Row(
-        children: [
-          InkWell(
-            onTap: showAddNewModal, 
-            borderRadius: BorderRadius.circular(10),
-            child: Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8), decoration: BoxDecoration(color: const Color(0xFF8B5CF6).withOpacity(0.1), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.2))), child: Column(mainAxisSize: MainAxisSize.min, children: const [Icon(Icons.add_box, color: Color(0xFF8B5CF6), size: 20), SizedBox(height: 2), Text('ADD NEW', style: TextStyle(color: Color(0xFF8B5CF6), fontSize: 9, fontWeight: FontWeight.w800))]))
-          ),
-          const SizedBox(width: 8),
-          Container(width: 1, height: 35, color: Colors.grey.shade200), 
-          const SizedBox(width: 4),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildToolBtn(Icons.grid_on, 'Grid', () => setState(() => _showGrid = !_showGrid)), 
-                  _buildToolBtn(Icons.aspect_ratio, 'Resize', _showResizeModal), 
-                  _buildToolBtn(Icons.image, 'BG Image', _setCanvasBackground),
-                  _buildToolBtn(Icons.format_color_fill, 'BG Color', _showCanvasBgColorModal),
-                  _buildToolBtn(Icons.gradient, 'BG Gradient', _showCanvasBgGradientModal),
-                  _buildToolBtn(Icons.layers_clear, 'Clear BG', () { saveState(); setState((){ pageColor = Colors.transparent; bgImageBytes = null; bgGradient = null; }); }), 
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSelectedToolBar(DesignElement sel) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          color: Colors.white, padding: const EdgeInsets.symmetric(vertical: 6),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                const SizedBox(width: 8),
-                if (sel.isText) _buildToolBtn(Icons.text_fields, 'Size', () => showSizeSliderModal(sel)),
-                if (sel.isText) _buildToolBtn(Icons.height, 'Spacing', () => showSpacingModal(sel)),
-                if (sel.isText) _buildToolBtn(Icons.format_color_fill, 'Text BG', () => _showTextBgPickerModal(sel)),
-                if (sel.isText) _buildToolBtn(Icons.gradient, 'Gradient', () => _showGradientPickerModal(sel)),
-                if (sel.isText) _buildToolBtn(Icons.data_usage, 'Curve', () => _showCurveModal(sel)),
-                if (sel.isText) _buildToolBtn(Icons.texture, 'Texture', () => _addTextureToText(sel)),
-                if (sel.isText && sel.textTextureBytes != null) _buildToolBtn(Icons.layers_clear, 'No Texture', () { saveState(); setState(() => sel.textTextureBytes = null); }),
-                if (sel.isText) _buildToolBtn(Icons.format_align_left, 'Align', () => _toggleAlignment(sel)),
-                _buildToolBtn(Icons.center_focus_strong, 'Position', () => _showAlignmentModal(sel)),
-                if (sel.isText) _buildToolBtn(Icons.view_in_ar_outlined, '3D', () => _show3DBlockModal(sel)),
-                if (sel.imageBytes != null) _buildToolBtn(Icons.format_paint, 'Tint', () { saveState(); setState(() => sel.isTinted = !sel.isTinted); if(sel.isTinted) _showColorPickerModal(sel); }),
-                if (sel.imageBytes != null) _buildToolBtn(Icons.auto_awesome_motion, 'Blend', () => _showBlendModeModal(sel)),
-                if (!sel.isBorder) _buildToolBtn(Icons.border_color, 'Stroke', () => _showAdvancedStrokeModal(sel)),
-                if (!sel.isBorder) _buildToolBtn(Icons.brightness_6, 'Shadow', () => _showAdvancedShadowModal(sel)),
-                if (!sel.isText && !sel.isBorder) _buildToolBtn(Icons.rounded_corner, 'Radius', () => _showRadiusModal(sel)),
-                if (sel.imageBytes != null && !sel.isTinted) _buildToolBtn(Icons.photo_filter, 'Filters', () => _showImageFiltersModal(sel)),
-                if (sel.imageBytes != null) _buildToolBtn(Icons.crop, 'Crop', () => _showShapeClipModal(sel)),
-                
-                _buildToolBtn(Icons.flip, 'Flip H', () { saveState(); setState(() => sel.flipX = !sel.flipX); }),
-                _buildToolBtn(Icons.flip_camera_android, 'Flip V', () { saveState(); setState(() => sel.flipY = !sel.flipY); }),
-                _buildToolBtn(Icons.opacity, 'Opacity', () { saveState(); setState(() => sel.opacity = sel.opacity == 1.0 ? 0.5 : 1.0); }),
-                _buildToolBtn(Icons.rotate_right, 'Rotate', () => showRotationModal(sel)), 
-                _buildToolBtn(Icons.view_in_ar, 'Angles', () => show3DModal(sel)), 
-                _buildToolBtn(Icons.open_with, 'Nudge', () => showNudgeModal(sel)),
-                const SizedBox(width: 8),
-              ],
-            ),
-          ),
-        ),
-        Divider(height: 1, color: Colors.grey.shade200),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          child: Row(
-            children: [
-              InkWell(
-                onTap: () => setState(() => selectedId = null), 
-                borderRadius: BorderRadius.circular(8),
-                child: Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), decoration: BoxDecoration(color: Colors.red.shade50, border: Border.all(color: Colors.red.shade200), borderRadius: BorderRadius.circular(8)), child: Row(children: const [Icon(Icons.deselect, color: Colors.red, size: 14), SizedBox(width: 4), Text('DESELECT', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w800, fontSize: 9))]))
-              ),
-              const Expanded(child: SizedBox()),
-              if (sel.isText) _buildToolBtn(Icons.edit, 'Edit', () => _showTextComposerDialog(existingElement: sel)),
-              if (sel.isText) _buildToolBtn(Icons.font_download, 'Font', () => showFontPickerModal(sel)),
-              if (sel.isText || sel.isBorder || sel.isShape || sel.isTinted) _buildToolBtn(Icons.palette, 'Color', () => _showColorPickerModal(sel)),
-            ],
-          ),
-        )
-      ],
-    );
-  }
-
-  Widget _buildTopBtn(IconData icon, String label, [VoidCallback? onTap]) { 
-    return InkWell(
-      onTap: onTap, 
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), 
-        child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, color: const Color(0xFF4B5563), size: 20), const SizedBox(height: 2), Text(label, style: const TextStyle(fontSize: 9, color: Color(0xFF4B5563), fontWeight: FontWeight.w600))])
-      )
-    ); 
-  }
-  
-  Widget _buildToolBtn(IconData icon, String label, [VoidCallback? onTap]) { 
-    return InkWell(
-      onTap: onTap, 
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 2),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), 
-        child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, color: const Color(0xFF4B5563), size: 20), const SizedBox(height: 4), Text(label, style: const TextStyle(fontSize: 9, color: Color(0xFF4B5563), fontWeight: FontWeight.w700))])
-      )
-    ); 
-  }
-}
