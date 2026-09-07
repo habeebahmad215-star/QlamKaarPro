@@ -16,7 +16,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/design_models.dart';
 import '../widgets/custom_widgets.dart';
-import '../utils/constants.dart';
 import 'my_folder_screen.dart';
 
 class ProWorkspaceScreen extends StatefulWidget {
@@ -57,6 +56,69 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   double _initialY = 0.0;
   Offset _initialFocalPoint = Offset.zero;
   Map<String, Map<String, dynamic>> _initialGroupStates = {};
+
+  static const List<double> grayscaleMatrix = [0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0, 0, 0, 1, 0];
+  static const List<double> sepiaMatrix = [0.393, 0.769, 0.189, 0, 0, 0.349, 0.686, 0.168, 0, 0, 0.272, 0.534, 0.131, 0, 0, 0, 0, 0, 1, 0];
+  static const List<double> invertMatrix = [-1, 0, 0, 0, 255, 0, -1, 0, 0, 255, 0, 0, -1, 0, 255, 0, 0, 0, 1, 0];
+  final List<BlendMode> _blendModes = [BlendMode.srcOver, BlendMode.multiply, BlendMode.screen, BlendMode.overlay, BlendMode.darken, BlendMode.colorBurn];
+
+  final Map<String, List<String>> _urduPoetryLibrary = {
+    'اسلامی (Islamic)': [
+      'بے شک اللہ صبر کرنے والوں کے ساتھ ہے۔',
+      'جو اللہ کا ہو جاتا ہے، اللہ اس کا ہو جاتا ہے۔',
+      'نماز تمام بیماریوں کی شفا ہے۔',
+      'حسبنا اللہ ونعم الوکیل\n(ہمیں اللہ ہی کافی ہے اور وہی سب سے بہتر کارساز ہے)',
+      'اے اللہ! ہمارے دلوں کو اپنے دین پر ثابت قدم رکھ۔',
+      'قرآن وہ کتاب ہے جو اندھیروں سے نکال کر روشنی کی طرف لاتی ہے۔',
+      'تمہارا بہترین دوست وہ ہے جو تمہیں اللہ کی یاد دلائے۔',
+      'جب دعائیں قبول نہ ہو رہی ہوں تو سجدے لمبے کر دو۔',
+      'اللہ کی رحمت سے کبھی مایوس نہ ہونا۔',
+      'موت کو ہمیشہ یاد رکھو، یہ بہترین نصیحت کرنے والی ہے۔',
+    ],
+    'اقوال (Quotes)': [
+      'وقت وہ واحد سکہ ہے جو آپ کی زندگی بناتا ہے۔',
+      'خاموشی سب سے بہترین جواب ہے اس کے لیے جو آپ کے الفاظ کی قدر نہ کرے۔',
+      'علم ایک ایسا خزانہ ہے جسے کوئی چوری نہیں کر سکتا۔',
+      'زندگی میں کبھی ہار نہ مانو، کیونکہ گچھے کی آخری چابی بھی تالا کھول سکتی ہے۔',
+      'اچھے اخلاق وہ واحد خوبصورتی ہے جو کبھی ختم نہیں ہوتی۔',
+      'تجربہ ایک سخت استاد ہے کیونکہ وہ پہلے امتحان لیتا ہے اور بعد میں سبق دیتا ہے۔',
+      'انسان کی اصل پہچان اس کے الفاظ نہیں، اس کا عمل ہوتا ہے۔',
+      'جو دوسروں کو معاف کرنا جانتا ہے، وہ اندر سے بہت مضبوط ہوتا ہے۔',
+      'غصہ ایک ایسا زہر ہے جو انسان خود پیتا ہے اور مرنے کی امید دوسروں کی کرتا ہے۔',
+      'امید وہ روشنی ہے جو گھنے اندھیرے میں بھی راستہ دکھاتی ہے۔',
+    ],
+    'علامہ اقبال (Allama Iqbal)': [
+      'ہزاروں سال نرگس اپنی بے نوری پہ روتی ہے\nبڑی مشکل سے ہوتا ہے چمن میں دیدہ ور پیدا',
+      'عمل سے زندگی بنتی ہے جنت بھی جہنم بھی\nیہ خاکی اپنی فطرت میں نہ نوری ہے نہ ناری ہے',
+      'ستاروں سے آگے جہاں اور بھی ہیں\nابھی عشق کے امتحاں اور بھی ہیں',
+      'خودی کو کر بلند اتنا کہ ہر تقدیر سے پہلے\nخدا بندے سے خود پوچھے بتا تیری رضا کیا ہے',
+      'نہیں تیرا نشیمن قصرِ سلطانی کے گنبد پر\nتو شاہیں ہے، بسیرا کر پہاڑوں کی چٹانوں میں',
+      'خدا تجھے کسی طوفان سے آشنا کر دے\nکہ تیرے بحر کی موجوں میں اضطراب نہیں',
+      'مٹا دے اپنی ہستی کو اگر کچھ مرتبہ چاہیے\nکہ دانہ خاک میں مل کر گل و گلزار ہوتا ہے',
+      'کی محمدؐ سے وفا تو نے تو ہم تیرے ہیں\nیہ جہاں چیز ہے کیا لوح و قلم تیرے ہیں',
+    ],
+    'محبت (Love)': [
+      'دل دھڑکنے کا سبب یاد آیا\nوہ تری یاد تھی اب یاد آیا',
+      'تمہارے بعد کسی اور کو چاہا نہ گیا\nیہ وہ سچ ہے جو کبھی ہم سے چھپایا نہ گیا',
+      'محبت میں نہیں ہے شرطِ ملنا اور بچھڑ جانا\nمحبت تو بس اک احساس ہے جو دل میں رہتا ہے',
+      'ہم کو ان سے وفا کی ہے امید\nجو نہیں جانتے وفا کیا ہے',
+      'تیرے بنا زندگی سے کوئی شکوہ تو نہیں\nتیرے بنا زندگی بھی لیکن زندگی نہیں',
+      'کسی کو ٹوٹ کر چاہنا اور پھر ٹوٹ جانا\nیہی محبت کی سب سے بڑی حقیقت ہے',
+    ],
+    'اداس (Sad)': [
+      'ہم نے سینے سے لگایا دل نہ اپنا بن سکا\nمسکراہٹ کو ترستے ہی رہے روتے رہے',
+      'دل کے ٹوٹنے کی کوئی آواز نہیں ہوتی\nبس ایک خاموشی ہوتی ہے جو عمر بھر رلاتی ہے',
+      'کبھی کبھی ہم غلط نہیں ہوتے\nبس ہمارے پاس وہ الفاظ نہیں ہوتے جو ہمیں صحیح ثابت کر سکیں',
+      'تجھ سے بچھڑ کر ہم بھی کہاں پہلے جیسے رہے\nبس سانسیں چلتی ہیں اور زندگی کٹ رہی ہے',
+      'کچھ درد ایسے ہوتے ہیں جو نہ کسی کو بتائے جا سکتے ہیں نہ سہہ جا سکتے ہیں۔',
+      'وقت کے ساتھ سب کچھ بدل جاتا ہے، حتیٰ کہ وہ لوگ بھی جن پر ہمیں سب سے زیادہ یقین ہوتا ہے۔',
+      'زندگی کا سب سے بڑا دکھ یہ ہے کہ جب ہم سچ بول رہے ہوں اور کوئی اعتبار نہ کرے۔',
+      'آنسو وہ الفاظ ہیں جو دل بول نہیں پاتا۔',
+    ],
+  };
+
+  final List<Color> _proColorPalette = [Colors.black, Colors.white, Colors.grey.shade900, Colors.grey.shade700, Colors.grey.shade400, Colors.grey.shade200, const Color(0xFF800000), const Color(0xFFA52A2A), const Color(0xFFDC143C), const Color(0xFFEF4444), const Color(0xFFF87171), const Color(0xFF4B0082), const Color(0xFF8B5CF6), const Color(0xFF9C27B0), const Color(0xFFD946EF), const Color(0xFFEC4899), const Color(0xFFF43F5E), const Color(0xFFFFC0CB), const Color(0xFF000080), const Color(0xFF1E3A8A), const Color(0xFF2563EB), const Color(0xFF3B82F6), const Color(0xFF06B6D4), const Color(0xFF38BDF8), const Color(0xFFE0F2FE), const Color(0xFF004d00), const Color(0xFF14532D), const Color(0xFF047857), const Color(0xFF10B981), const Color(0xFF22C55E), const Color(0xFF84CC16), const Color(0xFF14B8A6), const Color(0xFFCCFFCC), const Color(0xFFD4AF37), const Color(0xFFB8860B), const Color(0xFFF59E0B), const Color(0xFFF97316), const Color(0xFFFF8C00), const Color(0xFFEAB308), const Color(0xFFFEF08A), const Color(0xFFFFD700), const Color(0xFF8B4513), const Color(0xFFD2B48C), const Color(0xFFFFE4C4), const Color(0xFFFAEBD7)];
+  final List<List<Color>> _proGradientPalette = [[const Color(0xFFBF953F), const Color(0xFFFCF6BA), const Color(0xFFB38728), const Color(0xFFFBF5B7)], [const Color(0xFF8E9EAB), const Color(0xFFEEF2F3)], [const Color(0xFFB87333), const Color(0xFFFFCC99), const Color(0xFFB87333)], [const Color(0xFFB76E79), const Color(0xFFE0BFB8)], [const Color(0xFFFF4E50), const Color(0xFFF9D423)], [const Color(0xFF1A2980), const Color(0xFF26D0CE)], [const Color(0xFF134E5E), const Color(0xFF71B280)], [const Color(0xFFFF7E5F), const Color(0xFFFEB47B)], [const Color(0xFF2C3E50), const Color(0xFF3498DB)], [const Color(0xFF833AB4), const Color(0xFFFD1D1D), const Color(0xFFFCB045)], [const Color(0xFF12C2E9), const Color(0xFFC471ED), const Color(0xFFF64F59)], [const Color(0xFF00C9FF), const Color(0xFF92FE9D)], [const Color(0xFFF09819), const Color(0xFFEDDE5D)], [const Color(0xFFDA22FF), const Color(0xFF9733EE)], [const Color(0xFFEC008C), const Color(0xFFFC6767)], [const Color(0xFF02AAB0), const Color(0xFF00CDAC)], [const Color(0xFF434343), const Color(0xFF000000)], [const Color(0xFF0F2027), const Color(0xFF203A43), const Color(0xFF2C5364)], [const Color(0xFF141E30), const Color(0xFF243B55)], [const Color(0xFF870000), const Color(0xFF190A05)]];
 
   List<DesignElement> get elements => pages[currentPageIndex].elements;
   set elements(List<DesignElement> val) => pages[currentPageIndex].elements = val;
@@ -176,32 +238,32 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   Widget _buildExportOption(IconData icon, String title, String subtitle, Color color, VoidCallback onTap) { 
     return InkWell(
       onTap: onTap, 
-      borderRadius: BorderRadius.circular(8), 
+      borderRadius: BorderRadius.circular(10), 
       child: Container(
         padding: const EdgeInsets.all(10), 
         decoration: BoxDecoration(
           color: color.withOpacity(0.06), 
-          borderRadius: BorderRadius.circular(8), 
+          borderRadius: BorderRadius.circular(10), 
           border: Border.all(color: color.withOpacity(0.2))
         ), 
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8), 
-              decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(6)), 
-              child: Icon(icon, color: Colors.white, size: 18)
+              decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(8)), 
+              child: Icon(icon, color: Colors.white, size: 20)
             ), 
             const SizedBox(width: 12), 
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start, 
                 children: [
-                  Text(title, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: color)), 
-                  Text(subtitle, style: const TextStyle(fontSize: 9, color: Colors.grey))
+                  Text(title, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: color)), 
+                  Text(subtitle, style: const TextStyle(fontSize: 10, color: Colors.grey))
                 ]
               )
             ), 
-            Icon(Icons.arrow_forward_ios, color: color, size: 12)
+            Icon(Icons.arrow_forward_ios, color: color, size: 14)
           ]
         )
       )
@@ -229,14 +291,14 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
               content: Column(
                 mainAxisSize: MainAxisSize.min, 
                 children: [
-                  const Icon(Icons.check_circle, color: Colors.green, size: 40), 
+                  const Icon(Icons.check_circle, color: Colors.green, size: 50), 
                   const SizedBox(height: 15), 
-                  const Text('Saved to Gallery!', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), 
+                  const Text('Saved to Gallery!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), 
                   const SizedBox(height: 8), 
                   ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), 
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)), 
                     onPressed: () => Navigator.pop(context), 
-                    child: const Text('OK', style: TextStyle(color: Colors.white, fontSize: 12))
+                    child: const Text('OK', style: TextStyle(color: Colors.white))
                   )
                 ]
               )
@@ -276,7 +338,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
           height: MediaQuery.of(context).size.height * 0.7, 
           padding: const EdgeInsets.all(15), 
           child: DefaultTabController(
-            length: AppConstants.urduPoetryLibrary.keys.length, 
+            length: _urduPoetryLibrary.keys.length, 
             child: Column(
               children: [
                 Row(
@@ -291,16 +353,16 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   labelColor: const Color(0xFF8B5CF6), 
                   unselectedLabelColor: Colors.grey, 
                   indicatorColor: const Color(0xFF8B5CF6), 
-                  tabs: AppConstants.urduPoetryLibrary.keys.map((k) => Tab(text: k)).toList()
+                  tabs: _urduPoetryLibrary.keys.map((k) => Tab(text: k)).toList()
                 ),
                 const SizedBox(height: 10),
                 Expanded(
                   child: TabBarView(
-                    children: AppConstants.urduPoetryLibrary.keys.map((category) {
+                    children: _urduPoetryLibrary.keys.map((category) {
                       return ListView.builder(
-                        itemCount: AppConstants.urduPoetryLibrary[category]!.length, 
+                        itemCount: _urduPoetryLibrary[category]!.length, 
                         itemBuilder: (context, index) {
-                          String text = AppConstants.urduPoetryLibrary[category]![index];
+                          String text = _urduPoetryLibrary[category]![index];
                           return Card(
                             color: Colors.white, 
                             elevation: 0, 
@@ -314,7 +376,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                 text, 
                                 textDirection: TextDirection.rtl, 
                                 textAlign: TextAlign.center, 
-                                style: const TextStyle(fontFamily: 'JameelNoori', fontSize: 16, height: 1.5)
+                                style: const TextStyle(fontFamily: 'JameelNoori', fontSize: 18, height: 1.5)
                               ), 
                               onTap: () { 
                                 textController.text = text; 
@@ -435,14 +497,14 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   padding: const EdgeInsets.all(12), 
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey.shade200), 
-                    borderRadius: BorderRadius.circular(8), 
+                    borderRadius: BorderRadius.circular(10), 
                     color: Colors.grey.shade50
                   ), 
                   child: TextField(
                     controller: controller, 
                     maxLines: null, 
                     textDirection: TextDirection.rtl, 
-                    style: const TextStyle(fontFamily: 'JameelNoori', fontSize: 22), 
+                    style: const TextStyle(fontFamily: 'JameelNoori', fontSize: 24), 
                     decoration: const InputDecoration(
                       border: InputBorder.none, 
                       hintText: 'یہاں لکھیں...', 
@@ -526,18 +588,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     return InkWell(
       onTap: onTap, 
       borderRadius: BorderRadius.circular(8), 
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), 
-        decoration: BoxDecoration(
-          color: const Color(0xFF8B5CF6).withOpacity(0.05),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.2))
-        ),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0), 
         child: Column(
           children: [
-            Icon(icon, color: const Color(0xFF8B5CF6), size: 18), 
+            Icon(icon, color: const Color(0xFF8B5CF6), size: 20), 
             const SizedBox(height: 4), 
-            Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.black87))
+            Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.black87))
           ]
         )
       )
@@ -597,8 +654,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(12), 
-              decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(8)), 
-              child: Icon(icon, color: iconColor, size: 22)
+              decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(10)), 
+              child: Icon(icon, color: iconColor, size: 24)
             ), 
             const SizedBox(height: 8), 
             Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700), textAlign: TextAlign.center)
@@ -689,11 +746,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       }); 
                       Navigator.pop(context); 
                     }, 
-                    borderRadius: BorderRadius.circular(8), 
+                    borderRadius: BorderRadius.circular(10), 
                     child: Container(
                       decoration: BoxDecoration(
                         color: (item['color'] as Color).withOpacity(0.05), 
-                        borderRadius: BorderRadius.circular(8), 
+                        borderRadius: BorderRadius.circular(10), 
                         border: Border.all(color: (item['color'] as Color).withOpacity(0.3), width: 1.0)
                       ), 
                       child: Column(
@@ -781,21 +838,21 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
             Expanded(
               child: GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 8, mainAxisSpacing: 8), 
-                itemCount: AppConstants.proColorPalette.length, 
+                itemCount: _proColorPalette.length, 
                 itemBuilder: (ctx, index) { 
                   return InkWell(
                     onTap: () { 
                       if(colorNum == 1) {
-                        sel.customGradColor1 = AppConstants.proColorPalette[index]; 
+                        sel.customGradColor1 = _proColorPalette[index]; 
                       } else {
-                        sel.customGradColor2 = AppConstants.proColorPalette[index]; 
+                        sel.customGradColor2 = _proColorPalette[index]; 
                       }
                       parentSetState((){}); 
                       Navigator.pop(ctx); 
                     }, 
                     child: Container(
                       decoration: BoxDecoration(
-                        color: AppConstants.proColorPalette[index], 
+                        color: _proColorPalette[index], 
                         shape: BoxShape.circle, 
                         border: Border.all(color: Colors.black12)
                       )
@@ -884,9 +941,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
                         ),
-                        itemCount: AppConstants.proColorPalette.length,
+                        itemCount: _proColorPalette.length,
                         itemBuilder: (context, index) {
-                          Color c = AppConstants.proColorPalette[index];
+                          Color c = _proColorPalette[index];
                           bool isSelected = pageColor.value == c.value;
                           return GestureDetector(
                             onTap: () {
@@ -1000,9 +1057,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
                         ),
-                        itemCount: AppConstants.proColorPalette.length,
+                        itemCount: _proColorPalette.length,
                         itemBuilder: (context, index) {
-                          Color c = AppConstants.proColorPalette[index];
+                          Color c = _proColorPalette[index];
                           bool isSelected = currentColor.value == c.value;
                           return GestureDetector(
                             onTap: () {
@@ -1071,9 +1128,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                         mainAxisSpacing: 10,
                         childAspectRatio: 2.0,
                       ),
-                      itemCount: AppConstants.proGradientPalette.length,
+                      itemCount: _proGradientPalette.length,
                       itemBuilder: (context, index) {
-                        List<Color> g = AppConstants.proGradientPalette[index];
+                        List<Color> g = _proGradientPalette[index];
                         return GestureDetector(
                           onTap: () {
                             saveState();
@@ -1144,9 +1201,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
                       ),
-                      itemCount: AppConstants.proColorPalette.length,
+                      itemCount: _proColorPalette.length,
                       itemBuilder: (context, index) {
-                        Color c = AppConstants.proColorPalette[index];
+                        Color c = _proColorPalette[index];
                         bool isSelected = sel.textBgColor?.value == c.value;
                         return GestureDetector(
                           onTap: () {
@@ -1279,9 +1336,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                         mainAxisSpacing: 10,
                         childAspectRatio: 2.0,
                       ),
-                      itemCount: AppConstants.proGradientPalette.length,
+                      itemCount: _proGradientPalette.length,
                       itemBuilder: (context, index) {
-                        List<Color> g = AppConstants.proGradientPalette[index];
+                        List<Color> g = _proGradientPalette[index];
                         return GestureDetector(
                           onTap: () {
                             saveState();
@@ -1371,9 +1428,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           crossAxisSpacing: 8,
                           mainAxisSpacing: 8,
                         ),
-                        itemCount: AppConstants.proColorPalette.length,
+                        itemCount: _proColorPalette.length,
                         itemBuilder: (context, index) {
-                          Color c = AppConstants.proColorPalette[index];
+                          Color c = _proColorPalette[index];
                           bool isSel = sel.strokeColor.value == c.value;
                           return GestureDetector(
                             onTap: () {
@@ -1501,9 +1558,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           crossAxisSpacing: 8,
                           mainAxisSpacing: 8,
                         ),
-                        itemCount: AppConstants.proColorPalette.length,
+                        itemCount: _proColorPalette.length,
                         itemBuilder: (context, index) {
-                          Color c = AppConstants.proColorPalette[index];
+                          Color c = _proColorPalette[index];
                           bool isSel = sel.shadowColor.value == c.value;
                           return GestureDetector(
                             onTap: () {
@@ -1582,9 +1639,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                         crossAxisSpacing: 8,
                         mainAxisSpacing: 8,
                       ),
-                      itemCount: AppConstants.proColorPalette.length,
+                      itemCount: _proColorPalette.length,
                       itemBuilder: (context, index) {
-                        Color c = AppConstants.proColorPalette[index];
+                        Color c = _proColorPalette[index];
                         bool isSel = sel.text3dColor.value == c.value;
                         return GestureDetector(
                           onTap: () {
@@ -2142,9 +2199,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   Divider(color: Colors.grey.shade200), 
                   Expanded(
                     child: ListView.builder(
-                      itemCount: AppConstants.blendModes.length, 
+                      itemCount: _blendModes.length, 
                       itemBuilder: (context, index) { 
-                        String bName = AppConstants.blendModes[index].toString().replaceAll('BlendMode.', '').toUpperCase(); 
+                        String bName = _blendModes[index].toString().replaceAll('BlendMode.', '').toUpperCase(); 
                         return ListTile(
                           title: Text(bName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)), 
                           dense: true, 
@@ -2167,6 +2224,250 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     ); 
   }
 
+  void _showLayersPanel() { 
+    Set<String> selectedForGroup = {}; 
+    showModalBottomSheet(
+      context: context, 
+      backgroundColor: Colors.transparent, 
+      isScrollControlled: true, 
+      builder: (context) { 
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) { 
+            return Container(
+              height: 450, 
+              decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(16))), 
+              padding: const EdgeInsets.all(16), 
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start, 
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+                    children: [
+                      const Text('Layers & Groups', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), 
+                      if (selectedForGroup.length > 1) 
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), padding: const EdgeInsets.symmetric(horizontal: 10), elevation: 0), 
+                          icon: const Icon(Icons.link, size: 16, color: Colors.white), 
+                          label: const Text('Group', style: TextStyle(color: Colors.white, fontSize: 12)), 
+                          onPressed: () { 
+                            String newGroup = DateTime.now().millisecondsSinceEpoch.toString(); 
+                            saveState(); 
+                            for (var e in elements) { if (selectedForGroup.contains(e.id)) e.groupId = newGroup; } 
+                            selectedForGroup.clear(); setModalState((){}); setState((){}); 
+                          }
+                        ), 
+                      if (selectedForGroup.isNotEmpty) 
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, padding: const EdgeInsets.symmetric(horizontal: 10), elevation: 0), 
+                          icon: const Icon(Icons.link_off, size: 16, color: Colors.white), 
+                          label: const Text('Ungroup', style: TextStyle(color: Colors.white, fontSize: 12)), 
+                          onPressed: () { 
+                            saveState(); 
+                            for (var e in elements) { if (selectedForGroup.contains(e.id)) e.groupId = null; } 
+                            selectedForGroup.clear(); setModalState((){}); setState((){}); 
+                          }
+                        ), 
+                      IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))
+                    ]
+                  ), 
+                  const Text('Tick boxes to group layers together', style: TextStyle(fontSize: 11, color: Colors.grey)), 
+                  Divider(color: Colors.grey.shade200), 
+                  Expanded(
+                    child: elements.isEmpty 
+                      ? const Center(child: Text('No elements yet.', style: TextStyle(color: Colors.grey))) 
+                      : ListView.builder(
+                          itemCount: elements.length, 
+                          itemBuilder: (context, index) { 
+                            int actualIndex = elements.length - 1 - index; 
+                            DesignElement e = elements[actualIndex]; 
+                            bool isSel = selectedId == e.id; 
+                            bool isGroupChecked = selectedForGroup.contains(e.id); 
+                            return Card(
+                              color: isSel ? const Color(0xFFF3E8FF) : (e.groupId != null ? Colors.blue.shade50 : Colors.white), 
+                              elevation: 0, 
+                              margin: const EdgeInsets.only(bottom: 6), 
+                              shape: RoundedRectangleBorder(
+                                side: BorderSide(color: isSel ? const Color(0xFF8B5CF6) : (e.groupId != null ? Colors.blue.shade300 : Colors.grey.shade200)), 
+                                borderRadius: BorderRadius.circular(8)
+                              ), 
+                              child: ListTile(
+                                dense: true, 
+                                leading: Row(
+                                  mainAxisSize: MainAxisSize.min, 
+                                  children: [
+                                    Checkbox(
+                                      value: isGroupChecked, 
+                                      activeColor: const Color(0xFF8B5CF6), 
+                                      onChanged: (val) { setModalState(() { if (val == true) selectedForGroup.add(e.id); else selectedForGroup.remove(e.id); }); }
+                                    ), 
+                                    CircleAvatar(
+                                      radius: 12, 
+                                      backgroundColor: e.isText ? e.textColor : Colors.blueGrey, 
+                                      child: Icon(e.isText ? Icons.title : (e.isBorder ? Icons.filter_frames : Icons.category), size: 12, color: Colors.white)
+                                    )
+                                  ]
+                                ), 
+                                title: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        e.isText ? e.content.replaceAll('\n', ' ') : (e.isBorder ? e.content : 'Shape'), 
+                                        maxLines: 1, overflow: TextOverflow.ellipsis, 
+                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)
+                                      )
+                                    ), 
+                                    if (e.groupId != null) const Icon(Icons.link, size: 12, color: Colors.blue)
+                                  ]
+                                ), 
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min, 
+                                  children: [
+                                    IconButton(
+                                      padding: EdgeInsets.zero, constraints: const BoxConstraints(), 
+                                      icon: Icon(e.isHidden ? Icons.visibility_off : Icons.visibility, size: 16, color: e.isHidden ? Colors.red : Colors.black54), 
+                                      onPressed: () { saveState(); setState(() => e.isHidden = !e.isHidden); setModalState((){}); }
+                                    ), 
+                                    const SizedBox(width: 8), 
+                                    IconButton(
+                                      padding: EdgeInsets.zero, constraints: const BoxConstraints(), 
+                                      icon: Icon(e.isLocked ? Icons.lock : Icons.lock_open, size: 16, color: e.isLocked ? Colors.red : Colors.black54), 
+                                      onPressed: () { saveState(); setState(() { e.isLocked = !e.isLocked; if(e.isLocked && isSel) selectedId = null; }); setModalState((){}); }
+                                    ), 
+                                    const SizedBox(width: 8), 
+                                    IconButton(
+                                      padding: EdgeInsets.zero, constraints: const BoxConstraints(), 
+                                      icon: const Icon(Icons.arrow_upward, size: 16, color: Colors.black54), 
+                                      onPressed: () { if (actualIndex < elements.length - 1) { saveState(); setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex + 1, item); }); setModalState((){}); } }
+                                    ), 
+                                    const SizedBox(width: 8), 
+                                    IconButton(
+                                      padding: EdgeInsets.zero, constraints: const BoxConstraints(), 
+                                      icon: const Icon(Icons.arrow_downward, size: 16, color: Colors.black54), 
+                                      onPressed: () { if (actualIndex > 0) { saveState(); setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex - 1, item); }); setModalState((){}); } }
+                                    )
+                                  ]
+                                ), 
+                                onTap: () { if(!e.isLocked && !e.isHidden) { setState(() => selectedId = e.id); setModalState((){}); } }
+                              )
+                            ); 
+                          }
+                        )
+                  )
+                ]
+              )
+            ); 
+          }
+        ); 
+      }
+    ); 
+  }
+
+  void _showPagesPanel() { 
+    showModalBottomSheet(
+      context: context, 
+      backgroundColor: Colors.transparent, 
+      builder: (context) { 
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) { 
+            return Container(
+              height: 400, 
+              decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(16))), 
+              padding: const EdgeInsets.all(16), 
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start, 
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+                    children: [
+                      const Text('Pages (صفحات)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), 
+                      IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))
+                    ]
+                  ), 
+                  Divider(color: Colors.grey.shade200), 
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: pages.length, 
+                      itemBuilder: (context, index) { 
+                        bool isCurrent = currentPageIndex == index; 
+                        return Card(
+                          color: isCurrent ? const Color(0xFFF3E8FF) : Colors.white, 
+                          elevation: 0, 
+                          margin: const EdgeInsets.only(bottom: 6), 
+                          shape: RoundedRectangleBorder(
+                            side: BorderSide(color: isCurrent ? const Color(0xFF8B5CF6) : Colors.grey.shade200), 
+                            borderRadius: BorderRadius.circular(8)
+                          ), 
+                          child: ListTile(
+                            dense: true, 
+                            leading: Icon(Icons.description, color: isCurrent ? const Color(0xFF8B5CF6) : Colors.grey, size: 20), 
+                            title: Text(pages[index].title, style: TextStyle(fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600, fontSize: 13)), 
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min, 
+                              children: [ 
+                                IconButton(
+                                  icon: const Icon(Icons.copy, color: Colors.blue, size: 18), 
+                                  padding: EdgeInsets.zero, constraints: const BoxConstraints(), 
+                                  onPressed: () { 
+                                    setState(() { 
+                                      pages.insert(index + 1, DesignPage(title: '${pages[index].title} Copy', elements: pages[index].elements.map((e) => e.clone()).toList(), pageColor: pages[index].pageColor, bgImageBytes: pages[index].bgImageBytes, canvasRatio: pages[index].canvasRatio, bgGradient: pages[index].bgGradient)); 
+                                      currentPageIndex = index + 1; 
+                                    }); 
+                                    setModalState(() {}); 
+                                  }
+                                ), 
+                                const SizedBox(width: 12), 
+                                if(pages.length > 1) 
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18), 
+                                    padding: EdgeInsets.zero, constraints: const BoxConstraints(), 
+                                    onPressed: () { 
+                                      setState(() { 
+                                        pages.removeAt(index); 
+                                        if (currentPageIndex >= pages.length) currentPageIndex = pages.length - 1; 
+                                      }); 
+                                      setModalState(() {}); 
+                                    }
+                                  ) 
+                              ]
+                            ), 
+                            onTap: () { 
+                              setState(() { currentPageIndex = index; selectedId = null; }); 
+                              Navigator.pop(context); 
+                            }
+                          )
+                        ); 
+                      }
+                    )
+                  ), 
+                  const SizedBox(height: 10), 
+                  SizedBox(
+                    width: double.infinity, 
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8B5CF6), 
+                        elevation: 0, 
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
+                      ), 
+                      onPressed: () { 
+                        setState(() { 
+                          pages.add(DesignPage(title: 'Page ${pages.length + 1}', elements: [DesignElement(id: Random().nextInt(10000).toString(), x: 60, y: 100, content: 'نیا صفحہ', width: 250)], pageColor: Colors.white)); 
+                          currentPageIndex = pages.length - 1; 
+                          selectedId = null; 
+                        }); 
+                        Navigator.pop(context); 
+                      }, 
+                      child: const Text('Add New Page', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700))
+                    )
+                  )
+                ]
+              )
+            );
+          }
+        );
+      }
+    ); 
+  }
+
   @override
   Widget build(BuildContext context) {
     bool hasSelection = selectedId != null;
@@ -2184,9 +2485,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
-              _buildTopBtn(Icons.layers, 'Layers', showLayersPanel), 
+              _buildTopBtn(Icons.layers, 'Layers', _showLayersPanel), 
               const SizedBox(width: 4),
-              _buildTopBtn(Icons.auto_stories, 'Pages', showPagesPanel), 
+              _buildTopBtn(Icons.auto_stories, 'Pages', _showPagesPanel), 
               const SizedBox(width: 4),
               _buildTopBtn(Icons.undo, 'Undo', undoAction), 
               const SizedBox(width: 4),
@@ -2370,13 +2671,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                       if (e.isTinted) {
                                         img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, fit: BoxFit.fill, color: e.elementColor, colorBlendMode: BlendMode.srcIn);
                                       } else {
-                                        if (e.imageFilter == 1) img = ColorFiltered(colorFilter: const ColorFilter.matrix(AppConstants.grayscaleMatrix), child: img);
-                                        else if (e.imageFilter == 2) img = ColorFiltered(colorFilter: const ColorFilter.matrix(AppConstants.sepiaMatrix), child: img);
-                                        else if (e.imageFilter == 3) img = ColorFiltered(colorFilter: const ColorFilter.matrix(AppConstants.invertMatrix), child: img);
+                                        if (e.imageFilter == 1) img = ColorFiltered(colorFilter: const ColorFilter.matrix(grayscaleMatrix), child: img);
+                                        else if (e.imageFilter == 2) img = ColorFiltered(colorFilter: const ColorFilter.matrix(sepiaMatrix), child: img);
+                                        else if (e.imageFilter == 3) img = ColorFiltered(colorFilter: const ColorFilter.matrix(invertMatrix), child: img);
                                       }
 
                                       if (e.blendModeIndex != 0) {
-                                        img = ColorFiltered(colorFilter: ColorFilter.mode(Colors.transparent, AppConstants.blendModes[e.blendModeIndex]), child: img);
+                                        img = ColorFiltered(colorFilter: ColorFilter.mode(Colors.transparent, _blendModes[e.blendModeIndex]), child: img);
                                       }
 
                                       Widget clippedImg = img;
