@@ -20,7 +20,7 @@ import 'my_folder_screen.dart';
 
 class ProWorkspaceScreen extends StatefulWidget {
   final ProjectModel? project;
-  final String? initialAction; // 🔥 YAHAN ERROR THA: Aapki Home Screen se connect karne ke liye yeh wapas add kar diya hai
+  final String? initialAction;
   
   const ProWorkspaceScreen({Key? key, this.project, this.initialAction}) : super(key: key);
   @override
@@ -103,7 +103,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       pages = [DesignPage(title: 'Page 1', elements: [DesignElement(id: 'demo1', x: 40, y: 150, content: 'مدرسہ اسلامیہ نصیرالعلوم', width: 280)], pageColor: Colors.white)];
     }
     
-    // Initial Action Handling
     if (widget.initialAction != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (widget.initialAction == 'text_editor') {
@@ -699,6 +698,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                         },
                                         onPanStart: (d) { if(!e.isLocked) saveState(); },
                                         onPanEnd: (d) => setState(() { _snapV = false; _snapH = false; }),
+                                        
+                                        // 🔥 FIXED: MAGNETIC SNAP REMOVED, ONLY RED LINE & HAPTIC REMAINS 🔥
                                         onPanUpdate: (d) {
                                           if(!e.isLocked) {
                                             setState(() { 
@@ -722,17 +723,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                               if (_snapV && !prevSnapV) HapticFeedback.mediumImpact();
                                               if (_snapH && !prevSnapH) HapticFeedback.mediumImpact();
 
-                                              if (_snapV) {
-                                                 double snapShiftX = (canvasW/2 - currentWidth/2 - 20) - e.x;
-                                                 e.x += snapShiftX;
-                                                 shiftX += snapShiftX;
-                                              }
-                                              if (_snapH) {
-                                                 double snapShiftY = (canvasH/2 - (e.isText && e.textCurveRadius == 0 ? 100 : currentHeight)/2 - 15) - e.y;
-                                                 e.y += snapShiftY;
-                                                 shiftY += snapShiftY;
-                                              }
-
+                                              // Group ke baaqi elements ko bhi shift karo (without magnetic jump)
                                               if (e.groupId != null) {
                                                 for (var other in elements) {
                                                   if (other.id != e.id && other.groupId == e.groupId && !other.isLocked) {
