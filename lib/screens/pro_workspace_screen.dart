@@ -52,7 +52,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   static const List<double> invertMatrix = [-1, 0, 0, 0, 255, 0, -1, 0, 0, 255, 0, 0, -1, 0, 255, 0, 0, 0, 1, 0];
   final List<BlendMode> _blendModes = [BlendMode.srcOver, BlendMode.multiply, BlendMode.screen, BlendMode.overlay, BlendMode.darken, BlendMode.colorBurn];
 
-  // 🔥 NAYA FEATURE: URDU POETRY & QUOTES LIBRARY (EXPANDED) 🔥
   final Map<String, List<String>> _urduPoetryLibrary = {
     'اسلامی (Islamic)': [
       'بے شک اللہ صبر کرنے والوں کے ساتھ ہے۔',
@@ -795,7 +794,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                         child: Row(
                                                           mainAxisSize: MainAxisSize.min,
                                                           children: [
-                                                            Inkങ്ക്Well(onTap: bringForward, child: const Icon(Icons.arrow_upward, size: 22, color: Colors.black87)), const SizedBox(width: 15),
+                                                            InkWell(onTap: bringForward, child: const Icon(Icons.arrow_upward, size: 22, color: Colors.black87)), const SizedBox(width: 15),
                                                             InkWell(onTap: sendBackward, child: const Icon(Icons.arrow_downward, size: 22, color: Colors.black87)), const SizedBox(width: 15),
                                                             InkWell(onTap: duplicateSelected, child: const Icon(Icons.copy, size: 22, color: Colors.black87)), const SizedBox(width: 15),
                                                             InkWell(onTap: deleteSelected, child: const Icon(Icons.delete_outline, size: 22, color: Colors.redAccent)),
