@@ -176,32 +176,32 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   Widget _buildExportOption(IconData icon, String title, String subtitle, Color color, VoidCallback onTap) { 
     return InkWell(
       onTap: onTap, 
-      borderRadius: BorderRadius.circular(10), 
+      borderRadius: BorderRadius.circular(8), 
       child: Container(
         padding: const EdgeInsets.all(10), 
         decoration: BoxDecoration(
           color: color.withOpacity(0.06), 
-          borderRadius: BorderRadius.circular(10), 
+          borderRadius: BorderRadius.circular(8), 
           border: Border.all(color: color.withOpacity(0.2))
         ), 
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8), 
-              decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(8)), 
-              child: Icon(icon, color: Colors.white, size: 20)
+              decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(6)), 
+              child: Icon(icon, color: Colors.white, size: 18)
             ), 
             const SizedBox(width: 12), 
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start, 
                 children: [
-                  Text(title, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: color)), 
-                  Text(subtitle, style: const TextStyle(fontSize: 10, color: Colors.grey))
+                  Text(title, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: color)), 
+                  Text(subtitle, style: const TextStyle(fontSize: 9, color: Colors.grey))
                 ]
               )
             ), 
-            Icon(Icons.arrow_forward_ios, color: color, size: 14)
+            Icon(Icons.arrow_forward_ios, color: color, size: 12)
           ]
         )
       )
@@ -229,14 +229,14 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
               content: Column(
                 mainAxisSize: MainAxisSize.min, 
                 children: [
-                  const Icon(Icons.check_circle, color: Colors.green, size: 50), 
+                  const Icon(Icons.check_circle, color: Colors.green, size: 40), 
                   const SizedBox(height: 15), 
-                  const Text('Saved to Gallery!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), 
+                  const Text('Saved to Gallery!', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), 
                   const SizedBox(height: 8), 
                   ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)), 
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), 
                     onPressed: () => Navigator.pop(context), 
-                    child: const Text('OK', style: TextStyle(color: Colors.white))
+                    child: const Text('OK', style: TextStyle(color: Colors.white, fontSize: 12))
                   )
                 ]
               )
@@ -314,7 +314,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                 text, 
                                 textDirection: TextDirection.rtl, 
                                 textAlign: TextAlign.center, 
-                                style: const TextStyle(fontFamily: 'JameelNoori', fontSize: 18, height: 1.5)
+                                style: const TextStyle(fontFamily: 'JameelNoori', fontSize: 16, height: 1.5)
                               ), 
                               onTap: () { 
                                 textController.text = text; 
@@ -435,14 +435,14 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   padding: const EdgeInsets.all(12), 
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey.shade200), 
-                    borderRadius: BorderRadius.circular(10), 
+                    borderRadius: BorderRadius.circular(8), 
                     color: Colors.grey.shade50
                   ), 
                   child: TextField(
                     controller: controller, 
                     maxLines: null, 
                     textDirection: TextDirection.rtl, 
-                    style: const TextStyle(fontFamily: 'JameelNoori', fontSize: 24), 
+                    style: const TextStyle(fontFamily: 'JameelNoori', fontSize: 22), 
                     decoration: const InputDecoration(
                       border: InputBorder.none, 
                       hintText: 'یہاں لکھیں...', 
@@ -526,13 +526,18 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     return InkWell(
       onTap: onTap, 
       borderRadius: BorderRadius.circular(8), 
-      child: Padding(
-        padding: const EdgeInsets.all(8.0), 
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), 
+        decoration: BoxDecoration(
+          color: const Color(0xFF8B5CF6).withOpacity(0.05),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.2))
+        ),
         child: Column(
           children: [
-            Icon(icon, color: const Color(0xFF8B5CF6), size: 20), 
+            Icon(icon, color: const Color(0xFF8B5CF6), size: 18), 
             const SizedBox(height: 4), 
-            Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.black87))
+            Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.black87))
           ]
         )
       )
@@ -592,8 +597,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(12), 
-              decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(10)), 
-              child: Icon(icon, color: iconColor, size: 24)
+              decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(8)), 
+              child: Icon(icon, color: iconColor, size: 22)
             ), 
             const SizedBox(height: 8), 
             Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700), textAlign: TextAlign.center)
@@ -684,11 +689,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       }); 
                       Navigator.pop(context); 
                     }, 
-                    borderRadius: BorderRadius.circular(10), 
+                    borderRadius: BorderRadius.circular(8), 
                     child: Container(
                       decoration: BoxDecoration(
                         color: (item['color'] as Color).withOpacity(0.05), 
-                        borderRadius: BorderRadius.circular(10), 
+                        borderRadius: BorderRadius.circular(8), 
                         border: Border.all(color: (item['color'] as Color).withOpacity(0.3), width: 1.0)
                       ), 
                       child: Column(
@@ -2162,452 +2167,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     ); 
   }
 
-  void _showResizeModal() { 
-    showModalBottomSheet(
-      context: context, 
-      backgroundColor: Colors.white, 
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), 
-      builder: (context) { 
-        return Container(
-          height: 280, 
-          padding: const EdgeInsets.all(20), 
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start, 
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween, 
-                children: [
-                  const Text('Canvas Size', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), 
-                  IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))
-                ]
-              ), 
-              Divider(color: Colors.grey.shade200), 
-              Expanded(
-                child: ListView(
-                  children: [
-                    ListTile(
-                      leading: const Icon(Icons.crop_square, size: 20), 
-                      title: const Text('1:1 (Logo / DP)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)), 
-                      dense: true, 
-                      onTap: (){ saveState(); setState(()=> canvasRatio = 1.0); Navigator.pop(context); }
-                    ), 
-                    ListTile(
-                      leading: const Icon(Icons.crop_16_9, size: 20), 
-                      title: const Text('16:9 (YouTube)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)), 
-                      dense: true, 
-                      onTap: (){ saveState(); setState(()=> canvasRatio = 16/9); Navigator.pop(context); }
-                    ), 
-                    ListTile(
-                      leading: const Icon(Icons.crop_portrait, size: 20), 
-                      title: const Text('9:16 (Story / Reel)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)), 
-                      dense: true, 
-                      onTap: (){ saveState(); setState(()=> canvasRatio = 9/16); Navigator.pop(context); }
-                    ), 
-                    ListTile(
-                      leading: const Icon(Icons.description, size: 20), 
-                      title: const Text('1:1.414 (A4 Print)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)), 
-                      dense: true, 
-                      onTap: (){ saveState(); setState(()=> canvasRatio = 1/1.414); Navigator.pop(context); }
-                    )
-                  ]
-                )
-              )
-            ]
-          )
-        ); 
-      }
-    ); 
-  }
-
-  void showLayersPanel() { 
-    Set<String> selectedForGroup = {}; 
-    showModalBottomSheet(
-      context: context, 
-      backgroundColor: Colors.transparent, 
-      isScrollControlled: true, 
-      builder: (context) { 
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) { 
-            return Container(
-              height: 450, 
-              decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(16))), 
-              padding: const EdgeInsets.all(16), 
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start, 
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween, 
-                    children: [
-                      const Text('Layers & Groups', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), 
-                      if (selectedForGroup.length > 1) 
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), padding: const EdgeInsets.symmetric(horizontal: 10), elevation: 0), 
-                          icon: const Icon(Icons.link, size: 16, color: Colors.white), 
-                          label: const Text('Group', style: TextStyle(color: Colors.white, fontSize: 12)), 
-                          onPressed: () { 
-                            String newGroup = DateTime.now().millisecondsSinceEpoch.toString(); 
-                            saveState(); 
-                            for (var e in elements) { if (selectedForGroup.contains(e.id)) e.groupId = newGroup; } 
-                            selectedForGroup.clear(); setModalState((){}); setState((){}); 
-                          }
-                        ), 
-                      if (selectedForGroup.isNotEmpty) 
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, padding: const EdgeInsets.symmetric(horizontal: 10), elevation: 0), 
-                          icon: const Icon(Icons.link_off, size: 16, color: Colors.white), 
-                          label: const Text('Ungroup', style: TextStyle(color: Colors.white, fontSize: 12)), 
-                          onPressed: () { 
-                            saveState(); 
-                            for (var e in elements) { if (selectedForGroup.contains(e.id)) e.groupId = null; } 
-                            selectedForGroup.clear(); setModalState((){}); setState((){}); 
-                          }
-                        ), 
-                      IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))
-                    ]
-                  ), 
-                  const Text('Tick boxes to group layers together', style: TextStyle(fontSize: 11, color: Colors.grey)), 
-                  Divider(color: Colors.grey.shade200), 
-                  Expanded(
-                    child: elements.isEmpty 
-                      ? const Center(child: Text('No elements yet.', style: TextStyle(color: Colors.grey))) 
-                      : ListView.builder(
-                          itemCount: elements.length, 
-                          itemBuilder: (context, index) { 
-                            int actualIndex = elements.length - 1 - index; 
-                            DesignElement e = elements[actualIndex]; 
-                            bool isSel = selectedId == e.id; 
-                            bool isGroupChecked = selectedForGroup.contains(e.id); 
-                            return Card(
-                              color: isSel ? const Color(0xFFF3E8FF) : (e.groupId != null ? Colors.blue.shade50 : Colors.white), 
-                              elevation: 0, 
-                              margin: const EdgeInsets.only(bottom: 6), 
-                              shape: RoundedRectangleBorder(
-                                side: BorderSide(color: isSel ? const Color(0xFF8B5CF6) : (e.groupId != null ? Colors.blue.shade300 : Colors.grey.shade200)), 
-                                borderRadius: BorderRadius.circular(8)
-                              ), 
-                              child: ListTile(
-                                dense: true, 
-                                leading: Row(
-                                  mainAxisSize: MainAxisSize.min, 
-                                  children: [
-                                    Checkbox(
-                                      value: isGroupChecked, 
-                                      activeColor: const Color(0xFF8B5CF6), 
-                                      onChanged: (val) { setModalState(() { if (val == true) selectedForGroup.add(e.id); else selectedForGroup.remove(e.id); }); }
-                                    ), 
-                                    CircleAvatar(
-                                      radius: 12, 
-                                      backgroundColor: e.isText ? e.textColor : Colors.blueGrey, 
-                                      child: Icon(e.isText ? Icons.title : (e.isBorder ? Icons.filter_frames : Icons.category), size: 12, color: Colors.white)
-                                    )
-                                  ]
-                                ), 
-                                title: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        e.isText ? e.content.replaceAll('\n', ' ') : (e.isBorder ? e.content : 'Shape'), 
-                                        maxLines: 1, overflow: TextOverflow.ellipsis, 
-                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)
-                                      )
-                                    ), 
-                                    if (e.groupId != null) const Icon(Icons.link, size: 12, color: Colors.blue)
-                                  ]
-                                ), 
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min, 
-                                  children: [
-                                    IconButton(
-                                      padding: EdgeInsets.zero, constraints: const BoxConstraints(), 
-                                      icon: Icon(e.isHidden ? Icons.visibility_off : Icons.visibility, size: 16, color: e.isHidden ? Colors.red : Colors.black54), 
-                                      onPressed: () { saveState(); setState(() => e.isHidden = !e.isHidden); setModalState((){}); }
-                                    ), 
-                                    const SizedBox(width: 8), 
-                                    IconButton(
-                                      padding: EdgeInsets.zero, constraints: const BoxConstraints(), 
-                                      icon: Icon(e.isLocked ? Icons.lock : Icons.lock_open, size: 16, color: e.isLocked ? Colors.red : Colors.black54), 
-                                      onPressed: () { saveState(); setState(() { e.isLocked = !e.isLocked; if(e.isLocked && isSel) selectedId = null; }); setModalState((){}); }
-                                    ), 
-                                    const SizedBox(width: 8), 
-                                    IconButton(
-                                      padding: EdgeInsets.zero, constraints: const BoxConstraints(), 
-                                      icon: const Icon(Icons.arrow_upward, size: 16, color: Colors.black54), 
-                                      onPressed: () { if (actualIndex < elements.length - 1) { saveState(); setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex + 1, item); }); setModalState((){}); } }
-                                    ), 
-                                    const SizedBox(width: 8), 
-                                    IconButton(
-                                      padding: EdgeInsets.zero, constraints: const BoxConstraints(), 
-                                      icon: const Icon(Icons.arrow_downward, size: 16, color: Colors.black54), 
-                                      onPressed: () { if (actualIndex > 0) { saveState(); setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex - 1, item); }); setModalState((){}); } }
-                                    )
-                                  ]
-                                ), 
-                                onTap: () { if(!e.isLocked && !e.isHidden) { setState(() => selectedId = e.id); setModalState((){}); } }
-                              )
-                            ); 
-                          }
-                        )
-                  )
-                ]
-              )
-            ); 
-          }
-        ); 
-      }
-    ); 
-  }
-
-  void showPagesPanel() { 
-    showModalBottomSheet(
-      context: context, 
-      backgroundColor: Colors.transparent, 
-      builder: (context) { 
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) { 
-            return Container(
-              height: 400, 
-              decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(16))), 
-              padding: const EdgeInsets.all(16), 
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start, 
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween, 
-                    children: [
-                      const Text('Pages (صفحات)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), 
-                      IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))
-                    ]
-                  ), 
-                  Divider(color: Colors.grey.shade200), 
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: pages.length, 
-                      itemBuilder: (context, index) { 
-                        bool isCurrent = currentPageIndex == index; 
-                        return Card(
-                          color: isCurrent ? const Color(0xFFF3E8FF) : Colors.white, 
-                          elevation: 0, 
-                          margin: const EdgeInsets.only(bottom: 6), 
-                          shape: RoundedRectangleBorder(
-                            side: BorderSide(color: isCurrent ? const Color(0xFF8B5CF6) : Colors.grey.shade200), 
-                            borderRadius: BorderRadius.circular(8)
-                          ), 
-                          child: ListTile(
-                            dense: true, 
-                            leading: Icon(Icons.description, color: isCurrent ? const Color(0xFF8B5CF6) : Colors.grey, size: 20), 
-                            title: Text(pages[index].title, style: TextStyle(fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600, fontSize: 13)), 
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min, 
-                              children: [ 
-                                IconButton(
-                                  icon: const Icon(Icons.copy, color: Colors.blue, size: 18), 
-                                  padding: EdgeInsets.zero, constraints: const BoxConstraints(), 
-                                  onPressed: () { 
-                                    setState(() { 
-                                      pages.insert(index + 1, DesignPage(title: '${pages[index].title} Copy', elements: pages[index].elements.map((e) => e.clone()).toList(), pageColor: pages[index].pageColor, bgImageBytes: pages[index].bgImageBytes, canvasRatio: pages[index].canvasRatio, bgGradient: pages[index].bgGradient)); 
-                                      currentPageIndex = index + 1; 
-                                    }); 
-                                    setModalState(() {}); 
-                                  }
-                                ), 
-                                const SizedBox(width: 12), 
-                                if(pages.length > 1) 
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18), 
-                                    padding: EdgeInsets.zero, constraints: const BoxConstraints(), 
-                                    onPressed: () { 
-                                      setState(() { 
-                                        pages.removeAt(index); 
-                                        if (currentPageIndex >= pages.length) currentPageIndex = pages.length - 1; 
-                                      }); 
-                                      setModalState(() {}); 
-                                    }
-                                  ) 
-                              ]
-                            ), 
-                            onTap: () { 
-                              setState(() { currentPageIndex = index; selectedId = null; }); 
-                              Navigator.pop(context); 
-                            }
-                          )
-                        ); 
-                      }
-                    )
-                  ), 
-                  const SizedBox(height: 10), 
-                  SizedBox(
-                    width: double.infinity, 
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF8B5CF6), 
-                        elevation: 0, 
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
-                      ), 
-                      onPressed: () { 
-                        setState(() { 
-                          pages.add(DesignPage(title: 'Page ${pages.length + 1}', elements: [DesignElement(id: Random().nextInt(10000).toString(), x: 60, y: 100, content: 'نیا صفحہ', width: 250)], pageColor: Colors.white)); 
-                          currentPageIndex = pages.length - 1; 
-                          selectedId = null; 
-                        }); 
-                        Navigator.pop(context); 
-                      }, 
-                      child: const Text('Add New Page', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700))
-                    )
-                  )
-                ]
-              )
-            );
-          }
-        );
-      }
-    ); 
-  }
-
-  Future<void> _importCustomFont() async { 
-    try { 
-      FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['ttf', 'otf']); 
-      if (result != null && result.files.single.path != null) { 
-        String filePath = result.files.single.path!; 
-        String fontName = result.files.single.name.replaceAll('.ttf', '').replaceAll('.otf', ''); 
-        var fontLoader = FontLoader(fontName); 
-        fontLoader.addFont(Future.value(ByteData.view(File(filePath).readAsBytesSync().buffer))); 
-        await fontLoader.load(); 
-        setState(() { if (!customFonts.contains(fontName)) customFonts.add(fontName); }); 
-        if(mounted){
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Font "$fontName" imported! 🎉', style: const TextStyle(fontWeight: FontWeight.w700)))); 
-        }
-      } 
-    } catch (e) { 
-      debugPrint("Font Import Error: $e"); 
-    } 
-  }
-
-  void showFontPickerModal(DesignElement sel) { 
-    showModalBottomSheet(
-      context: context, 
-      backgroundColor: Colors.white, 
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), 
-      builder: (context) { 
-        return StatefulBuilder(
-          builder: (context, setModalState) { 
-            return Container(
-              height: 420, 
-              padding: const EdgeInsets.all(20), 
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start, 
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween, 
-                    children: [
-                      const Text('Fonts', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), 
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), 
-                        onPressed: () async { await _importCustomFont(); setModalState(() {}); }, 
-                        icon: const Icon(Icons.add, color: Colors.white, size: 14), 
-                        label: const Text('Add Font', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700))
-                      ) 
-                    ]
-                  ), 
-                  Divider(color: Colors.grey.shade200), 
-                  Expanded(
-                    child: ListView(
-                      children: [
-                        if (customFonts.isNotEmpty) ...[
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4), 
-                            child: Text('My Fonts', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w800))
-                          ), 
-                          ...customFonts.map((fontName) => ListTile(
-                            title: Text(fontName, style: TextStyle(fontFamily: fontName, fontSize: 20)), 
-                            trailing: sel.fontFamily == fontName ? const Icon(Icons.check_circle, color: Color(0xFF8B5CF6), size: 18) : null, 
-                            dense: true, 
-                            onTap: () { saveState(); setState(() => sel.fontFamily = fontName); Navigator.pop(context); }
-                          )).toList(), 
-                          Divider(color: Colors.grey.shade200)
-                        ], 
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4), 
-                          child: Text('Default Fonts', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w800))
-                        ), 
-                        ...availableFonts.map((fontName) => ListTile(
-                          title: Text('اردو فونٹ - $fontName', style: TextStyle(fontFamily: fontName, fontSize: 20)), 
-                          trailing: sel.fontFamily == fontName ? const Icon(Icons.check_circle, color: Color(0xFF8B5CF6), size: 18) : null, 
-                          dense: true, 
-                          onTap: () { saveState(); setState(() => sel.fontFamily = fontName); Navigator.pop(context); }
-                        )).toList()
-                      ]
-                    )
-                  )
-                ]
-              )
-            ); 
-          }
-        ); 
-      }
-    ); 
-  }
-
-  void _showAlignmentModal(DesignElement sel) { 
-    showModalBottomSheet(
-      context: context, 
-      backgroundColor: Colors.white, 
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), 
-      builder: (context) { 
-        return Container(
-          height: 240, 
-          padding: const EdgeInsets.all(20), 
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween, 
-                children: [
-                  const Text('Align', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)), 
-                  IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => Navigator.pop(context))
-                ]
-              ), 
-              Divider(color: Colors.grey.shade200), 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly, 
-                children: [
-                  _buildAlignButton(Icons.align_horizontal_left, 'Left', () { saveState(); setState(() => sel.x = 10); Navigator.pop(context); }), 
-                  _buildAlignButton(Icons.align_horizontal_center, 'Center', () { saveState(); setState(() => sel.x = (MediaQuery.of(context).size.width - 40 - (sel.width > 0 ? sel.width : 280)) / 2); Navigator.pop(context); }), 
-                  _buildAlignButton(Icons.align_horizontal_right, 'Right', () { saveState(); setState(() => sel.x = MediaQuery.of(context).size.width - 40 - (sel.width > 0 ? sel.width : 280) - 10); Navigator.pop(context); })
-                ]
-              ), 
-              const SizedBox(height: 16), 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly, 
-                children: [
-                  _buildAlignButton(Icons.align_vertical_top, 'Top', () { saveState(); setState(() => sel.y = 10); Navigator.pop(context); }), 
-                  _buildAlignButton(Icons.align_vertical_center, 'Middle', () { saveState(); setState(() => sel.y = (MediaQuery.of(context).size.height * 0.5) / 2); Navigator.pop(context); }), 
-                  _buildAlignButton(Icons.align_vertical_bottom, 'Bottom', () { saveState(); setState(() => sel.y = (MediaQuery.of(context).size.height * 0.6) - 100); Navigator.pop(context); })
-                ]
-              )
-            ]
-          )
-        ); 
-      }
-    ); 
-  }
-
-  Widget _buildAlignButton(IconData icon, String label, VoidCallback onTap) { 
-    return InkWell(
-      onTap: onTap, 
-      borderRadius: BorderRadius.circular(8), 
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
-        decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade200)), 
-        child: Column(
-          children: [
-            Icon(icon, color: const Color(0xFF8B5CF6), size: 20), 
-            const SizedBox(height: 4), 
-            Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.black54))
-          ]
-        )
-      )
-    ); 
-  }
-
   @override
   Widget build(BuildContext context) {
     bool hasSelection = selectedId != null;
@@ -2741,7 +2300,19 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                     ),
 
                                   if (!_isExporting)
-                                    Positioned.fill(child: Container(margin: const EdgeInsets.all(15), decoration: BoxDecoration(border: Border.all(color: Colors.redAccent.withOpacity(0.3), width: 1.5)), child: Align(alignment: Alignment.topRight, child: Padding(padding: const EdgeInsets.all(4.0), child: Text('Safe Area', style: TextStyle(color: Colors.redAccent.withOpacity(0.5), fontSize: 10)))))),
+                                    Positioned.fill(
+                                      child: Container(
+                                        margin: const EdgeInsets.all(15), 
+                                        decoration: BoxDecoration(border: Border.all(color: Colors.redAccent.withOpacity(0.3), width: 1.5)), 
+                                        child: Align(
+                                          alignment: Alignment.topRight, 
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(4.0), 
+                                            child: Text('Safe Area', style: TextStyle(color: Colors.redAccent.withOpacity(0.5), fontSize: 10))
+                                          )
+                                        )
+                                      )
+                                    ),
                                   
                                   ...elements.map((e) {
                                     if (e.isHidden) return const SizedBox.shrink();
@@ -2772,7 +2343,14 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           onTap: () { if(!e.isLocked) setState(() => selectedId = e.id); }, 
                                           child: Transform(
                                             transform: matrix, alignment: Alignment.center,
-                                            child: Container(margin: const EdgeInsets.all(8), decoration: BoxDecoration(border: Border.all(color: e.elementColor, width: e.borderWidth), borderRadius: BorderRadius.circular(10), color: isSel && !_isExporting ? Colors.purple.withOpacity(0.05) : Colors.transparent))
+                                            child: Container(
+                                              margin: const EdgeInsets.all(8), 
+                                              decoration: BoxDecoration(
+                                                border: Border.all(color: e.elementColor, width: e.borderWidth), 
+                                                borderRadius: BorderRadius.circular(10), 
+                                                color: isSel && !_isExporting ? Colors.purple.withOpacity(0.05) : Colors.transparent
+                                              )
+                                            )
                                           )
                                         )
                                       );
@@ -2783,7 +2361,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                     double currentHeight = e.height > 20 ? e.height : (e.isShape ? 90 : 150);
 
                                     if (e.isShape) {
-                                      contentWidget = Container(width: currentWidth, height: currentHeight, decoration: BoxDecoration(color: e.elementColor, boxShadow: boxShadows.isNotEmpty ? boxShadows : null, border: universalBorder, borderRadius: BorderRadius.circular(e.cornerRadius)));
+                                      contentWidget = Container(
+                                        width: currentWidth, height: currentHeight, 
+                                        decoration: BoxDecoration(color: e.elementColor, boxShadow: boxShadows.isNotEmpty ? boxShadows : null, border: universalBorder, borderRadius: BorderRadius.circular(e.cornerRadius))
+                                      );
                                     } else if (e.imageBytes != null) {
                                       Widget img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, fit: BoxFit.fill);
                                       if (e.isTinted) {
@@ -2851,7 +2432,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                     }
 
                                     if (_isExporting) { 
-                                      return Positioned(left: e.x, top: e.y, child: Transform(transform: matrix, alignment: Alignment.center, child: Opacity(opacity: e.opacity, child: Padding(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15), child: contentWidget)))); 
+                                      return Positioned(
+                                        left: e.x, top: e.y, 
+                                        child: Transform(
+                                          transform: matrix, alignment: Alignment.center, 
+                                          child: Opacity(opacity: e.opacity, child: Padding(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15), child: contentWidget))
+                                        )
+                                      ); 
                                     }
 
                                     return Positioned(
@@ -2959,7 +2546,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                     Stack(
                                                       clipBehavior: Clip.none,
                                                       children: [
-                                                        Container(padding: const EdgeInsets.all(5), decoration: BoxDecoration(border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5), color: Colors.purple.withOpacity(0.05)), child: Opacity(opacity: e.opacity, child: contentWidget)),
+                                                        Container(
+                                                          padding: const EdgeInsets.all(5), 
+                                                          decoration: BoxDecoration(border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5), color: Colors.purple.withOpacity(0.05)), 
+                                                          child: Opacity(opacity: e.opacity, child: contentWidget)
+                                                        ),
                                                         
                                                         Positioned(
                                                           top: -15, left: 0, right: 0, 
@@ -2968,14 +2559,48 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                               onPanUpdate: (d) {
                                                                 setState(() { e.angle += d.delta.dx * 0.02; });
                                                               },
-                                                              child: Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)]), child: const Icon(Icons.rotate_right, size: 14, color: Colors.black87))
+                                                              child: Container(
+                                                                padding: const EdgeInsets.all(4), 
+                                                                decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)]), 
+                                                                child: const Icon(Icons.rotate_right, size: 14, color: Colors.black87)
+                                                              )
                                                             )
                                                           )
                                                         ),
                                                         
-                                                        if (!e.isText && !e.isShape) Positioned(right: -15, top: 0, bottom: 0, child: GestureDetector(onPanUpdate: (d) { setState(() { double w = currentWidth + d.delta.dx; if (w > 50) e.width = w; }); }, child: Container(width: 30, color: Colors.transparent, alignment: Alignment.center, child: Container(width: 6, height: 20, decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)))))),
-                                                        if (!e.isText && !e.isShape) Positioned(left: -15, top: 0, bottom: 0, child: GestureDetector(onPanUpdate: (d) { setState(() { double newW = currentWidth - d.delta.dx; if (newW > 50) { e.width = newW; e.x += d.delta.dx; } }); }, child: Container(width: 30, color: Colors.transparent, alignment: Alignment.center, child: Container(width: 6, height: 20, decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)))))),
-                                                        if (!e.isText) Positioned(bottom: -15, left: 0, right: 0, child: GestureDetector(onPanUpdate: (d) { setState(() { double h = currentHeight + d.delta.dy; if (h > 20) e.height = h; }); }, child: Container(height: 30, color: Colors.transparent, alignment: Alignment.center, child: Container(height: 6, width: 20, decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)))))),
+                                                        if (!e.isText && !e.isShape) 
+                                                          Positioned(
+                                                            right: -15, top: 0, bottom: 0, 
+                                                            child: GestureDetector(
+                                                              onPanUpdate: (d) { setState(() { double w = currentWidth + d.delta.dx; if (w > 50) e.width = w; }); }, 
+                                                              child: Container(
+                                                                width: 30, color: Colors.transparent, alignment: Alignment.center, 
+                                                                child: Container(width: 6, height: 20, decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)))
+                                                              )
+                                                            )
+                                                          ),
+                                                        if (!e.isText && !e.isShape) 
+                                                          Positioned(
+                                                            left: -15, top: 0, bottom: 0, 
+                                                            child: GestureDetector(
+                                                              onPanUpdate: (d) { setState(() { double newW = currentWidth - d.delta.dx; if (newW > 50) { e.width = newW; e.x += d.delta.dx; } }); }, 
+                                                              child: Container(
+                                                                width: 30, color: Colors.transparent, alignment: Alignment.center, 
+                                                                child: Container(width: 6, height: 20, decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)))
+                                                              )
+                                                            )
+                                                          ),
+                                                        if (!e.isText) 
+                                                          Positioned(
+                                                            bottom: -15, left: 0, right: 0, 
+                                                            child: GestureDetector(
+                                                              onPanUpdate: (d) { setState(() { double h = currentHeight + d.delta.dy; if (h > 20) e.height = h; }); }, 
+                                                              child: Container(
+                                                                height: 30, color: Colors.transparent, alignment: Alignment.center, 
+                                                                child: Container(height: 6, width: 20, decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)))
+                                                              )
+                                                            )
+                                                          ),
                                                         
                                                         Positioned(
                                                           bottom: -15, right: -15, 
@@ -2992,7 +2617,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                                 }
                                                               }); 
                                                             }, 
-                                                            child: Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: const Color(0xFF8B5CF6), shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)]), child: const Icon(Icons.open_in_full, size: 12, color: Colors.white))
+                                                            child: Container(
+                                                              padding: const EdgeInsets.all(4), 
+                                                              decoration: BoxDecoration(color: const Color(0xFF8B5CF6), shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)]), 
+                                                              child: const Icon(Icons.open_in_full, size: 12, color: Colors.white)
+                                                            )
                                                           )
                                                         ),
                                                       ],
@@ -3001,7 +2630,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                     Material(
                                                       color: Colors.transparent, elevation: 6, borderRadius: BorderRadius.circular(12),
                                                       child: Container(
-                                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), 
+                                                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
                                                         child: Row(
                                                           mainAxisSize: MainAxisSize.min,
                                                           children: [
@@ -3040,7 +2670,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       ),
       bottomNavigationBar: SafeArea(
         child: Container(
-          decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, -2))]), 
+          decoration: BoxDecoration(
+            color: Colors.white, 
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, -2))]
+          ), 
           child: hasSelection ? _buildSelectedToolBar(sel!) : _buildDefaultBottomBar()
         )
       ),
