@@ -31,7 +31,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   final GlobalKey _canvasKey = GlobalKey();
   final TransformationController _transformController = TransformationController();
   
-  // 🔥 LAGGING FIX: Fast Rendering Engine
   final ValueNotifier<int> _canvasNotifier = ValueNotifier<int>(0);
 
   bool _isCanvasLocked = false;
@@ -398,6 +397,36 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         return Container(height: 180, padding: const EdgeInsets.all(20), child: Column(children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Opacity (شفافیت): ${(sel.opacity * 100).toInt()}%', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), 
           Slider(value: sel.opacity, min: 0.0, max: 1.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.opacity = val); setModalState((){}); _triggerCanvasUpdate(); })
+        ])); 
+      }); 
+    }); 
+  }
+
+  // 🔥 YAHAN MISSING CURVE TEXT AUR BLEND MODE MODALS WAPAS ADD KIYE GAYE HAIN 🔥
+  void _showCurveModal(DesignElement sel) { 
+    showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { 
+      return StatefulBuilder(builder: (context, setModalState) { 
+        return Container(height: 250, padding: const EdgeInsets.all(20), child: Column(children: [
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Curve Text (گولائی)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), 
+          const SizedBox(height: 10), 
+          Row(children: [const Text('Bend:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), Expanded(child: Slider(value: sel.textCurveRadius, min: -150.0, max: 150.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.textCurveRadius = val); setModalState((){}); _triggerCanvasUpdate(); }))]), 
+          Row(children: [const Text('Spacing:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), Expanded(child: Slider(value: sel.letterSpacing, min: -5.0, max: 20.0, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.letterSpacing = val); setModalState((){}); _triggerCanvasUpdate(); }))]), 
+          ElevatedButton(onPressed: () { saveState(); setState(() => sel.textCurveRadius = 0.0); setModalState((){}); _triggerCanvasUpdate(); }, style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade200), child: const Text('Reset Curve', style: TextStyle(color: Colors.black))) 
+        ])); 
+      }); 
+    }); 
+  }
+
+  void _showBlendModeModal(DesignElement sel) { 
+    showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { 
+      return StatefulBuilder(builder: (context, setModalState) { 
+        return Container(height: 350, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Blend Modes (مکس کرنا)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), 
+          const Divider(), 
+          Expanded(child: ListView.builder(itemCount: _blendModes.length, itemBuilder: (context, index) { 
+            String bName = _blendModes[index].toString().replaceAll('BlendMode.', '').toUpperCase(); 
+            return ListTile(title: Text(bName, style: const TextStyle(fontWeight: FontWeight.bold)), trailing: sel.blendModeIndex == index ? const Icon(Icons.check_circle, color: Color(0xFF8B5CF6)) : null, onTap: () { saveState(); setState(() => sel.blendModeIndex = index); _triggerCanvasUpdate(); Navigator.pop(context); }); 
+          }))
         ])); 
       }); 
     }); 
@@ -775,6 +804,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                               _snapV = false; _snapH = false;
                                               _triggerCanvasUpdate();
                                             },
+                                            
                                             onPanUpdate: (d) {
                                               if(!e.isLocked) {
                                                 double shiftX = d.delta.dx;
@@ -803,6 +833,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                     }
                                                   }
                                                 }
+                                                // Only update the canvas without freezing the whole app
                                                 _triggerCanvasUpdate();
                                               }
                                             },
@@ -873,7 +904,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                       if (_snapH && !_isExporting) Positioned(top: canvasH/2, left: 0, right: 0, child: Container(height: 2, color: Colors.redAccent)),
                                     ],
                                   );
-                                },
+                                }
                               ),
                             ),
                           ),
