@@ -20,7 +20,9 @@ import 'my_folder_screen.dart';
 
 class ProWorkspaceScreen extends StatefulWidget {
   final ProjectModel? project;
-  const ProWorkspaceScreen({Key? key, this.project}) : super(key: key);
+  final String? initialAction; // 🔥 YAHAN ERROR THA: Aapki Home Screen se connect karne ke liye yeh wapas add kar diya hai
+  
+  const ProWorkspaceScreen({Key? key, this.project, this.initialAction}) : super(key: key);
   @override
   State<ProWorkspaceScreen> createState() => _ProWorkspaceScreenState();
 }
@@ -100,6 +102,19 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       projectName = 'Design_$projectId';
       pages = [DesignPage(title: 'Page 1', elements: [DesignElement(id: 'demo1', x: 40, y: 150, content: 'مدرسہ اسلامیہ نصیرالعلوم', width: 280)], pageColor: Colors.white)];
     }
+    
+    // Initial Action Handling
+    if (widget.initialAction != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (widget.initialAction == 'text_editor') {
+          _showTextComposerDialog();
+        } else if (widget.initialAction == 'images') {
+          addImageFromGallery();
+        } else if (widget.initialAction == 'elements') {
+          showAddNewModal();
+        }
+      });
+    }
   }
 
   @override
@@ -115,7 +130,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     savedStrings.removeWhere((str) => jsonDecode(str)['id'] == projectId); 
     savedStrings.add(jsonEncode(p.toJson())); 
     await prefs.setStringList('qalamkaar_projects', savedStrings);
-    HapticFeedback.lightImpact(); // 🔥 PRO FEATURE: VIBRATION ON SAVE
+    HapticFeedback.lightImpact();
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Project "My Folder" mein save ho gaya! 🎉', style: TextStyle(fontFamily: 'JameelNoori', fontSize: 20)), backgroundColor: Color(0xFF10B981)));
   }
 
@@ -307,7 +322,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void showRotationModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 200, padding: const EdgeInsets.all(20), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Rotate (گھمائیں)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const SizedBox(height: 10), Slider(value: sel.angle, min: -pi, max: pi, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.angle = val); setModalState((){}); }), Text('${(sel.angle * 180 / pi).toInt()}°', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))])); }); }); }
   void show3DModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 280, padding: const EdgeInsets.all(20), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('3D Perspective (تھری ڈی زاویہ)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const SizedBox(height: 10), Row(children: [const Text('X-Axis:', style: TextStyle(fontWeight: FontWeight.bold)), Expanded(child: Slider(value: sel.pitch, min: -pi/2, max: pi/2, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.pitch = val); setModalState((){}); }))]), Row(children: [const Text('Y-Axis:', style: TextStyle(fontWeight: FontWeight.bold)), Expanded(child: Slider(value: sel.yaw, min: -pi/2, max: pi/2, activeColor: Colors.green, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.yaw = val); setModalState((){}); }))]), ElevatedButton(onPressed: () { saveState(); setState((){ sel.pitch=0; sel.yaw=0; }); setModalState((){}); }, style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade200), child: const Text('Reset Perspective', style: TextStyle(color: Colors.black))) ])); }); }); }
   
-  // 🔥 NAYA FEATURE: OPACITY SLIDER MODAL (DUMMY REPLACE KIYA) 🔥
   void _showOpacityModal(DesignElement sel) { 
     showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { 
       return StatefulBuilder(builder: (context, setModalState) { 
@@ -429,6 +443,35 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   void showPagesPanel() { showModalBottomSheet(context: context, backgroundColor: Colors.transparent, builder: (context) { return StatefulBuilder(builder: (BuildContext context, StateSetter setModalState) { return Container(height: 400, decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))), padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Pages (صفحات)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const Divider(), Expanded(child: ListView.builder(itemCount: pages.length, itemBuilder: (context, index) { bool isCurrent = currentPageIndex == index; return Card(color: isCurrent ? const Color(0xFFF3E8FF) : Colors.white, elevation: 0, margin: const EdgeInsets.only(bottom: 8), shape: RoundedRectangleBorder(side: BorderSide(color: isCurrent ? const Color(0xFF8B5CF6) : Colors.grey.shade300), borderRadius: BorderRadius.circular(8)), child: ListTile(leading: Icon(Icons.description, color: isCurrent ? const Color(0xFF8B5CF6) : Colors.grey), title: Text(pages[index].title, style: TextStyle(fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal)), trailing: Row(mainAxisSize: MainAxisSize.min, children: [ IconButton(icon: const Icon(Icons.copy, color: Colors.blue, size: 20), onPressed: () { setState(() { pages.insert(index + 1, DesignPage(title: '${pages[index].title} Copy', elements: pages[index].elements.map((e) => e.clone()).toList(), pageColor: pages[index].pageColor, bgImageBytes: pages[index].bgImageBytes, canvasRatio: pages[index].canvasRatio, bgGradient: pages[index].bgGradient)); currentPageIndex = index + 1; }); setModalState(() {}); }), if(pages.length > 1) IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20), onPressed: () { setState(() { pages.removeAt(index); if (currentPageIndex >= pages.length) currentPageIndex = pages.length - 1; }); setModalState(() {}); }) ]), onTap: () { setState(() { currentPageIndex = index; selectedId = null; }); Navigator.pop(context); },)); },)), const SizedBox(height: 10), SizedBox(width: double.infinity, child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)), onPressed: () { setState(() { pages.add(DesignPage(title: 'Page ${pages.length + 1}', elements: [DesignElement(id: Random().nextInt(10000).toString(), x: 60, y: 100, content: 'نیا صفحہ', width: 250)], pageColor: Colors.white)); currentPageIndex = pages.length - 1; selectedId = null; }); Navigator.pop(context); }, child: const Text('Add New Page', style: TextStyle(color: Colors.white)))),]));});}); }
 
+  void _showCurveModal(DesignElement sel) { 
+    showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { 
+      return StatefulBuilder(builder: (context, setModalState) { 
+        return Container(height: 250, padding: const EdgeInsets.all(20), child: Column(children: [
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Curve Text (گولائی)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), 
+          const SizedBox(height: 10), 
+          Row(children: [const Text('Bend:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), Expanded(child: Slider(value: sel.textCurveRadius, min: -150.0, max: 150.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.textCurveRadius = val); setModalState((){}); }))]), 
+          Row(children: [const Text('Spacing:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), Expanded(child: Slider(value: sel.letterSpacing, min: -5.0, max: 20.0, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.letterSpacing = val); setModalState((){}); }))]), 
+          ElevatedButton(onPressed: () { saveState(); setState(() => sel.textCurveRadius = 0.0); setModalState((){}); }, style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade200), child: const Text('Reset Curve', style: TextStyle(color: Colors.black))) 
+        ])); 
+      }); 
+    }); 
+  }
+
+  void _showBlendModeModal(DesignElement sel) { 
+    showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { 
+      return StatefulBuilder(builder: (context, setModalState) { 
+        return Container(height: 350, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Blend Modes (مکس کرنا)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), 
+          const Divider(), 
+          Expanded(child: ListView.builder(itemCount: _blendModes.length, itemBuilder: (context, index) { 
+            String bName = _blendModes[index].toString().replaceAll('BlendMode.', '').toUpperCase(); 
+            return ListTile(title: Text(bName, style: const TextStyle(fontWeight: FontWeight.bold)), trailing: sel.blendModeIndex == index ? const Icon(Icons.check_circle, color: Color(0xFF8B5CF6)) : null, onTap: () { saveState(); setState(() => sel.blendModeIndex = index); Navigator.pop(context); }); 
+          }))
+        ])); 
+      }); 
+    }); 
+  }
+
   @override
   Widget build(BuildContext context) {
     bool hasSelection = selectedId != null;
@@ -487,7 +530,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
             
           Expanded(
             child: GestureDetector(
-              onTap: () => setState(() => selectedId = null), 
+              onTap: () { HapticFeedback.lightImpact(); setState(() => selectedId = null); }, 
               child: Center(
                 child: InteractiveViewer(
                   transformationController: _transformController,
@@ -558,7 +601,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                     if (e.isBorder) {
                                       return Positioned.fill(
                                         child: GestureDetector(
-                                          onTap: () { if(!e.isLocked) setState(() => selectedId = e.id); }, 
+                                          onTap: () { if(!e.isLocked) { HapticFeedback.lightImpact(); setState(() => selectedId = e.id); } }, 
                                           child: Transform(
                                             transform: matrix, alignment: Alignment.center,
                                             child: Container(margin: const EdgeInsets.all(8), decoration: BoxDecoration(border: Border.all(color: e.elementColor, width: e.borderWidth), borderRadius: BorderRadius.circular(10), color: isSel && !_isExporting ? Colors.purple.withOpacity(0.05) : Colors.transparent))
@@ -650,13 +693,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           if (e.isLocked) {
                                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Yeh Layer Lock hai.', style: TextStyle(fontFamily: 'JameelNoori')), duration: Duration(seconds: 1)));
                                           } else {
+                                            HapticFeedback.lightImpact();
                                             setState(() => selectedId = e.id);
                                           }
                                         },
                                         onPanStart: (d) { if(!e.isLocked) saveState(); },
                                         onPanEnd: (d) => setState(() { _snapV = false; _snapH = false; }),
-                                        
-                                        // 🔥 FIXED: HAPTIC FEEDBACK (VIBRATION) ON SNAPPING 🔥
                                         onPanUpdate: (d) {
                                           if(!e.isLocked) {
                                             setState(() { 
@@ -691,7 +733,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                  shiftY += snapShiftY;
                                               }
 
-                                              // Group ke baaqi elements ko bhi shift karo
                                               if (e.groupId != null) {
                                                 for (var other in elements) {
                                                   if (other.id != e.id && other.groupId == e.groupId && !other.isLocked) {
@@ -720,7 +761,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                         Positioned(right: -15, top: 0, bottom: 0, child: GestureDetector(onPanUpdate: (d) { setState(() { double w = currentWidth + d.delta.dx; if (w > 50) e.width = w; }); }, child: Container(width: 30, color: Colors.transparent, alignment: Alignment.center, child: Container(width: 8, height: 25, decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)))))),
                                                         Positioned(left: -15, top: 0, bottom: 0, child: GestureDetector(onPanUpdate: (d) { setState(() { double newW = currentWidth - d.delta.dx; if (newW > 50) { e.width = newW; e.x += d.delta.dx; } }); }, child: Container(width: 30, color: Colors.transparent, alignment: Alignment.center, child: Container(width: 8, height: 25, decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)))))),
                                                         
-                                                        // 🔥 FIXED: RESIZING TEXT CORRECTLY 🔥
                                                         Positioned(
                                                           bottom: -15, right: -15, 
                                                           child: GestureDetector(
@@ -848,7 +888,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                 
                 _buildToolBtn(Icons.flip, 'Flip H', () { saveState(); setState(() => sel.flipX = !sel.flipX); }),
                 _buildToolBtn(Icons.flip_camera_android, 'Flip V', () { saveState(); setState(() => sel.flipY = !sel.flipY); }),
-                _buildToolBtn(Icons.opacity, 'Opacity', () => _showOpacityModal(sel)), // 🔥 FIXED: OPACITY SLIDER
+                _buildToolBtn(Icons.opacity, 'Opacity', () => _showOpacityModal(sel)), 
                 _buildToolBtn(Icons.rotate_right, 'Rotate', () => showRotationModal(sel)), 
                 _buildToolBtn(Icons.view_in_ar, 'Perspective', () => show3DModal(sel)), 
                 _buildToolBtn(Icons.open_with, 'Nudge', () => showNudgeModal(sel)),
