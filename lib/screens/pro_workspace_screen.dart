@@ -31,7 +31,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   final GlobalKey _canvasKey = GlobalKey();
   final TransformationController _transformController = TransformationController();
   
-  // 🔥 LAGGING FIX: ValueNotifier for 60fps Smooth Canvas Rendering
+  // 🔥 LAGGING FIX: Fast Rendering Engine
   final ValueNotifier<int> _canvasNotifier = ValueNotifier<int>(0);
 
   bool _isCanvasLocked = false;
@@ -95,7 +95,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   @override
   void dispose() { 
     _transformController.dispose(); 
-    _canvasNotifier.dispose(); // 🔥 Memory Leak Se Bachne Ke Liye
+    _canvasNotifier.dispose(); 
     super.dispose(); 
   }
 
@@ -392,6 +392,17 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void showRotationModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 200, padding: const EdgeInsets.all(20), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Rotate (گھمائیں)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const SizedBox(height: 10), Slider(value: sel.angle, min: -pi, max: pi, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.angle = val); setModalState((){}); _triggerCanvasUpdate(); }), Text('${(sel.angle * 180 / pi).toInt()}°', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))])); }); }); }
   void show3DModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 280, padding: const EdgeInsets.all(20), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('3D Perspective (تھری ڈی زاویہ)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const SizedBox(height: 10), Row(children: [const Text('X-Axis:', style: TextStyle(fontWeight: FontWeight.bold)), Expanded(child: Slider(value: sel.pitch, min: -pi/2, max: pi/2, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.pitch = val); setModalState((){}); _triggerCanvasUpdate(); }))]), Row(children: [const Text('Y-Axis:', style: TextStyle(fontWeight: FontWeight.bold)), Expanded(child: Slider(value: sel.yaw, min: -pi/2, max: pi/2, activeColor: Colors.green, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.yaw = val); setModalState((){}); _triggerCanvasUpdate(); }))]), ElevatedButton(onPressed: () { saveState(); setState((){ sel.pitch=0; sel.yaw=0; }); setModalState((){}); _triggerCanvasUpdate(); }, style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade200), child: const Text('Reset Perspective', style: TextStyle(color: Colors.black))) ])); }); }); }
   
+  void _showOpacityModal(DesignElement sel) { 
+    showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { 
+      return StatefulBuilder(builder: (context, setModalState) { 
+        return Container(height: 180, padding: const EdgeInsets.all(20), child: Column(children: [
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Opacity (شفافیت): ${(sel.opacity * 100).toInt()}%', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), 
+          Slider(value: sel.opacity, min: 0.0, max: 1.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.opacity = val); setModalState((){}); _triggerCanvasUpdate(); })
+        ])); 
+      }); 
+    }); 
+  }
+
   void showNudgeModal(DesignElement sel) { 
     showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { 
       return StatefulBuilder(builder: (context, setModalState) { 
@@ -586,10 +597,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                   ? BoxDecoration(image: DecorationImage(image: MemoryImage(bgImageBytes!), fit: BoxFit.cover))
                                   : (bgGradient != null ? BoxDecoration(gradient: LinearGradient(colors: bgGradient!)) : (pageColor == Colors.transparent ? const BoxDecoration(image: DecorationImage(image: AssetImage('assets/transparent_pattern.png'), repeat: ImageRepeat.repeat)) : null)),
                               
-                              // 🔥 LAGGING FIX: Canvas ab ValueListenableBuilder ke andar hai 🔥
                               child: ValueListenableBuilder<int>(
                                 valueListenable: _canvasNotifier,
-                                builder: (context, _, __) {
+                                builder: (context, value, child) {
                                   return Stack(
                                     clipBehavior: Clip.none,
                                     children: [
@@ -674,7 +684,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                         else if (e.isShape) {
                                           contentWidget = Container(width: currentWidth, height: currentHeight, decoration: BoxDecoration(color: e.elementColor, boxShadow: boxShadows.isNotEmpty ? boxShadows : null, border: universalBorder, borderRadius: BorderRadius.circular(e.cornerRadius)));
                                         } else if (e.imageBytes != null) {
-                                          // 🔥 LAGGING FIX: Added FilterQuality.low to heavily optimize Image scaling RAM usage
                                           Widget img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, fit: BoxFit.fill, filterQuality: FilterQuality.low, gaplessPlayback: true);
                                           if (e.isTinted) {
                                             img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, fit: BoxFit.fill, color: e.elementColor, colorBlendMode: BlendMode.srcIn, filterQuality: FilterQuality.low, gaplessPlayback: true);
@@ -718,7 +727,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           }
 
                                           List<Widget> blockLayers = [];
-                                          // Optimized 3D layers loop (Capped max visual copies to avoid heavy rendering)
                                           if (e.text3dDepth > 0) {
                                             double step = e.text3dDepth > 15 ? 2.0 : 1.0;
                                             for (double i = e.text3dDepth; i > 0; i -= step) {
@@ -767,8 +775,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                               _snapV = false; _snapH = false;
                                               _triggerCanvasUpdate();
                                             },
-                                            
-                                            // 🔥 LAGGING FIX: setState Removed from onPanUpdate 🔥
                                             onPanUpdate: (d) {
                                               if(!e.isLocked) {
                                                 double shiftX = d.delta.dx;
@@ -797,7 +803,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                     }
                                                   }
                                                 }
-                                                // Only update the canvas without freezing the whole app
                                                 _triggerCanvasUpdate();
                                               }
                                             },
@@ -868,7 +873,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                       if (_snapH && !_isExporting) Positioned(top: canvasH/2, left: 0, right: 0, child: Container(height: 2, color: Colors.redAccent)),
                                     ],
                                   );
-                                }
+                                },
                               ),
                             ),
                           ),
