@@ -16,7 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/design_models.dart';
 import '../widgets/custom_widgets.dart';
-import 'my_folder_screen.dart'; // 🔥 NAYA IMPORT MY FOLDER KE LIYE
+import 'my_folder_screen.dart';
 
 class ProWorkspaceScreen extends StatefulWidget {
   final ProjectModel? project;
@@ -47,6 +47,16 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   final ImagePicker _picker = ImagePicker();
   bool _isExporting = false;
+
+  // 🔥 NAYE VARIABLES TOUCH GESTURES KE LIYE 🔥
+  double _initialRotation = 0.0;
+  double _initialWidth = 0.0;
+  double _initialHeight = 0.0;
+  double _initialFontSize = 0.0;
+  double _initialX = 0.0;
+  double _initialY = 0.0;
+  Offset _initialFocalPoint = Offset.zero;
+  Map<String, Map<String, dynamic>> _initialGroupStates = {};
 
   static const List<double> grayscaleMatrix = [0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0, 0, 0, 1, 0];
   static const List<double> sepiaMatrix = [0.393, 0.769, 0.189, 0, 0, 0.349, 0.686, 0.168, 0, 0, 0.272, 0.534, 0.131, 0, 0, 0, 0, 0, 1, 0];
@@ -271,7 +281,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // 🔥 NAYA FEATURE: TASHKEEL / SYMBOLS LIBRARY (اعراب) 🔥
   void _showTashkeelModal(TextEditingController controller) {
     final List<String> tashkeelList = ['َ', 'ِ', 'ُ', 'ً', 'ٍ', 'ٌ', 'ّ', 'ْ', 'ٰ', 'ٓ', 'ے', 'ۓ', 'ﷺ', 'ؓ', 'ؒ', 'ﷻ', 'ﷲ', 'اکبر', 'جل جلالہ', 'بسم اللہ'];
     showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) {
@@ -288,15 +297,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void _showTextComposerDialog({DesignElement? existingElement}) { 
     TextEditingController controller = TextEditingController(text: existingElement?.content ?? ''); 
     showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) => Padding(padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom), child: Container(height: MediaQuery.of(context).size.height * 0.75, padding: const EdgeInsets.all(20), child: Column(children: [Container(decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(10)), child: Row(mainAxisSize: MainAxisSize.min, children: [Container(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), child: const Text('English', style: TextStyle(color: Colors.grey))), Container(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)]), child: const Text('اردو', style: TextStyle(fontWeight: FontWeight.bold)))])), const SizedBox(height: 15), Expanded(child: Container(padding: const EdgeInsets.all(15), decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(15), color: Colors.grey.shade50), child: TextField(controller: controller, maxLines: null, textDirection: TextDirection.rtl, style: const TextStyle(fontFamily: 'JameelNoori', fontSize: 28), decoration: const InputDecoration(border: InputBorder.none, hintText: 'یہاں لکھیں...', hintTextDirection: TextDirection.rtl)))), const SizedBox(height: 15), 
-    
-    // 🔥 FIXED: PASTE & TASHKEEL DUMMY BUTTONS 🔥
     Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
       _buildComposerTool(Icons.paste, 'Paste', () async { ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain); if (data != null && data.text != null) controller.text += data.text!; }), 
       _buildComposerTool(Icons.delete_outline, 'Clear', () => controller.clear()), 
       _buildComposerTool(Icons.auto_stories, 'شاعری', () => _showPoetryLibrary(controller)), 
-      _buildComposerTool(Icons.format_quote, 'اعراب', () => _showTashkeelModal(controller)) // Pehle yahan Translate (Dummy) tha
+      _buildComposerTool(Icons.format_quote, 'اعراب', () => _showTashkeelModal(controller)) 
     ]), 
-    
     const SizedBox(height: 20), Row(children: [Expanded(flex: 1, child: OutlinedButton(style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))), onPressed: () => Navigator.pop(context), child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontSize: 16)))), const SizedBox(width: 15), Expanded(flex: 2, child: ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))), onPressed: () { if (controller.text.isNotEmpty) { saveState(); if (existingElement != null) { setState(() => existingElement.content = controller.text); } else { var newEl = DesignElement(id: Random().nextInt(10000).toString(), x: 40, y: 100, content: controller.text, width: 280); setState(() { elements.add(newEl); selectedId = newEl.id; }); } } Navigator.pop(context); }, icon: const Icon(Icons.check, color: Colors.white), label: const Text('Add to design', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))))])])))); 
   }
 
@@ -306,12 +312,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   void showAddNewModal() { 
     showModalBottomSheet(context: context, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (context) => Container(height: MediaQuery.of(context).size.height * 0.65, decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))), padding: const EdgeInsets.all(20), child: Column(children: [Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)))), const SizedBox(height: 20), 
-    
-    // 🔥 FIXED: STOCK IMAGES & MY FOLDER DUMMY BUTTONS 🔥
     Expanded(child: GridView.count(crossAxisCount: 3, crossAxisSpacing: 15, mainAxisSpacing: 15, children: [
       _buildGridItem(Icons.image, 'Gallery Pic', Colors.blue.shade100, Colors.blue, addImageFromGallery), 
-      _buildGridItem(Icons.gradient, 'Backgrounds', Colors.indigo.shade100, Colors.indigo, () { Navigator.pop(context); _showCanvasBgGradientModal(); }), // Pehle Stock Image (Dummy) tha
-      _buildGridItem(Icons.folder, 'My Folder', Colors.teal.shade100, Colors.teal, () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const MyFolderScreen())); }), // Pehle Dummy tha
+      _buildGridItem(Icons.gradient, 'Backgrounds', Colors.indigo.shade100, Colors.indigo, () { Navigator.pop(context); _showCanvasBgGradientModal(); }), 
+      _buildGridItem(Icons.folder, 'My Folder', Colors.teal.shade100, Colors.teal, () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const MyFolderScreen())); }), 
       _buildGridItem(Icons.text_fields, 'Add Text', Colors.orange.shade100, Colors.orange, () { Navigator.pop(context); _showTextComposerDialog(); }), 
       _buildGridItem(Icons.border_outer, 'Borders', Colors.amber.shade100, Colors.amber.shade800, () => showGenericStockModal('Borders', 'royal_islamic', Icons.border_outer)), 
       _buildGridItem(Icons.category, 'Shapes', Colors.pink.shade100, Colors.pink, () => showGenericStockModal('Shapes', 'shape_rect', Icons.category))
@@ -749,6 +753,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
                                     return Positioned(
                                       left: e.x, top: e.y,
+                                      // 🔥 NAYA FEATURE: TOUCH GESTURES (PINCH TO ZOOM & ROTATE) 🔥
                                       child: GestureDetector(
                                         onTap: () {
                                           if (e.isLocked) {
@@ -757,46 +762,94 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                             setState(() => selectedId = e.id);
                                           }
                                         },
-                                        onPanStart: (d) { if(!e.isLocked) saveState(); },
-                                        onPanEnd: (d) => setState(() { _snapV = false; _snapH = false; }),
-                                        onPanUpdate: (d) {
-                                          if(!e.isLocked) {
-                                            setState(() { 
-                                              selectedId = e.id; 
+                                        onScaleStart: (details) {
+                                          if (!e.isLocked) {
+                                            saveState();
+                                            setState(() {
+                                              selectedId = e.id;
+                                              _initialRotation = e.angle;
+                                              _initialWidth = e.width > 50 ? e.width : 280.0;
+                                              _initialHeight = e.height > 20 ? e.height : (e.isShape ? 90 : 150);
+                                              _initialFontSize = e.fontSize;
+                                              _initialX = e.x;
+                                              _initialY = e.y;
+                                              _initialFocalPoint = details.focalPoint;
                                               
-                                              double shiftX = d.delta.dx;
-                                              double shiftY = d.delta.dy;
-                                              
-                                              e.x += shiftX; 
-                                              e.y += shiftY; 
-                                              
-                                              double eCenterX = e.x + currentWidth / 2 + 20; 
-                                              double eCenterY = e.y + (e.isText && e.textCurveRadius == 0 ? 100 : currentHeight) / 2 + 15;
-                                              
-                                              _snapV = (eCenterX - canvasW/2).abs() < 12;
-                                              _snapH = (eCenterY - canvasH/2).abs() < 12;
-
-                                              if (_snapV) {
-                                                 double snapShiftX = (canvasW/2 - currentWidth/2 - 20) - e.x;
-                                                 e.x += snapShiftX;
-                                                 shiftX += snapShiftX;
-                                              }
-                                              if (_snapH) {
-                                                 double snapShiftY = (canvasH/2 - (e.isText && e.textCurveRadius == 0 ? 100 : currentHeight)/2 - 15) - e.y;
-                                                 e.y += snapShiftY;
-                                                 shiftY += snapShiftY;
-                                              }
-
+                                              _initialGroupStates.clear();
                                               if (e.groupId != null) {
                                                 for (var other in elements) {
-                                                  if (other.id != e.id && other.groupId == e.groupId && !other.isLocked) {
-                                                    other.x += shiftX;
-                                                    other.y += shiftY;
+                                                  if (other.groupId == e.groupId) {
+                                                    _initialGroupStates[other.id] = {'x': other.x, 'y': other.y};
                                                   }
                                                 }
                                               }
                                             });
                                           }
+                                        },
+                                        onScaleUpdate: (details) {
+                                          if (!e.isLocked) {
+                                            setState(() {
+                                              selectedId = e.id;
+                                              
+                                              // Translation (Moving)
+                                              Offset delta = details.focalPoint - _initialFocalPoint;
+                                              e.x = _initialX + delta.dx;
+                                              e.y = _initialY + delta.dy;
+
+                                              // Snapping Logic
+                                              double snapCenterX = e.x + currentWidth / 2 + 20; 
+                                              double snapCenterY = e.y + (e.isText && e.textCurveRadius == 0 ? 100 : currentHeight) / 2 + 15;
+                                              
+                                              _snapV = (snapCenterX - canvasW/2).abs() < 12;
+                                              _snapH = (snapCenterY - canvasH/2).abs() < 12;
+
+                                              double snapShiftX = 0, snapShiftY = 0;
+                                              if (_snapV) {
+                                                 snapShiftX = (canvasW/2 - currentWidth/2 - 20) - e.x;
+                                                 e.x += snapShiftX;
+                                              }
+                                              if (_snapH) {
+                                                 snapShiftY = (canvasH/2 - (e.isText && e.textCurveRadius == 0 ? 100 : currentHeight)/2 - 15) - e.y;
+                                                 e.y += snapShiftY;
+                                              }
+
+                                              // Group Elements Movement
+                                              if (e.groupId != null) {
+                                                for (var other in elements) {
+                                                  if (other.id != e.id && other.groupId == e.groupId && !other.isLocked) {
+                                                    var initStates = _initialGroupStates[other.id];
+                                                    if (initStates != null) {
+                                                      other.x = initStates['x'] + delta.dx + snapShiftX;
+                                                      other.y = initStates['y'] + delta.dy + snapShiftY;
+                                                    }
+                                                  }
+                                                }
+                                              }
+
+                                              // Scale (Zooming)
+                                              if (details.scale != 1.0) {
+                                                if (e.isText) {
+                                                  double newSize = _initialFontSize * details.scale;
+                                                  if (newSize > 10.0 && newSize < 300.0) e.fontSize = newSize;
+                                                } else {
+                                                  double newW = _initialWidth * details.scale;
+                                                  double newH = _initialHeight * details.scale;
+                                                  if (newW > 20 && newH > 20) {
+                                                    e.width = newW;
+                                                    e.height = newH;
+                                                  }
+                                                }
+                                              }
+
+                                              // Rotation
+                                              if (details.rotation != 0.0) {
+                                                e.angle = _initialRotation + details.rotation;
+                                              }
+                                            });
+                                          }
+                                        },
+                                        onScaleEnd: (details) {
+                                          setState(() { _snapV = false; _snapH = false; });
                                         },
                                         child: Transform(
                                           transform: matrix, alignment: Alignment.center,
@@ -810,7 +863,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                       clipBehavior: Clip.none,
                                                       children: [
                                                         Container(padding: const EdgeInsets.all(5), decoration: BoxDecoration(border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5), color: Colors.purple.withOpacity(0.05)), child: Opacity(opacity: e.opacity, child: contentWidget)),
-                                                        const Positioned(top: -15, left: 0, right: 0, child: Center(child: CircleAvatar(radius: 12, backgroundColor: Colors.white, child: Icon(Icons.refresh, size: 14, color: Colors.black)))),
+                                                        const Positioned(top: -15, left: 0, right: 0, child: Center(child: CircleAvatar(radius: 12, backgroundColor: Colors.white, child: Icon(Icons.touch_app, size: 14, color: Colors.black)))), // Changed icon to touch
                                                         
                                                         Positioned(right: -15, top: 0, bottom: 0, child: GestureDetector(onPanUpdate: (d) { setState(() { double w = currentWidth + d.delta.dx; if (w > 50) e.width = w; }); }, child: Container(width: 30, color: Colors.transparent, alignment: Alignment.center, child: Container(width: 8, height: 25, decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)))))),
                                                         Positioned(left: -15, top: 0, bottom: 0, child: GestureDetector(onPanUpdate: (d) { setState(() { double newW = currentWidth - d.delta.dx; if (newW > 50) { e.width = newW; e.x += d.delta.dx; } }); }, child: Container(width: 30, color: Colors.transparent, alignment: Alignment.center, child: Container(width: 8, height: 25, decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)))))),
