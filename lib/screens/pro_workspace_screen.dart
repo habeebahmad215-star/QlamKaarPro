@@ -56,11 +56,38 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   final List<BlendMode> _blendModes = [BlendMode.srcOver, BlendMode.multiply, BlendMode.screen, BlendMode.overlay, BlendMode.darken, BlendMode.colorBurn];
 
   final Map<String, List<String>> _urduPoetryLibrary = {
-    'اسلامی (Islamic)': ['بے شک اللہ صبر کرنے والوں کے ساتھ ہے۔', 'جو اللہ کا ہو جاتا ہے، اللہ اس کا ہو جاتا ہے۔', 'نماز تمام بیماریوں کی شفا ہے۔', 'حسبنا اللہ ونعم الوکیل\n(ہمیں اللہ ہی کافی ہے اور وہی سب سے بہتر کارساز ہے)', 'اے اللہ! ہمارے دلوں کو اپنے دین پر ثابت قدم رکھ۔', 'قرآن وہ کتاب ہے جو اندھیروں سے نکال کر روشنی کی طرف لاتی ہے۔', 'تمہارا بہترین دوست وہ ہے جو تمہیں اللہ کی یاد دلائے۔'],
-    'اقوال (Quotes)': ['وقت وہ واحد سکہ ہے جو آپ کی زندگی بناتا ہے۔', 'خاموشی سب سے بہترین جواب ہے اس کے لیے جو آپ کے الفاظ کی قدر نہ کرے۔', 'علم ایک ایسا خزانہ ہے جسے کوئی چوری نہیں کر سکتا۔', 'زندگی میں کبھی ہار نہ مانو، کیونکہ گچھے کی آخری چابی بھی تالا کھول سکتی ہے۔', 'اچھے اخلاق وہ واحد خوبصورتی ہے جو کبھی ختم نہیں ہوتی۔'],
-    'علامہ اقبال (Allama Iqbal)': ['ہزاروں سال نرگس اپنی بے نوری پہ روتی ہے\nبڑی مشکل سے ہوتا ہے چمن میں دیدہ ور پیدا', 'عمل سے زندگی بنتی ہے جنت بھی جہنم بھی\nیہ خاکی اپنی فطرت میں نہ نوری ہے نہ ناری ہے', 'ستاروں سے آگے جہاں اور بھی ہیں\nابھی عشق کے امتحاں اور بھی ہیں', 'خودی کو کر بلند اتنا کہ ہر تقدیر سے پہلے\nخدا بندے سے خود پوچھے بتا تیری رضا کیا ہے'],
-    'محبت (Love)': ['دل دھڑکنے کا سبب یاد آیا\nوہ تری یاد تھی اب یاد آیا', 'تمہارے بعد کسی اور کو چاہا نہ گیا\nیہ وہ سچ ہے جو کبھی ہم سے چھپایا نہ گیا', 'محبت میں نہیں ہے شرطِ ملنا اور بچھڑ جانا\nمحبت تو بس اک احساس ہے جو دل میں رہتا ہے'],
-    'اداس (Sad)': ['ہم نے سینے سے لگایا دل نہ اپنا بن سکا\nمسکراہٹ کو ترستے ہی رہے روتے رہے', 'دل کے ٹوٹنے کی کوئی آواز نہیں ہوتی\nبس ایک خاموشی ہوتی ہے جو عمر بھر رلاتی ہے', 'تجھ سے بچھڑ کر ہم بھی کہاں پہلے جیسے رہے\nبس سانسیں چلتی ہیں اور زندگی کٹ رہی ہے'],
+    'اسلامی (Islamic)': [
+      'بے شک اللہ صبر کرنے والوں کے ساتھ ہے۔',
+      'جو اللہ کا ہو جاتا ہے، اللہ اس کا ہو جاتا ہے۔',
+      'نماز تمام بیماریوں کی شفا ہے۔',
+      'حسبنا اللہ ونعم الوکیل\n(ہمیں اللہ ہی کافی ہے اور وہی سب سے بہتر کارساز ہے)',
+      'اے اللہ! ہمارے دلوں کو اپنے دین پر ثابت قدم رکھ۔',
+      'قرآن وہ کتاب ہے جو اندھیروں سے نکال کر روشنی کی طرف لاتی ہے۔',
+      'تمہارا بہترین دوست وہ ہے جو تمہیں اللہ کی یاد دلائے۔',
+    ],
+    'اقوال (Quotes)': [
+      'وقت وہ واحد سکہ ہے جو آپ کی زندگی بناتا ہے۔',
+      'خاموشی سب سے بہترین جواب ہے اس کے لیے جو آپ کے الفاظ کی قدر نہ کرے۔',
+      'علم ایک ایسا خزانہ ہے جسے کوئی چوری نہیں کر سکتا۔',
+      'زندگی میں کبھی ہار نہ مانو، کیونکہ گچھے کی آخری چابی بھی تالا کھول سکتی ہے۔',
+      'اچھے اخلاق وہ واحد خوبصورتی ہے جو کبھی ختم نہیں ہوتی۔',
+    ],
+    'علامہ اقبال (Allama Iqbal)': [
+      'ہزاروں سال نرگس اپنی بے نوری پہ روتی ہے\nبڑی مشکل سے ہوتا ہے چمن میں دیدہ ور پیدا',
+      'عمل سے زندگی بنتی ہے جنت بھی جہنم بھی\nیہ خاکی اپنی فطرت میں نہ نوری ہے نہ ناری ہے',
+      'ستاروں سے آگے جہاں اور بھی ہیں\nابھی عشق کے امتحاں اور بھی ہیں',
+      'خودی کو کر بلند اتنا کہ ہر تقدیر سے پہلے\nخدا بندے سے خود پوچھے بتا تیری رضا کیا ہے',
+    ],
+    'محبت (Love)': [
+      'دل دھڑکنے کا سبب یاد آیا\nوہ تری یاد تھی اب یاد آیا',
+      'تمہارے بعد کسی اور کو چاہا نہ گیا\nیہ وہ سچ ہے جو کبھی ہم سے چھپایا نہ گیا',
+      'محبت میں نہیں ہے شرطِ ملنا اور بچھڑ جانا\nمحبت تو بس اک احساس ہے جو دل میں رہتا ہے',
+    ],
+    'اداس (Sad)': [
+      'ہم نے سینے سے لگایا دل نہ اپنا بن سکا\nمسکراہٹ کو ترستے ہی رہے روتے رہے',
+      'دل کے ٹوٹنے کی کوئی آواز نہیں ہوتی\nبس ایک خاموشی ہوتی ہے جو عمر بھر رلاتی ہے',
+      'تجھ سے بچھڑ کر ہم بھی کہاں پہلے جیسے رہے\nبس سانسیں چلتی ہیں اور زندگی کٹ رہی ہے',
+    ],
   };
 
   @override
@@ -181,7 +208,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     return InkWell(onTap: onTap, child: Column(children: [Icon(icon, color: const Color(0xFF8B5CF6)), const SizedBox(height: 4), Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87))])); 
   }
 
-  // 🔥 NAYA FEATURE: TABLE EDITOR MODAL 🔥
+  // 🔥 NAYA FEATURE: TABLE EDITOR MODAL (FIXED UI & RTL) 🔥
   void _showTableEditor(DesignElement sel) {
     showModalBottomSheet(
       context: context, backgroundColor: Colors.white, isScrollControlled: true,
@@ -199,11 +226,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
                   ]),
                   const SizedBox(height: 10),
+                  // 🔥 FIX 1: Double ++ aur -- hata diye hain
                   Wrap(spacing: 10, runSpacing: 10, alignment: WrapAlignment.center, children: [
-                    ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)), icon: const Icon(Icons.add, color: Colors.white, size: 16), label: const Text('+ Row', style: TextStyle(color: Colors.white)), onPressed: () { saveState(); setModalState(() { sel.tableCells!.add(List.generate(sel.tableCells![0].length, (i) => '')); }); setState((){}); }),
-                    ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.blue), icon: const Icon(Icons.add, color: Colors.white, size: 16), label: const Text('+ Col', style: TextStyle(color: Colors.white)), onPressed: () { saveState(); setModalState(() { for (var row in sel.tableCells!) { row.add(''); } }); setState((){}); }),
-                    OutlinedButton.icon(icon: const Icon(Icons.remove, size: 16, color: Colors.red), label: const Text('- Row', style: TextStyle(color: Colors.red)), onPressed: () { if (sel.tableCells!.length > 1) { saveState(); setModalState(() { sel.tableCells!.removeLast(); }); setState((){}); } }),
-                    OutlinedButton.icon(icon: const Icon(Icons.remove, size: 16, color: Colors.red), label: const Text('- Col', style: TextStyle(color: Colors.red)), onPressed: () { if (sel.tableCells![0].length > 1) { saveState(); setModalState(() { for (var row in sel.tableCells!) { row.removeLast(); } }); setState((){}); } }),
+                    ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)), icon: const Icon(Icons.add, color: Colors.white, size: 16), label: const Text('Row', style: TextStyle(color: Colors.white)), onPressed: () { saveState(); setModalState(() { sel.tableCells!.add(List.generate(sel.tableCells![0].length, (i) => '')); }); setState((){}); }),
+                    ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.blue), icon: const Icon(Icons.add, color: Colors.white, size: 16), label: const Text('Col', style: TextStyle(color: Colors.white)), onPressed: () { saveState(); setModalState(() { for (var row in sel.tableCells!) { row.add(''); } }); setState((){}); }),
+                    OutlinedButton.icon(icon: const Icon(Icons.remove, size: 16, color: Colors.red), label: const Text('Row', style: TextStyle(color: Colors.red)), onPressed: () { if (sel.tableCells!.length > 1) { saveState(); setModalState(() { sel.tableCells!.removeLast(); }); setState((){}); } }),
+                    OutlinedButton.icon(icon: const Icon(Icons.remove, size: 16, color: Colors.red), label: const Text('Col', style: TextStyle(color: Colors.red)), onPressed: () { if (sel.tableCells![0].length > 1) { saveState(); setModalState(() { for (var row in sel.tableCells!) { row.removeLast(); } }); setState((){}); } }),
                   ]),
                   const Divider(),
                   const Text('خانے میں ٹائپ کریں', style: TextStyle(color: Colors.grey, fontSize: 10)),
@@ -211,28 +239,42 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: SingleChildScrollView(
-                        child: Table(
-                          border: TableBorder.all(color: Colors.grey.shade400),
-                          defaultColumnWidth: const IntrinsicColumnWidth(),
-                          children: List.generate(sel.tableCells!.length, (r) {
-                            return TableRow(
-                              children: List.generate(sel.tableCells![r].length, (c) {
-                                return Container(
-                                  width: 120, padding: const EdgeInsets.all(4),
-                                  child: TextField(
-                                    controller: TextEditingController(text: sel.tableCells![r][c])..selection = TextSelection.collapsed(offset: sel.tableCells![r][c].length),
-                                    onChanged: (val) { sel.tableCells![r][c] = val; setState((){}); },
-                                    textDirection: TextDirection.rtl, textAlign: TextAlign.center,
-                                    style: const TextStyle(fontFamily: 'JameelNoori', fontSize: 18),
-                                    decoration: const InputDecoration(border: InputBorder.none, isDense: true, hintText: '...'),
-                                  )
-                                );
-                              })
-                            );
-                          })
+                        // 🔥 FIX 2: Table ab Right-To-Left (Urdu style) render hogi
+                        child: Directionality(
+                          textDirection: TextDirection.rtl,
+                          child: Table(
+                            border: TableBorder.all(color: Colors.grey.shade400),
+                            defaultColumnWidth: const IntrinsicColumnWidth(),
+                            children: List.generate(sel.tableCells!.length, (r) {
+                              return TableRow(
+                                children: List.generate(sel.tableCells![r].length, (c) {
+                                  return Container(
+                                    width: 120, padding: const EdgeInsets.all(4),
+                                    child: TextField(
+                                      controller: TextEditingController(text: sel.tableCells![r][c])..selection = TextSelection.collapsed(offset: sel.tableCells![r][c].length),
+                                      onChanged: (val) { sel.tableCells![r][c] = val; setState((){}); },
+                                      textDirection: TextDirection.rtl, textAlign: TextAlign.center,
+                                      style: const TextStyle(fontFamily: 'JameelNoori', fontSize: 18),
+                                      decoration: const InputDecoration(border: InputBorder.none, isDense: true, hintText: '...'),
+                                    )
+                                  );
+                                })
+                              );
+                            })
+                          )
                         )
                       )
                     )
+                  ),
+                  const SizedBox(height: 10),
+                  // 🔥 FIX 3: Save karne ke liye "Done" button add kar diya hai
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Done (مکمل کریں)', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                    ),
                   )
                 ]
               )
@@ -243,7 +285,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // 🔥 NAYA FEATURE: ADD TABLE LOGIC 🔥
   void _addNewTable() {
     saveState();
     var newEl = DesignElement(
@@ -255,9 +296,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       textColor: Colors.black, // Text Color
       fontSize: 20.0,
       tableCells: [
-        ['نمبر', 'نام', 'حاصل کردہ نمبر'],
-        ['1', 'علی', '85'],
-        ['2', 'عمر', '90'],
+        ['نمبر شمار', 'نام طالب علم', 'حاصل کردہ نمبر'],
+        ['1', 'محمد علی', '85'],
+        ['2', 'عمر فاروق', '90'],
       ]
     );
     setState(() {
@@ -274,7 +315,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       _buildGridItem(Icons.gradient, 'Backgrounds', Colors.indigo.shade100, Colors.indigo, () { Navigator.pop(context); _showCanvasBgGradientModal(); }), 
       _buildGridItem(Icons.folder, 'My Folder', Colors.teal.shade100, Colors.teal, () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const MyFolderScreen())); }), 
       _buildGridItem(Icons.text_fields, 'Add Text', Colors.orange.shade100, Colors.orange, () { Navigator.pop(context); _showTextComposerDialog(); }), 
-      // 🔥 NAYA FEATURE: TABLE BUTTON ADDED HERE 🔥
       _buildGridItem(Icons.table_chart, 'Table', Colors.cyan.shade100, Colors.cyan.shade700, () { Navigator.pop(context); _addNewTable(); }), 
       _buildGridItem(Icons.border_outer, 'Borders', Colors.amber.shade100, Colors.amber.shade800, () => showGenericStockModal('Borders', 'royal_islamic', Icons.border_outer)), 
       _buildGridItem(Icons.category, 'Shapes', Colors.pink.shade100, Colors.pink, () => showGenericStockModal('Shapes', 'shape_rect', Icons.category))
@@ -343,7 +383,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void _showTextBgPickerModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 450, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Text Background', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const Divider(), ListTile(leading: const Icon(Icons.block), title: const Text('Remove Background'), onTap: () { saveState(); setState(() { sel.textBgColor = null; }); Navigator.pop(context); }), Expanded(child: GridView.builder(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 12, mainAxisSpacing: 12), itemCount: _proColorPalette.length, itemBuilder: (context, index) { Color c = _proColorPalette[index]; bool isSelected = sel.textBgColor?.value == c.value; return GestureDetector(onTap: () { saveState(); setState(() { sel.textBgColor = c; }); setModalState((){}); }, child: Container(decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300, width: 1.5)), child: isSelected ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white, size: 20) : null)); }))])); }); }); }
   void _showGradientPickerModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 550, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Gradient Tool (شیڈز)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const Divider(), Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Make Your Own (اپنی مرضی کا شیڈ بنائیں):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)), const SizedBox(height: 10), Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [InkWell(onTap: () => _pickCustomGradColor(sel, 1, setModalState), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: sel.customGradColor1 ?? Colors.red, shape: BoxShape.circle, border: Border.all(color: Colors.black26)))), const Icon(Icons.add), InkWell(onTap: () => _pickCustomGradColor(sel, 2, setModalState), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: sel.customGradColor2 ?? Colors.blue, shape: BoxShape.circle, border: Border.all(color: Colors.black26)))), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)), onPressed: () { if(sel.customGradColor1 != null && sel.customGradColor2 != null) { saveState(); setState(() => sel.textGradient = [sel.customGradColor1!, sel.customGradColor2!]); setModalState((){}); Navigator.pop(context); } }, child: const Text('Apply', style: TextStyle(color: Colors.white)))])])), const SizedBox(height: 10), ListTile(leading: const Icon(Icons.block), title: const Text('Clear Gradient'), onTap: () { saveState(); setState(() { sel.textGradient = null; }); Navigator.pop(context); }), Expanded(child: GridView.builder(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 15, mainAxisSpacing: 15, childAspectRatio: 2.0), itemCount: _proGradientPalette.length, itemBuilder: (context, index) { List<Color> g = _proGradientPalette[index]; return GestureDetector(onTap: () { saveState(); setState(() { sel.textGradient = g; }); setModalState((){}); Navigator.pop(context); }, child: Container(decoration: BoxDecoration(gradient: LinearGradient(colors: g), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade300, width: 1.5)))); }))])); }); }); }
   
-  // 🔥 FIX: TABLE COLOR PICKER SUPPORT 🔥
   void _showColorPickerModal(DesignElement sel, {bool isTableBorder = false}) { 
     TextEditingController hexCtrl = TextEditingController(); showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { Color currentColor = isTableBorder ? sel.elementColor : (sel.isText || sel.isTable ? sel.textColor : sel.elementColor); return Padding(padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom), child: Container(height: 480, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Color (رنگ منتخب کریں)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), Padding(padding: const EdgeInsets.only(bottom: 10), child: Row(children: [Expanded(child: TextField(controller: hexCtrl, decoration: const InputDecoration(hintText: 'Custom Hex: #FF0000', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 10)))), const SizedBox(width: 10), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), padding: const EdgeInsets.symmetric(vertical: 12)), onPressed: () { String hex = hexCtrl.text.replaceAll('#', ''); if(hex.length == 6) hex = 'FF$hex'; if(hex.length == 8) { saveState(); setState((){ Color c = Color(int.parse('0x$hex')); if(isTableBorder) { sel.elementColor = c; } else if(sel.isText || sel.isTable){ sel.textColor = c; sel.textGradient = null; } else { sel.elementColor = c; } }); setModalState((){}); Navigator.pop(context); } }, child: const Text('Apply', style: TextStyle(color: Colors.white)))])), const Divider(), Expanded(child: GridView.builder(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 12, mainAxisSpacing: 12), itemCount: _proColorPalette.length, itemBuilder: (context, index) { Color c = _proColorPalette[index]; bool isSelected = currentColor.value == c.value; return GestureDetector(onTap: () { saveState(); setState(() { if(isTableBorder) { sel.elementColor = c; } else if (sel.isText || sel.isTable) { sel.textColor = c; sel.textGradient = null; } else { sel.elementColor = c; } }); setModalState((){}); Navigator.pop(context); }, child: Container(decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300, width: 1.5), boxShadow: isSelected ? [BoxShadow(color: c.withOpacity(0.5), blurRadius: 8, spreadRadius: 2)] : null), child: isSelected ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white, size: 20) : null)); }))]))); }); }); 
   }
@@ -664,23 +703,25 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                     double currentWidth = e.width > 50 ? e.width : 280.0; 
                                     double currentHeight = e.height > 20 ? e.height : (e.isShape ? 90 : 150);
 
-                                    // 🔥 NAYA FEATURE: TABLE RENDER LOGIC 🔥
                                     if (e.isTable) {
                                       contentWidget = Container(
                                         width: currentWidth,
                                         decoration: BoxDecoration(color: e.textBgColor, borderRadius: BorderRadius.circular(e.cornerRadius)),
-                                        child: Table(
-                                          border: TableBorder.all(color: e.elementColor, width: e.borderWidth),
-                                          children: e.tableCells!.map((row) {
-                                            return TableRow(
-                                              children: row.map((cell) {
-                                                return Padding(
-                                                  padding: const EdgeInsets.all(8.0),
-                                                  child: Text(cell, textAlign: e.textAlign, textDirection: TextDirection.rtl, style: TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, color: e.textColor, fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal)),
-                                                );
-                                              }).toList()
-                                            );
-                                          }).toList()
+                                        child: Directionality(
+                                          textDirection: TextDirection.rtl, // 🔥 FIX: Canvas par bhi table RTL hogi
+                                          child: Table(
+                                            border: TableBorder.all(color: e.elementColor, width: e.borderWidth),
+                                            children: e.tableCells!.map((row) {
+                                              return TableRow(
+                                                children: row.map((cell) {
+                                                  return Padding(
+                                                    padding: const EdgeInsets.all(8.0),
+                                                    child: Text(cell, textAlign: e.textAlign, textDirection: TextDirection.rtl, style: TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, color: e.textColor, fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal)),
+                                                  );
+                                                }).toList()
+                                              );
+                                            }).toList()
+                                          )
                                         )
                                       );
                                     } 
@@ -770,6 +811,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                         onPanStart: (d) { if(!e.isLocked) saveState(); },
                                         onPanEnd: (d) => setState(() { _snapV = false; _snapH = false; }),
                                         
+                                        // 🔥 FIX: ZABARDASTI CENTER WALA MAGNET REMOVE KAR DIYA 🔥
                                         onPanUpdate: (d) {
                                           if(!e.isLocked) {
                                             setState(() { 
@@ -778,6 +820,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                               double shiftX = d.delta.dx;
                                               double shiftY = d.delta.dy;
                                               
+                                              // Object wahi move hoga jahan ungli jayegi (Koi magnetic jump nahi hoga)
                                               e.x += shiftX; 
                                               e.y += shiftY; 
                                               
@@ -787,9 +830,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                               bool prevSnapV = _snapV;
                                               bool prevSnapH = _snapH;
 
+                                              // Sirf Red Line draw karne ke liye check karega
                                               _snapV = (eCenterX - canvasW/2).abs() < 12;
                                               _snapH = (eCenterY - canvasH/2).abs() < 12;
 
+                                              // Vibration hogi jab line aayegi, par text apni jagah se nahi hilega
                                               if (_snapV && !prevSnapV) HapticFeedback.mediumImpact();
                                               if (_snapH && !prevSnapH) HapticFeedback.mediumImpact();
 
@@ -826,7 +871,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                           child: GestureDetector(
                                                             onPanUpdate: (d) { 
                                                               setState(() { 
-                                                                if (e.isText) {
+                                                                if (e.isText || e.isTable) {
                                                                   double newSize = e.fontSize + (d.delta.dx + d.delta.dy) * 0.5;
                                                                   if (newSize > 10 && newSize < 300) e.fontSize = newSize;
                                                                 } else {
@@ -928,7 +973,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
             child: Row(
               children: [
                 const SizedBox(width: 10),
-                if (sel.isTable) _buildToolBtn(Icons.edit, 'Edit Table', () => _showTableEditor(sel)), // 🔥 NAYA
+                if (sel.isTable) _buildToolBtn(Icons.edit, 'Edit Table', () => _showTableEditor(sel)),
                 if (sel.isText || sel.isTable) _buildToolBtn(Icons.text_fields, 'Text Size', () => showSizeSliderModal(sel)),
                 if (sel.isText) _buildToolBtn(Icons.height, 'Spacing', () => showSpacingModal(sel)),
                 if (sel.isText) _buildToolBtn(Icons.format_color_fill, 'Text BG', () => _showTextBgPickerModal(sel)),
@@ -939,11 +984,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                 if (sel.isText || sel.isTable) _buildToolBtn(Icons.format_align_left, 'Align Text', () => _toggleAlignment(sel)),
                 _buildToolBtn(Icons.center_focus_strong, 'Position', () => _showAlignmentModal(sel)),
                 if (sel.isText) _buildToolBtn(Icons.view_in_ar_outlined, '3D Block', () => _show3DBlockModal(sel)),
-                if (sel.isTable) _buildToolBtn(Icons.format_color_fill, 'Table BG', () => _showTextBgPickerModal(sel)), // 🔥 NAYA
+                if (sel.isTable) _buildToolBtn(Icons.format_color_fill, 'Table BG', () => _showTextBgPickerModal(sel)),
                 if (sel.imageBytes != null) _buildToolBtn(Icons.format_paint, 'Tint Color', () { saveState(); setState(() => sel.isTinted = !sel.isTinted); if(sel.isTinted) _showColorPickerModal(sel); }),
                 if (sel.imageBytes != null) _buildToolBtn(Icons.auto_awesome_motion, 'Blend', () => _showBlendModeModal(sel)),
                 if (!sel.isBorder && !sel.isTable) _buildToolBtn(Icons.border_color, 'Stroke', () => _showAdvancedStrokeModal(sel)),
-                if (sel.isTable) _buildToolBtn(Icons.line_weight, 'Border Width', () => _showBorderWidthModal(sel)), // 🔥 NAYA
+                if (sel.isTable) _buildToolBtn(Icons.line_weight, 'Border Width', () => _showBorderWidthModal(sel)),
                 if (!sel.isBorder && !sel.isTable) _buildToolBtn(Icons.brightness_6, 'Shadow', () => _showAdvancedShadowModal(sel)),
                 if (!sel.isText && !sel.isBorder && !sel.isTable) _buildToolBtn(Icons.rounded_corner, 'Radius', () => _showRadiusModal(sel)),
                 if (sel.imageBytes != null && !sel.isTinted) _buildToolBtn(Icons.photo_filter, 'Filters', () => _showImageFiltersModal(sel)),
@@ -969,7 +1014,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
               if (sel.isText) _buildToolBtn(Icons.edit, 'Edit', () => _showTextComposerDialog(existingElement: sel)),
               if (sel.isText || sel.isTable) _buildToolBtn(Icons.font_download, 'Font', () => showFontPickerModal(sel)),
               if (sel.isText || sel.isBorder || sel.isShape || sel.isTinted || sel.isTable) _buildToolBtn(Icons.palette, 'Color', () => _showColorPickerModal(sel)),
-              if (sel.isTable) _buildToolBtn(Icons.border_color, 'Border Color', () => _showColorPickerModal(sel, isTableBorder: true)), // 🔥 NAYA
+              if (sel.isTable) _buildToolBtn(Icons.border_color, 'Border Color', () => _showColorPickerModal(sel, isTableBorder: true)),
             ],
           ),
         )
