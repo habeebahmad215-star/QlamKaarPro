@@ -404,6 +404,35 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     }); 
   }
 
+  void _showCurveModal(DesignElement sel) { 
+    showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { 
+      return StatefulBuilder(builder: (context, setModalState) { 
+        return Container(height: 250, padding: const EdgeInsets.all(20), child: Column(children: [
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Curve Text (گولائی)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), 
+          const SizedBox(height: 10), 
+          Row(children: [const Text('Bend:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), Expanded(child: Slider(value: sel.textCurveRadius, min: -150.0, max: 150.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.textCurveRadius = val); setModalState((){}); }))]), 
+          Row(children: [const Text('Spacing:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), Expanded(child: Slider(value: sel.letterSpacing, min: -5.0, max: 20.0, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.letterSpacing = val); setModalState((){}); }))]), 
+          ElevatedButton(onPressed: () { saveState(); setState(() => sel.textCurveRadius = 0.0); setModalState((){}); }, style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade200), child: const Text('Reset Curve', style: TextStyle(color: Colors.black))) 
+        ])); 
+      }); 
+    }); 
+  }
+
+  void _showBlendModeModal(DesignElement sel) { 
+    showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { 
+      return StatefulBuilder(builder: (context, setModalState) { 
+        return Container(height: 350, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Blend Modes (مکس کرنا)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), 
+          const Divider(), 
+          Expanded(child: ListView.builder(itemCount: _blendModes.length, itemBuilder: (context, index) { 
+            String bName = _blendModes[index].toString().replaceAll('BlendMode.', '').toUpperCase(); 
+            return ListTile(title: Text(bName, style: const TextStyle(fontWeight: FontWeight.bold)), trailing: sel.blendModeIndex == index ? const Icon(Icons.check_circle, color: Color(0xFF8B5CF6)) : null, onTap: () { saveState(); setState(() => sel.blendModeIndex = index); Navigator.pop(context); }); 
+          }))
+        ])); 
+      }); 
+    }); 
+  }
+
   Future<void> _importCustomFont() async { try { FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['ttf', 'otf']); if (result != null && result.files.single.path != null) { String filePath = result.files.single.path!; String fontName = result.files.single.name.replaceAll('.ttf', '').replaceAll('.otf', ''); var fontLoader = FontLoader(fontName); fontLoader.addFont(Future.value(ByteData.view(File(filePath).readAsBytesSync().buffer))); await fontLoader.load(); setState(() { if (!customFonts.contains(fontName)) customFonts.add(fontName); }); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Font "$fontName" import ho gaya! 🎉'))); } } catch (e) { debugPrint("Font Import Error: $e"); } }
   void showFontPickerModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 450, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Select Font (فونٹ)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)), onPressed: () async { await _importCustomFont(); setModalState(() {}); }, icon: const Icon(Icons.add, color: Colors.white, size: 18), label: const Text('Add Font', style: TextStyle(color: Colors.white))) ]), const Divider(), Expanded(child: ListView(children: [if (customFonts.isNotEmpty) ...[const Padding(padding: EdgeInsets.all(8.0), child: Text('My Fonts (میرے فونٹس)', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold))), ...customFonts.map((fontName) => ListTile(title: Text(fontName, style: TextStyle(fontFamily: fontName, fontSize: 24)), trailing: sel.fontFamily == fontName ? const Icon(Icons.check_circle, color: Color(0xFF8B5CF6)) : null, onTap: () { saveState(); setState(() => sel.fontFamily = fontName); Navigator.pop(context); })).toList(), const Divider()], const Padding(padding: EdgeInsets.all(8.0), child: Text('Default Fonts (بنیادی فونٹس)', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold))), ...availableFonts.map((fontName) => ListTile(title: Text('اردو فونٹ - $fontName', style: TextStyle(fontFamily: fontName, fontSize: 24)), trailing: sel.fontFamily == fontName ? const Icon(Icons.check_circle, color: Color(0xFF8B5CF6)) : null, onTap: () { saveState(); setState(() => sel.fontFamily = fontName); Navigator.pop(context); })).toList(),])),])); }); }); }
 
@@ -554,7 +583,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
               child: Center(
                 child: InteractiveViewer(
                   transformationController: _transformController,
-                  // 🔥 FIX: Selection ke waqt canvas pan/scale band hoga, element ka scale chalega
                   panEnabled: !_isCanvasLocked && !hasSelection,
                   scaleEnabled: !_isCanvasLocked && !hasSelection, 
                   minScale: 0.2, maxScale: 5.0, 
@@ -746,12 +774,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                             setState(() {
                                               selectedId = e.id;
                                               
-                                              // Translation (Moving)
                                               Offset delta = details.focalPoint - _initialFocalPoint;
                                               e.x = _initialX + delta.dx;
                                               e.y = _initialY + delta.dy;
 
-                                              // Snapping Logic
                                               double snapCenterX = e.x + currentWidth / 2 + 20; 
                                               double snapCenterY = e.y + (e.isText && e.textCurveRadius == 0 ? 100 : currentHeight) / 2 + 15;
                                               
@@ -768,7 +794,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                  e.y += snapShiftY;
                                               }
 
-                                              // Group Elements Movement
                                               if (e.groupId != null) {
                                                 for (var other in elements) {
                                                   if (other.id != e.id && other.groupId == e.groupId && !other.isLocked) {
@@ -781,7 +806,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                 }
                                               }
 
-                                              // Scale (Zooming with 2 fingers)
                                               if (details.scale != 1.0) {
                                                 if (e.isText) {
                                                   double newSize = _initialFontSize * details.scale;
@@ -796,7 +820,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                 }
                                               }
 
-                                              // Rotation (with 2 fingers)
                                               if (details.rotation != 0.0) {
                                                 e.angle = _initialRotation + details.rotation;
                                               }
@@ -819,7 +842,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                       children: [
                                                         Container(padding: const EdgeInsets.all(5), decoration: BoxDecoration(border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5), color: Colors.purple.withOpacity(0.05)), child: Opacity(opacity: e.opacity, child: contentWidget)),
                                                         
-                                                        // 🔥 TOP CENTER: ROTATE HANDLE 🔥
                                                         Positioned(
                                                           top: -15, left: 0, right: 0, 
                                                           child: Center(
@@ -832,16 +854,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                           )
                                                         ),
                                                         
-                                                        // WIDTH STRETCH (RIGHT) - only for images/shapes
                                                         if (!e.isText && !e.isShape) Positioned(right: -15, top: 0, bottom: 0, child: GestureDetector(onPanUpdate: (d) { setState(() { double w = currentWidth + d.delta.dx; if (w > 50) e.width = w; }); }, child: Container(width: 30, color: Colors.transparent, alignment: Alignment.center, child: Container(width: 8, height: 25, decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)))))),
-                                                        
-                                                        // WIDTH STRETCH (LEFT) - only for images/shapes
                                                         if (!e.isText && !e.isShape) Positioned(left: -15, top: 0, bottom: 0, child: GestureDetector(onPanUpdate: (d) { setState(() { double newW = currentWidth - d.delta.dx; if (newW > 50) { e.width = newW; e.x += d.delta.dx; } }); }, child: Container(width: 30, color: Colors.transparent, alignment: Alignment.center, child: Container(width: 8, height: 25, decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)))))),
+                                                        if (!e.isText) Positioned(bottom: -15, left: 0, right: 0, child: GestureDetector(onPanUpdate: (d) { setState(() { double h = currentHeight + d.delta.dy; if (h > 20) e.height = h; }); }, child: Container(height: 30, color: Colors.transparent, alignment: Alignment.center, child: Container(height: 8, width: 25, decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)))))),
                                                         
-                                                        // HEIGHT STRETCH (BOTTOM) - only for images/shapes
-                                                        if (!e.isText && !e.isShape) Positioned(bottom: -15, left: 0, right: 0, child: GestureDetector(onPanUpdate: (d) { setState(() { double h = currentHeight + d.delta.dy; if (h > 20) e.height = h; }); }, child: Container(height: 30, color: Colors.transparent, alignment: Alignment.center, child: Container(height: 8, width: 25, decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)))))),
-                                                        
-                                                        // 🔥 BOTTOM RIGHT: RESIZE HANDLE (For Text & Images) 🔥
                                                         Positioned(
                                                           bottom: -15, right: -15, 
                                                           child: GestureDetector(
