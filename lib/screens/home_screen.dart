@@ -5,6 +5,7 @@ import 'dart:convert';
 import '../models/design_models.dart';
 import 'pro_workspace_screen.dart';
 import 'my_folder_screen.dart';
+import 'templates_screen.dart'; // 🔥 NAYA: Templates screen ki file yahan jodi gayi hai 🔥
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -99,7 +100,6 @@ class _HomeScreenState extends State<HomeScreen> {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Yeh feature jald aa raha hai! (Phase 2)', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF8B5CF6)));
   }
 
-  // 🔥 NAYA: PREMIUM SIDE DRAWER (MENU) 🔥
   Widget _buildDrawer() {
     return Drawer(
       child: Container(
@@ -146,11 +146,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), 
-      drawer: _buildDrawer(), // 🔥 Drawer yahan connect kiya hai 🔥
+      drawer: _buildDrawer(),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        // Builder zaroori hai Drawer open karne ke liye
         leading: Builder(
           builder: (context) {
             return IconButton(
@@ -254,7 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 35),
 
-              // 2. WHITE SPACE OPTIMIZED GRID (🔥 SMART ACTIONS ADDED 🔥)
+              // 2. WHITE SPACE OPTIMIZED GRID
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -264,33 +263,32 @@ class _HomeScreenState extends State<HomeScreen> {
                 childAspectRatio: 1.05, 
                 children: [
                   _buildPremiumGridTool('New Design', Icons.add_circle_rounded, const Color(0xFF3B82F6), const Color(0xFFEFF6FF), () => _showNewDesignModal(context)),
-                  _buildPremiumGridTool('Templates', Icons.image_rounded, const Color(0xFF8B5CF6), const Color(0xFFF5F3FF), _showComingSoon),
                   
-                  // 🔥 Smart Action: Direct Text Editor 🔥
+                  // 🔥 NAYA: Templates button ab TemplatesScreen open karega 🔥
+                  _buildPremiumGridTool('Templates', Icons.image_rounded, const Color(0xFF8B5CF6), const Color(0xFFF5F3FF), () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const TemplatesScreen()));
+                  }),
+                  
                   _buildPremiumGridTool('Text Editor', Icons.title_rounded, const Color(0xFF10B981), const Color(0xFFECFDF5), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'text_editor'))).then((_) => _loadRecentProjects());
                   }),
                   
                   _buildPremiumGridTool('Urdu Fonts', Icons.language_rounded, const Color(0xFFEC4899), const Color(0xFFFDF2F8), _showComingSoon),
                   
-                  // 🔥 Smart Action: Direct Elements/Shapes 🔥
                   _buildPremiumGridTool('Elements', Icons.category_rounded, const Color(0xFFF59E0B), const Color(0xFFFFFBEB), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'elements'))).then((_) => _loadRecentProjects());
                   }),
                   
-                  // 🔥 Smart Action: Direct Image Gallery 🔥
                   _buildPremiumGridTool('Images', Icons.photo_library_rounded, const Color(0xFF0EA5E9), const Color(0xFFF0F9FF), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'images'))).then((_) => _loadRecentProjects());
                   }),
                   
-                  // 🔥 Smart Action: Direct Backgrounds/Colors 🔥
                   _buildPremiumGridTool('Backgrounds', Icons.wallpaper_rounded, const Color(0xFFF43F5E), const Color(0xFFFFF1F2), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'backgrounds'))).then((_) => _loadRecentProjects());
                   }),
                   
                   _buildPremiumGridTool('Stickers', Icons.emoji_emotions_rounded, const Color(0xFFD946EF), const Color(0xFFFDF4FF), _showComingSoon),
                   
-                  // 🔥 Smart Action: Direct Layers Panel 🔥
                   _buildPremiumGridTool('Layers', Icons.layers_rounded, const Color(0xFF06B6D4), const Color(0xFFECFEFF), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'layers'))).then((_) => _loadRecentProjects());
                   }),
