@@ -102,7 +102,6 @@ class _HomeScreenState extends State<HomeScreen> {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Yeh feature jald aa raha hai! (Phase 2)', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF8B5CF6)));
   }
 
-  // 🔥 Yahan aapka WhatsApp number add kar diya gaya hai 🔥
   void _showHelpBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -142,12 +141,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 onPressed: () async {
                   Navigator.pop(context);
-                  // 👇 Aapka original WhatsApp number code mein embed ho gaya hai 👇
                   final Uri whatsappUrl = Uri.parse("https://wa.me/918948507401?text=Hello Qalamkaar Pro! Mujhe aapki app me ek madad chahiye.");
                   
-                  if (await canLaunchUrl(whatsappUrl)) {
+                  // 🔥 NAYA FIX: Direct launch karega bina security check ke 🔥
+                  try {
                     await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
-                  } else {
+                  } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('WhatsApp open nahi ho saka!', style: TextStyle(color: Colors.white)), backgroundColor: Colors.red));
                   }
                 },
