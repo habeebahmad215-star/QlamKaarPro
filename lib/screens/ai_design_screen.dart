@@ -121,19 +121,27 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
       ),
       body: Stack(
         children: [
-          // Background Glow Effects
+          // Background Glow Effects (FIXED: filter ki jagah blurRadius use kiya hai)
           Positioned(
             top: -100, right: -50,
             child: Container(
               width: 250, height: 250,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFF6366F1).withOpacity(0.15), filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80)),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle, 
+                color: const Color(0xFF6366F1).withOpacity(0.1), 
+                boxShadow: [BoxShadow(color: const Color(0xFF6366F1).withOpacity(0.3), blurRadius: 100)]
+              ),
             ),
           ),
           Positioned(
             bottom: -50, left: -50,
             child: Container(
               width: 300, height: 300,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFD946EF).withOpacity(0.15), filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80)),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle, 
+                color: const Color(0xFFD946EF).withOpacity(0.1), 
+                boxShadow: [BoxShadow(color: const Color(0xFFD946EF).withOpacity(0.3), blurRadius: 100)]
+              ),
             ),
           ),
           
