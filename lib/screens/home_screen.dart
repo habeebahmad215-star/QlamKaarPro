@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:url_launcher/url_launcher.dart'; 
 
 import '../models/design_models.dart';
 import 'pro_workspace_screen.dart';
 import 'my_folder_screen.dart';
 import 'templates_screen.dart';
-import 'ai_design_screen.dart'; // 🔥 NAYA: AI Screen file yahan jodi gayi hai 🔥
+import 'ai_design_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -101,6 +102,66 @@ class _HomeScreenState extends State<HomeScreen> {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Yeh feature jald aa raha hai! (Phase 2)', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF8B5CF6)));
   }
 
+  // 🔥 Yahan aapka WhatsApp number add kar diya gaya hai 🔥
+  void _showHelpBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10))),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16), 
+              decoration: BoxDecoration(color: const Color(0xFF25D366).withOpacity(0.1), shape: BoxShape.circle), 
+              child: const Icon(Icons.support_agent_rounded, color: Color(0xFF25D366), size: 40)
+            ),
+            const SizedBox(height: 15),
+            const Text('Need Help? (مدد چاہیے؟)', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 10),
+            const Text(
+              'ہماری ٹیم آپ کی مدد کے لیے واٹس ایپ پر موجود ہے۔ ایپ استعمال کرنے میں کوئی مسئلہ ہو تو ابھی میسج کریں!', 
+              textAlign: TextAlign.center, 
+              textDirection: TextDirection.rtl,
+              style: TextStyle(color: Colors.grey, fontFamily: 'JameelNoori', fontSize: 16, height: 1.5)
+            ),
+            const SizedBox(height: 25),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF25D366), 
+                  padding: const EdgeInsets.symmetric(vertical: 14), 
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 5,
+                  shadowColor: const Color(0xFF25D366).withOpacity(0.4)
+                ),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  // 👇 Aapka original WhatsApp number code mein embed ho gaya hai 👇
+                  final Uri whatsappUrl = Uri.parse("https://wa.me/918948507401?text=Hello Qalamkaar Pro! Mujhe aapki app me ek madad chahiye.");
+                  
+                  if (await canLaunchUrl(whatsappUrl)) {
+                    await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('WhatsApp open nahi ho saka!', style: TextStyle(color: Colors.white)), backgroundColor: Colors.red));
+                  }
+                },
+                icon: const Icon(Icons.chat_rounded, color: Colors.white),
+                label: const Text('Chat on WhatsApp', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildDrawer() {
     return Drawer(
       child: Container(
@@ -124,6 +185,10 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (context) => const MyFolderScreen())).then((_) => _loadRecentProjects());
             }),
+            _buildDrawerItem(Icons.support_agent_rounded, 'Help & Support', () {
+              Navigator.pop(context);
+              _showHelpBottomSheet(context);
+            }, iconColor: const Color(0xFF25D366)),
             _buildDrawerItem(Icons.star_rounded, 'Rate App', _showComingSoon, iconColor: const Color(0xFFD4AF37)),
             _buildDrawerItem(Icons.share_rounded, 'Share with Friends', _showComingSoon),
             const Padding(padding: EdgeInsets.symmetric(horizontal: 20), child: Divider()),
@@ -262,42 +327,30 @@ class _HomeScreenState extends State<HomeScreen> {
                 childAspectRatio: 1.05, 
                 children: [
                   _buildPremiumGridTool('New Design', Icons.add_circle_rounded, const Color(0xFF3B82F6), const Color(0xFFEFF6FF), () => _showNewDesignModal(context)),
-                  
                   _buildPremiumGridTool('Templates', Icons.image_rounded, const Color(0xFF8B5CF6), const Color(0xFFF5F3FF), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const TemplatesScreen()));
                   }),
-                  
                   _buildPremiumGridTool('Text Editor', Icons.title_rounded, const Color(0xFF10B981), const Color(0xFFECFDF5), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'text_editor'))).then((_) => _loadRecentProjects());
                   }),
-                  
                   _buildPremiumGridTool('Urdu Fonts', Icons.language_rounded, const Color(0xFFEC4899), const Color(0xFFFDF2F8), _showComingSoon),
-                  
                   _buildPremiumGridTool('Elements', Icons.category_rounded, const Color(0xFFF59E0B), const Color(0xFFFFFBEB), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'elements'))).then((_) => _loadRecentProjects());
                   }),
-                  
                   _buildPremiumGridTool('Images', Icons.photo_library_rounded, const Color(0xFF0EA5E9), const Color(0xFFF0F9FF), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'images'))).then((_) => _loadRecentProjects());
                   }),
-                  
                   _buildPremiumGridTool('Backgrounds', Icons.wallpaper_rounded, const Color(0xFFF43F5E), const Color(0xFFFFF1F2), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'backgrounds'))).then((_) => _loadRecentProjects());
                   }),
-                  
                   _buildPremiumGridTool('Stickers', Icons.emoji_emotions_rounded, const Color(0xFFD946EF), const Color(0xFFFDF4FF), _showComingSoon),
-                  
                   _buildPremiumGridTool('Layers', Icons.layers_rounded, const Color(0xFF06B6D4), const Color(0xFFECFEFF), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'layers'))).then((_) => _loadRecentProjects());
                   }),
-                  
                   _buildPremiumGridTool('Tools', Icons.build_rounded, const Color(0xFF64748B), const Color(0xFFF8FAFC), _showComingSoon),
-                  
-                  // 🔥 NAYA: AI Design button ab AI Design Screen open karega 🔥
                   _buildPremiumGridTool('AI Design', Icons.smart_toy_rounded, const Color(0xFF6366F1), const Color(0xFFEEF2FF), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const AiDesignScreen()));
                   }, isNew: true),
-                  
                   _buildPremiumGridTool('Pro Effects', Icons.auto_fix_high_rounded, const Color(0xFF14B8A6), const Color(0xFFF0FDFA), _showComingSoon),
                 ],
               ),
@@ -416,7 +469,9 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildBottomNavItem(Icons.home_filled, 'Home', true),
               _buildBottomNavItem(Icons.folder_rounded, 'Projects', false, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const MyFolderScreen())).then((_) => _loadRecentProjects())),
               const SizedBox(width: 45), 
-              _buildBottomNavItem(Icons.school_rounded, 'Tutorials', false),
+              
+              _buildBottomNavItem(Icons.support_agent_rounded, 'Help', false, onTap: () => _showHelpBottomSheet(context)),
+              
               _buildBottomNavItem(Icons.person_rounded, 'Profile', false),
             ],
           ),
