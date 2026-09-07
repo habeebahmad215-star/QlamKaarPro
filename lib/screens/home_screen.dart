@@ -96,17 +96,69 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showComingSoon() {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Yeh feature jald aa raha hai!', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF8B5CF6)));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Yeh feature jald aa raha hai! (Phase 2)', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF8B5CF6)));
+  }
+
+  // 🔥 NAYA: PREMIUM SIDE DRAWER (MENU) 🔥
+  Widget _buildDrawer() {
+    return Drawer(
+      child: Container(
+        color: const Color(0xFFF8FAFC),
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            UserAccountsDrawerHeader(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF8B5CF6)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+              ),
+              accountName: const Text('قلمکار پُرو', style: TextStyle(fontFamily: 'JameelNoori', fontSize: 30, color: Colors.white, height: 1.0)),
+              accountEmail: const Text('Urdu Designer App', style: TextStyle(fontSize: 10, letterSpacing: 1.5, fontWeight: FontWeight.bold, color: Colors.white70)),
+              currentAccountPicture: Container(
+                decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+                child: const Icon(Icons.history_edu, color: Color(0xFFD4AF37), size: 45),
+              ),
+            ),
+            _buildDrawerItem(Icons.home_filled, 'Home Screen', () => Navigator.pop(context)),
+            _buildDrawerItem(Icons.folder_rounded, 'My Projects', () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const MyFolderScreen())).then((_) => _loadRecentProjects());
+            }),
+            _buildDrawerItem(Icons.star_rounded, 'Rate App', _showComingSoon, iconColor: const Color(0xFFD4AF37)),
+            _buildDrawerItem(Icons.share_rounded, 'Share with Friends', _showComingSoon),
+            const Padding(padding: EdgeInsets.symmetric(horizontal: 20), child: Divider()),
+            _buildDrawerItem(Icons.info_outline_rounded, 'About Us', _showComingSoon, isGrey: true),
+            _buildDrawerItem(Icons.privacy_tip_outlined, 'Privacy Policy', _showComingSoon, isGrey: true),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem(IconData icon, String title, VoidCallback onTap, {Color? iconColor, bool isGrey = false}) {
+    return ListTile(
+      leading: Icon(icon, color: iconColor ?? (isGrey ? Colors.grey : const Color(0xFF6366F1))),
+      title: Text(title, style: TextStyle(fontWeight: isGrey ? FontWeight.normal : FontWeight.bold, color: isGrey ? Colors.grey.shade700 : const Color(0xFF1E293B))),
+      onTap: onTap,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), 
+      drawer: _buildDrawer(), // 🔥 Drawer yahan connect kiya hai 🔥
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.menu_rounded, color: Color(0xFF1E293B), size: 28), onPressed: _showComingSoon),
+        // Builder zaroori hai Drawer open karne ke liye
+        leading: Builder(
+          builder: (context) {
+            return IconButton(
+              icon: const Icon(Icons.menu_rounded, color: Color(0xFF1E293B), size: 28), 
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            );
+          },
+        ),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
@@ -138,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 🌟 1. SUPER CLEAN HERO BANNER WITH WHITE URDU BRANDING
+              // 1. HERO BANNER
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -149,7 +201,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    // 🔥 KHOOBSURAT URDU TEXT BRANDING (Right Side) 🔥
                     Positioned(
                       top: 24,
                       right: 24,
@@ -157,17 +208,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         'قلمکار پُرو',
                         style: TextStyle(
                           fontFamily: 'JameelNoori',
-                          fontSize: 38, // Bada aur wazeh size
-                          color: Colors.white, // Pure white jaisa aapne kaha
+                          fontSize: 38, 
+                          color: Colors.white, 
                           height: 1.0,
                           shadows: [
-                            Shadow(color: Colors.black.withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 4)) // Halka sa shadow ubharne ke liye
+                            Shadow(color: Colors.black.withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 4))
                           ]
                         ),
                       ),
                     ),
-                    
-                    // Main Content (Left Side)
                     Padding(
                       padding: const EdgeInsets.all(24),
                       child: Column(
@@ -205,7 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 35),
 
-              // 🌟 2. WHITE SPACE OPTIMIZED GRID
+              // 2. WHITE SPACE OPTIMIZED GRID (🔥 SMART ACTIONS ADDED 🔥)
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -216,15 +265,36 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   _buildPremiumGridTool('New Design', Icons.add_circle_rounded, const Color(0xFF3B82F6), const Color(0xFFEFF6FF), () => _showNewDesignModal(context)),
                   _buildPremiumGridTool('Templates', Icons.image_rounded, const Color(0xFF8B5CF6), const Color(0xFFF5F3FF), _showComingSoon),
-                  _buildPremiumGridTool('Text Editor', Icons.title_rounded, const Color(0xFF10B981), const Color(0xFFECFDF5), _showComingSoon),
+                  
+                  // 🔥 Smart Action: Direct Text Editor 🔥
+                  _buildPremiumGridTool('Text Editor', Icons.title_rounded, const Color(0xFF10B981), const Color(0xFFECFDF5), () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'text_editor'))).then((_) => _loadRecentProjects());
+                  }),
+                  
                   _buildPremiumGridTool('Urdu Fonts', Icons.language_rounded, const Color(0xFFEC4899), const Color(0xFFFDF2F8), _showComingSoon),
                   
-                  _buildPremiumGridTool('Elements', Icons.category_rounded, const Color(0xFFF59E0B), const Color(0xFFFFFBEB), _showComingSoon),
-                  _buildPremiumGridTool('Images', Icons.photo_library_rounded, const Color(0xFF0EA5E9), const Color(0xFFF0F9FF), _showComingSoon),
-                  _buildPremiumGridTool('Backgrounds', Icons.wallpaper_rounded, const Color(0xFFF43F5E), const Color(0xFFFFF1F2), _showComingSoon),
+                  // 🔥 Smart Action: Direct Elements/Shapes 🔥
+                  _buildPremiumGridTool('Elements', Icons.category_rounded, const Color(0xFFF59E0B), const Color(0xFFFFFBEB), () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'elements'))).then((_) => _loadRecentProjects());
+                  }),
+                  
+                  // 🔥 Smart Action: Direct Image Gallery 🔥
+                  _buildPremiumGridTool('Images', Icons.photo_library_rounded, const Color(0xFF0EA5E9), const Color(0xFFF0F9FF), () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'images'))).then((_) => _loadRecentProjects());
+                  }),
+                  
+                  // 🔥 Smart Action: Direct Backgrounds/Colors 🔥
+                  _buildPremiumGridTool('Backgrounds', Icons.wallpaper_rounded, const Color(0xFFF43F5E), const Color(0xFFFFF1F2), () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'backgrounds'))).then((_) => _loadRecentProjects());
+                  }),
+                  
                   _buildPremiumGridTool('Stickers', Icons.emoji_emotions_rounded, const Color(0xFFD946EF), const Color(0xFFFDF4FF), _showComingSoon),
                   
-                  _buildPremiumGridTool('Layers', Icons.layers_rounded, const Color(0xFF06B6D4), const Color(0xFFECFEFF), _showComingSoon),
+                  // 🔥 Smart Action: Direct Layers Panel 🔥
+                  _buildPremiumGridTool('Layers', Icons.layers_rounded, const Color(0xFF06B6D4), const Color(0xFFECFEFF), () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'layers'))).then((_) => _loadRecentProjects());
+                  }),
+                  
                   _buildPremiumGridTool('Tools', Icons.build_rounded, const Color(0xFF64748B), const Color(0xFFF8FAFC), _showComingSoon),
                   _buildPremiumGridTool('AI Design', Icons.smart_toy_rounded, const Color(0xFF6366F1), const Color(0xFFEEF2FF), _showComingSoon, isNew: true),
                   _buildPremiumGridTool('Pro Effects', Icons.auto_fix_high_rounded, const Color(0xFF14B8A6), const Color(0xFFF0FDFA), _showComingSoon),
@@ -233,7 +303,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 40),
 
-              // 🌟 3. RECENT PROJECTS SECTION
+              // 3. RECENT PROJECTS SECTION
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -309,7 +379,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       
-      // 🌟 4. METALLIC GOLDEN FAB
+      // 4. METALLIC GOLDEN FAB
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: Container(
         height: 70, width: 70,
@@ -345,7 +415,7 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildBottomNavItem(Icons.home_filled, 'Home', true),
-              _buildBottomNavItem(Icons.folder_rounded, 'Projects', false, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const MyFolderScreen()))),
+              _buildBottomNavItem(Icons.folder_rounded, 'Projects', false, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const MyFolderScreen())).then((_) => _loadRecentProjects())),
               const SizedBox(width: 45), 
               _buildBottomNavItem(Icons.school_rounded, 'Tutorials', false),
               _buildBottomNavItem(Icons.person_rounded, 'Profile', false),
