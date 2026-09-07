@@ -5,7 +5,7 @@ import 'dart:convert';
 import '../models/design_models.dart';
 import 'pro_workspace_screen.dart';
 import 'my_folder_screen.dart';
-import 'templates_screen.dart'; // 🔥 NAYA: Templates screen ki file yahan jodi gayi hai 🔥
+import 'templates_screen.dart'; // 👉 Is line ki wajah se error aata hai agar file ka naam match na kare
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -189,7 +189,6 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. HERO BANNER
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -253,7 +252,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 35),
 
-              // 2. WHITE SPACE OPTIMIZED GRID
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -264,7 +262,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   _buildPremiumGridTool('New Design', Icons.add_circle_rounded, const Color(0xFF3B82F6), const Color(0xFFEFF6FF), () => _showNewDesignModal(context)),
                   
-                  // 🔥 NAYA: Templates button ab TemplatesScreen open karega 🔥
                   _buildPremiumGridTool('Templates', Icons.image_rounded, const Color(0xFF8B5CF6), const Color(0xFFF5F3FF), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const TemplatesScreen()));
                   }),
@@ -301,7 +298,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 40),
 
-              // 3. RECENT PROJECTS SECTION
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -377,7 +373,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       
-      // 4. METALLIC GOLDEN FAB
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: Container(
         height: 70, width: 70,
