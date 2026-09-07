@@ -47,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('New Design', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
+                const Text('New Design', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
                 IconButton(icon: const Icon(Icons.close, color: Colors.grey), onPressed: () => Navigator.pop(context)),
               ],
             ),
@@ -102,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // Bohat hi light aur premium grey/blue background
+      backgroundColor: const Color(0xFFF8FAFC), 
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -111,7 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.history_edu, color: Color(0xFFD4AF37), size: 30), // Qalam (Feather) Icon
+            const Icon(Icons.history_edu, color: Color(0xFFD4AF37), size: 30), 
             const SizedBox(width: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,12 +119,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 RichText(
                   text: const TextSpan(
                     children: [
-                      TextSpan(text: 'Qalamkar', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF1E293B), letterSpacing: 0.5)),
-                      TextSpan(text: 'Pro', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400, color: Color(0xFFD4AF37), letterSpacing: 0.5)),
+                      TextSpan(text: 'Qalamkar', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF1E293B), letterSpacing: 0.5)),
+                      TextSpan(text: 'Pro', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFFD4AF37), letterSpacing: 0.5)),
                     ]
                   )
                 ),
-                const Text('URDU DESIGNER APP', style: TextStyle(fontSize: 7, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 2.0)),
+                const Text('URDU DESIGNER APP', style: TextStyle(fontSize: 7, fontWeight: FontWeight.w900, color: Color(0xFF64748B), letterSpacing: 2.0)),
               ],
             ),
           ],
@@ -138,51 +138,50 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 🌟 1. ADVANCED HERO BANNER (With Watermark & Soft Glow)
+              // 🌟 1. SUPER CLEAN HERO BANNER WITH WHITE URDU BRANDING
               Container(
                 width: double.infinity,
-                height: 190,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(24),
                   gradient: const LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF8B5CF6)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                  boxShadow: [BoxShadow(color: const Color(0xFF6366F1).withOpacity(0.35), blurRadius: 20, offset: const Offset(0, 10))],
+                  boxShadow: [BoxShadow(color: const Color(0xFF6366F1).withOpacity(0.4), blurRadius: 20, offset: const Offset(0, 10))],
                 ),
                 child: Stack(
+                  clipBehavior: Clip.none,
                   children: [
-                    // Right Side Big Urdu Watermark
+                    // 🔥 KHOOBSURAT URDU TEXT BRANDING (Right Side) 🔥
                     Positioned(
-                      right: 15,
-                      top: 15,
-                      child: Opacity(
-                        opacity: 0.15,
-                        child: const Text('قلمکار', style: TextStyle(fontFamily: 'JameelNoori', fontSize: 90, color: Colors.white, height: 1.0)),
+                      top: 24,
+                      right: 24,
+                      child: Text(
+                        'قلمکار پُرو',
+                        style: TextStyle(
+                          fontFamily: 'JameelNoori',
+                          fontSize: 38, // Bada aur wazeh size
+                          color: Colors.white, // Pure white jaisa aapne kaha
+                          height: 1.0,
+                          shadows: [
+                            Shadow(color: Colors.black.withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 4)) // Halka sa shadow ubharne ke liye
+                          ]
+                        ),
                       ),
                     ),
-                    // Right Bottom Feather Icon
-                    Positioned(
-                      right: -15,
-                      bottom: -20,
-                      child: Opacity(
-                        opacity: 0.1,
-                        child: const Icon(Icons.history_edu, size: 140, color: Colors.white),
-                      ),
-                    ),
-                    // Main Text Content
+                    
+                    // Main Content (Left Side)
                     Padding(
-                      padding: const EdgeInsets.all(22),
+                      padding: const EdgeInsets.all(24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text('Design Your\nImagination', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.white, height: 1.15, letterSpacing: 0.5)),
-                          const SizedBox(height: 8),
-                          const Text('Beautiful Text • Stunning Graphics', style: TextStyle(fontSize: 11, color: Colors.white70, fontWeight: FontWeight.w500)),
-                          const SizedBox(height: 20),
+                          const Text('Design Your\nImagination', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white, height: 1.15, letterSpacing: 0.5)),
+                          const SizedBox(height: 10),
+                          const Text('Beautiful Text • Stunning Graphics\nEndless Possibilities', style: TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.w500, height: 1.4)),
+                          const SizedBox(height: 24),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
                               foregroundColor: const Color(0xFF6366F1),
-                              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                               elevation: 5,
                               shadowColor: Colors.black26,
@@ -191,9 +190,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: const [
-                                Text('Start Designing', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                SizedBox(width: 6),
-                                Icon(Icons.arrow_forward_rounded, size: 16)
+                                Text('Start Designing', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                                SizedBox(width: 8),
+                                Icon(Icons.arrow_forward_rounded, size: 18)
                               ],
                             ),
                           )
@@ -204,35 +203,35 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 35),
 
-              // 🌟 2. SOFT PASTEL 12-ITEM GRID TOOLS
+              // 🌟 2. WHITE SPACE OPTIMIZED GRID
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: 4,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 0.85,
+                crossAxisSpacing: 12, 
+                mainAxisSpacing: 20, 
+                childAspectRatio: 1.05, 
                 children: [
-                  _buildGridTool('New Design', Icons.add_circle, const Color(0xFF93C5FD), const Color(0xFF3B82F6), () => _showNewDesignModal(context)),
-                  _buildGridTool('Templates', Icons.image, const Color(0xFFC4B5FD), const Color(0xFF8B5CF6), _showComingSoon),
-                  _buildGridTool('Text Editor', Icons.title, const Color(0xFF6EE7B7), const Color(0xFF10B981), _showComingSoon),
-                  _buildGridTool('Urdu Fonts', Icons.language, const Color(0xFFF9A8D4), const Color(0xFFEC4899), _showComingSoon),
+                  _buildPremiumGridTool('New Design', Icons.add_circle_rounded, const Color(0xFF3B82F6), const Color(0xFFEFF6FF), () => _showNewDesignModal(context)),
+                  _buildPremiumGridTool('Templates', Icons.image_rounded, const Color(0xFF8B5CF6), const Color(0xFFF5F3FF), _showComingSoon),
+                  _buildPremiumGridTool('Text Editor', Icons.title_rounded, const Color(0xFF10B981), const Color(0xFFECFDF5), _showComingSoon),
+                  _buildPremiumGridTool('Urdu Fonts', Icons.language_rounded, const Color(0xFFEC4899), const Color(0xFFFDF2F8), _showComingSoon),
                   
-                  _buildGridTool('Elements', Icons.category, const Color(0xFFFDE047), const Color(0xFFF59E0B), _showComingSoon),
-                  _buildGridTool('Images', Icons.photo_library, const Color(0xFF5EEAD4), const Color(0xFF0D9488), _showComingSoon),
-                  _buildGridTool('Backgrounds', Icons.wallpaper, const Color(0xFFFDBA74), const Color(0xFFEA580C), _showComingSoon),
-                  _buildGridTool('Stickers', Icons.emoji_emotions, const Color(0xFFD8B4FE), const Color(0xFFC026D3), _showComingSoon),
+                  _buildPremiumGridTool('Elements', Icons.category_rounded, const Color(0xFFF59E0B), const Color(0xFFFFFBEB), _showComingSoon),
+                  _buildPremiumGridTool('Images', Icons.photo_library_rounded, const Color(0xFF0EA5E9), const Color(0xFFF0F9FF), _showComingSoon),
+                  _buildPremiumGridTool('Backgrounds', Icons.wallpaper_rounded, const Color(0xFFF43F5E), const Color(0xFFFFF1F2), _showComingSoon),
+                  _buildPremiumGridTool('Stickers', Icons.emoji_emotions_rounded, const Color(0xFFD946EF), const Color(0xFFFDF4FF), _showComingSoon),
                   
-                  _buildGridTool('Layers', Icons.layers, const Color(0xFF7DD3FC), const Color(0xFF0284C7), _showComingSoon),
-                  _buildGridTool('Tools', Icons.build_rounded, const Color(0xFFFDA4AF), const Color(0xFFE11D48), _showComingSoon),
-                  _buildGridTool('AI Design', Icons.smart_toy_rounded, const Color(0xFFA5B4FC), const Color(0xFF4F46E5), _showComingSoon, isNew: true),
-                  _buildGridTool('Pro Effects', Icons.auto_fix_high, const Color(0xFF86EFAC), const Color(0xFF16A34A), _showComingSoon),
+                  _buildPremiumGridTool('Layers', Icons.layers_rounded, const Color(0xFF06B6D4), const Color(0xFFECFEFF), _showComingSoon),
+                  _buildPremiumGridTool('Tools', Icons.build_rounded, const Color(0xFF64748B), const Color(0xFFF8FAFC), _showComingSoon),
+                  _buildPremiumGridTool('AI Design', Icons.smart_toy_rounded, const Color(0xFF6366F1), const Color(0xFFEEF2FF), _showComingSoon, isNew: true),
+                  _buildPremiumGridTool('Pro Effects', Icons.auto_fix_high_rounded, const Color(0xFF14B8A6), const Color(0xFFF0FDFA), _showComingSoon),
                 ],
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 40),
 
               // 🌟 3. RECENT PROJECTS SECTION
               Row(
@@ -240,14 +239,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Row(
                     children: const [
-                      Icon(Icons.history_rounded, size: 20, color: Color(0xFF1E293B)),
+                      Icon(Icons.history_rounded, size: 22, color: Color(0xFF1E293B)),
                       SizedBox(width: 8),
-                      Text('Recent Projects', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
+                      Text('Recent Projects', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
                     ],
                   ),
                   InkWell(
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const MyFolderScreen())).then((_) => _loadRecentProjects()),
-                    child: const Text('See All', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF6366F1))),
+                    child: const Text('See All', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF6366F1))),
                   )
                 ],
               ),
@@ -258,7 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: isLoading
                   ? const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6)))
                   : recentProjects.isEmpty
-                    ? Center(child: Text('No recent projects yet.', style: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.w500)))
+                    ? Center(child: Text('No recent projects yet.', style: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.w600)))
                     : ListView.builder(
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
@@ -273,7 +272,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(20),
-                                boxShadow: [BoxShadow(color: const Color(0xFF1E293B).withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 5))]
+                                border: Border.all(color: Colors.grey.shade100, width: 1.5),
+                                boxShadow: [BoxShadow(color: const Color(0xFF1E293B).withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 5))]
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,7 +281,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Expanded(
                                     child: Container(
                                       width: double.infinity,
-                                      decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
+                                      decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: const BorderRadius.vertical(top: Radius.circular(18))),
                                       child: const Icon(Icons.design_services_rounded, size: 45, color: Color(0xFFCBD5E1)),
                                     ),
                                   ),
@@ -290,9 +290,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(proj.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                        Text(proj.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF1E293B)), maxLines: 1, overflow: TextOverflow.ellipsis),
                                         const SizedBox(height: 4),
-                                        Text('Edited: ${DateTime.fromMillisecondsSinceEpoch(proj.lastModified).toString().substring(0,10)}', style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500)),
+                                        Text('Edited: ${DateTime.fromMillisecondsSinceEpoch(proj.lastModified).toString().substring(0,10)}', style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600)),
                                       ],
                                     ),
                                   )
@@ -309,7 +309,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       
-      // 🌟 4. BOTTOM NAVIGATION BAR WITH GLOWING FAB
+      // 🌟 4. METALLIC GOLDEN FAB
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: Container(
         height: 70, width: 70,
@@ -321,13 +321,15 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: const LinearGradient(colors: [Color(0xFFFFDF00), Color(0xFFD4AF37), Color(0xFFB8860B)], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFFE066), Color(0xFFF5D020), Color(0xFFD4AF37)], 
+                begin: Alignment.topLeft, end: Alignment.bottomRight
+              ),
               boxShadow: [
-                BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.5), blurRadius: 20, spreadRadius: 3, offset: const Offset(0, 8)),
-                BoxShadow(color: Colors.white.withOpacity(0.5), blurRadius: 5, spreadRadius: 1, offset: const Offset(0, -2))
+                BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.6), blurRadius: 15, spreadRadius: 2, offset: const Offset(0, 6)),
               ]
             ),
-            child: const Center(child: Icon(Icons.add_rounded, color: Color(0xFF1E293B), size: 36)),
+            child: const Center(child: Icon(Icons.add_rounded, color: Colors.white, size: 38)),
           ),
         ),
       ),
@@ -344,7 +346,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _buildBottomNavItem(Icons.home_filled, 'Home', true),
               _buildBottomNavItem(Icons.folder_rounded, 'Projects', false, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const MyFolderScreen()))),
-              const SizedBox(width: 45), // Big Space for Glowing FAB
+              const SizedBox(width: 45), 
               _buildBottomNavItem(Icons.school_rounded, 'Tutorials', false),
               _buildBottomNavItem(Icons.person_rounded, 'Profile', false),
             ],
@@ -354,27 +356,31 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 🌟 HELPER: SOFT PASTEL GRID TOOL
-  Widget _buildGridTool(String title, IconData icon, Color colorLight, Color colorDark, VoidCallback onTap, {bool isNew = false}) {
+  Widget _buildPremiumGridTool(String title, IconData icon, Color iconColor, Color bgColor, VoidCallback onTap, {bool isNew = false}) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(16),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Container(
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [colorLight.withOpacity(0.85), colorDark.withOpacity(0.95)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: [BoxShadow(color: colorDark.withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 6))]
+              color: Colors.white, 
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200, width: 1),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))] 
             ),
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(icon, color: Colors.white, size: 28),
-                  const SizedBox(height: 8),
-                  Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.3)),
+                  Container(
+                    padding: const EdgeInsets.all(10), 
+                    decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
+                    child: Icon(icon, color: iconColor, size: 24), 
+                  ),
+                  const SizedBox(height: 6),
+                  Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF1E293B), letterSpacing: 0.2)), 
                 ],
               ),
             ),
@@ -384,7 +390,7 @@ class _HomeScreenState extends State<HomeScreen> {
               top: -6, right: -6,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                decoration: BoxDecoration(color: const Color(0xFFEF4444), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.white, width: 1.5), boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.3), blurRadius: 4)]),
+                decoration: BoxDecoration(color: const Color(0xFFEF4444), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.white, width: 1.5), boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.2), blurRadius: 4)]),
                 child: const Text('NEW', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
               ),
             )
@@ -402,7 +408,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Icon(icon, color: isSelected ? const Color(0xFF6366F1) : const Color(0xFF94A3B8), size: 26),
           const SizedBox(height: 4),
-          Text(label, style: TextStyle(fontSize: 10, fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600, color: isSelected ? const Color(0xFF6366F1) : const Color(0xFF94A3B8))),
+          Text(label, style: TextStyle(fontSize: 10, fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600, color: isSelected ? const Color(0xFF6366F1) : const Color(0xFF94A3B8))),
         ],
       ),
     );
