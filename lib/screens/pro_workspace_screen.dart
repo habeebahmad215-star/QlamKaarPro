@@ -132,13 +132,35 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void undoAction() { if (undoStack.isNotEmpty) { redoStack.add(elements.map((e) => e.clone()).toList()); setState(() { elements = undoStack.removeLast(); selectedId = null; }); HapticFeedback.lightImpact(); } }
   void redoAction() { if (redoStack.isNotEmpty) { undoStack.add(elements.map((e) => e.clone()).toList()); setState(() { elements = redoStack.removeLast(); selectedId = null; }); HapticFeedback.lightImpact(); } }
 
+  // 🔥 PRO UI BUILDERS (Handles)
+  Widget _buildPill(bool isHorizontal) {
+    return Container(
+      width: isHorizontal ? 24 : 8, height: isHorizontal ? 8 : 24,
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5))
+    );
+  }
+
+  Widget _buildCircle() {
+    return Container(
+      width: 12, height: 12,
+      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5))
+    );
+  }
+
+  Widget _buildIconCircle(IconData icon) {
+    return Container(
+      width: 24, height: 24,
+      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)]),
+      child: Icon(icon, size: 14, color: const Color(0xFF8B5CF6)),
+    );
+  }
+
   // 🔥 1. MATHEMATICAL RESIZE LOGIC (No Jumping)
   void _handleResize(double dx, double dy, Alignment align, DesignElement e, double currentW, double currentH) {
     setState(() {
       double oldW = currentW;
       double oldH = currentH;
       
-      // Convert global drag to local element space
       double c = cos(-e.angle);
       double s = sin(-e.angle);
       double lDx = dx * c - dy * s;
@@ -155,7 +177,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       if (newW < 50) newW = 50;
       if (newH < 20) newH = 20;
 
-      // Calculate center shift
       double localCXShift = 0;
       double localCYShift = 0;
 
@@ -171,15 +192,22 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       double oldCy = e.y + oldH / 2;
 
       e.width = newW;
-      e.height = newH;
+      if (!e.isText) e.height = newH;
+      
       e.x = (oldCx + gShiftX) - newW / 2;
-      e.y = (oldCy + gShiftY) - newH / 2;
+      if (!e.isText) {
+          e.y = (oldCy + gShiftY) - newH / 2;
+      } else {
+          double txtShiftX = localCXShift * cos(e.angle);
+          double txtShiftY = localCXShift * sin(e.angle);
+          e.y = (oldCy + txtShiftY) - oldH / 2;
+      }
       
       if (e.isTable) _triggerCanvasUpdate();
     });
   }
 
-  // 🔥 2. MATHEMATICAL SCALE LOGIC (Bottom-Left)
+  // 🔥 2. MATHEMATICAL SCALE LOGIC (Bottom-Left Proportional Scale)
   void _handleScale(double dx, double dy, DesignElement e, double currentW, double currentH) {
     setState(() {
       double c = cos(-e.angle);
@@ -187,7 +215,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       double lDx = dx * c - dy * s;
       double lDy = dx * s + dy * c;
       
-      // Moving left (-lDx) or down (+lDy) increases scale
       double scaleDelta = (-lDx + lDy) / 2; 
       double scale = (currentW + scaleDelta) / currentW;
       
@@ -207,54 +234,18 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         double oldCy = e.y + currentH / 2;
         
         e.width = newW;
-        e.height = newH;
-        e.x = (oldCx + gShiftX) - newW / 2;
-        e.y = (oldCy + gShiftY) - newH / 2;
+        if(!e.isText) e.height = newH;
         
+        e.x = (oldCx + gShiftX) - newW / 2;
+        
+        if(!e.isText){
+           e.y = (oldCy + gShiftY) - newH / 2;
+        } else {
+           e.y = (oldCy + gShiftY) - currentH / 2;
+        }
         if (e.isTable) _triggerCanvasUpdate();
       }
     });
-  }
-
-  // 🔥 3. MATHEMATICAL ROTATE LOGIC (Top-Center)
-  void _handleRotate(double dx, double dy, DesignElement e, double currentW, double currentH) {
-    setState(() {
-      // Handle is above the box
-      double vx = 0 * cos(e.angle) - (-currentH/2 - 25) * sin(e.angle);
-      double vy = 0 * sin(e.angle) + (-currentH/2 - 25) * cos(e.angle);
-      
-      double tx = -vy;
-      double ty = vx;
-      
-      double tLen = sqrt(tx*tx + ty*ty);
-      if(tLen > 0) {
-          tx /= tLen;
-          ty /= tLen;
-          double angularChange = (dx * tx + dy * ty) / tLen; 
-          e.angle += angularChange * 0.015; 
-      }
-    });
-  }
-
-  Widget _buildPill(bool isHorizontal, Alignment align, DesignElement e, double w, double h) {
-    return GestureDetector(
-      onPanUpdate: (d) => _handleResize(d.delta.dx, d.delta.dy, align, e, w, h),
-      child: Container(
-        width: isHorizontal ? 24 : 8, height: isHorizontal ? 8 : 24,
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5))
-      )
-    );
-  }
-
-  Widget _buildCorner(Alignment align, DesignElement e, double w, double h) {
-    return GestureDetector(
-      onPanUpdate: (d) => _handleResize(d.delta.dx, d.delta.dy, align, e, w, h),
-      child: Container(width: 12, height: 12, decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5)))
-    );
-  }
-
-  Widget _buildIconCircle(IconData icon) {
-    return Container(width: 24, height: 24, decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)]), child: Icon(icon, size: 14, color: const Color(0xFF8B5CF6)));
   }
 
   void _showExportMenu() { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) => Container(height: 350, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Export Design (سیو کریں)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const Divider(), const SizedBox(height: 10), _buildExportOption(Icons.image, 'Save as JPG', 'Solid Background', Colors.blue, () { Navigator.pop(context); _captureAndSave('JPG'); }), const SizedBox(height: 10), _buildExportOption(Icons.layers_clear, 'Save as PNG', 'Transparent Image (Logos)', Colors.purple, () { Navigator.pop(context); _captureAndSave('PNG'); }), const SizedBox(height: 10), _buildExportOption(Icons.picture_as_pdf, 'Save as Print HD PDF', 'High Quality PDF Document', Colors.red, () { Navigator.pop(context); _captureAndSave('PDF'); })]))); }
@@ -310,6 +301,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void _showResizeModal() { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return Container(height: 300, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Resize Canvas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const Divider(), Expanded(child: ListView(children: [ListTile(leading: const Icon(Icons.crop_square), title: const Text('1:1 (Square / Logo / DP)'), onTap: (){ saveState(); setState(()=> canvasRatio = 1.0); Navigator.pop(context); }), ListTile(leading: const Icon(Icons.crop_16_9), title: const Text('16:9 (YouTube / Post)'), onTap: (){ saveState(); setState(()=> canvasRatio = 16/9); Navigator.pop(context); }), ListTile(leading: const Icon(Icons.crop_portrait), title: const Text('9:16 (Story / Reel / Status)'), onTap: (){ saveState(); setState(()=> canvasRatio = 9/16); Navigator.pop(context); }), ListTile(leading: const Icon(Icons.description), title: const Text('1:1.414 (A4 Print / Letter)'), onTap: (){ saveState(); setState(()=> canvasRatio = 1/1.414); Navigator.pop(context); }),]))])); }); }
   void showLayersPanel() { Set<String> selectedForGroup = {}; showModalBottomSheet(context: context, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (context) { return StatefulBuilder(builder: (BuildContext context, StateSetter setModalState) { return Container(height: 450, decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))), padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Layers & Groups', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), if (selectedForGroup.length > 1) ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), padding: const EdgeInsets.symmetric(horizontal: 10)), icon: const Icon(Icons.link, size: 16, color: Colors.white), label: const Text('Group', style: TextStyle(color: Colors.white, fontSize: 12)), onPressed: () { String newGroup = DateTime.now().millisecondsSinceEpoch.toString(); saveState(); for (var e in elements) { if (selectedForGroup.contains(e.id)) e.groupId = newGroup; } selectedForGroup.clear(); setModalState((){}); setState((){}); }), if (selectedForGroup.isNotEmpty) ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, padding: const EdgeInsets.symmetric(horizontal: 10)), icon: const Icon(Icons.link_off, size: 16, color: Colors.white), label: const Text('Ungroup', style: TextStyle(color: Colors.white, fontSize: 12)), onPressed: () { saveState(); for (var e in elements) { if (selectedForGroup.contains(e.id)) e.groupId = null; } selectedForGroup.clear(); setModalState((){}); setState((){}); }), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const Text('Tick boxes to group layers together', style: TextStyle(fontSize: 11, color: Colors.grey)), const Divider(), Expanded(child: elements.isEmpty ? const Center(child: Text('No elements yet.', style: TextStyle(color: Colors.grey))) : ListView.builder(itemCount: elements.length, itemBuilder: (context, index) { int actualIndex = elements.length - 1 - index; DesignElement e = elements[actualIndex]; bool isSel = selectedId == e.id; bool isGroupChecked = selectedForGroup.contains(e.id); return Card(color: isSel ? const Color(0xFFF3E8FF) : (e.groupId != null ? Colors.blue.shade50 : Colors.white), elevation: 0, margin: const EdgeInsets.only(bottom: 8), shape: RoundedRectangleBorder(side: BorderSide(color: isSel ? const Color(0xFF8B5CF6) : (e.groupId != null ? Colors.blue.shade300 : Colors.grey.shade300)), borderRadius: BorderRadius.circular(8)), child: ListTile(leading: Row(mainAxisSize: MainAxisSize.min, children: [Checkbox(value: isGroupChecked, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setModalState(() { if (val == true) selectedForGroup.add(e.id); else selectedForGroup.remove(e.id); }); }), CircleAvatar(radius: 14, backgroundColor: e.isText ? e.textColor : Colors.blueGrey, child: Icon(e.isText ? Icons.title : (e.isBorder ? Icons.filter_frames : Icons.category), size: 14, color: Colors.white))]), title: Row(children: [Expanded(child: Text(e.isText ? e.content.replaceAll('\n', ' ') : (e.isBorder ? e.content : 'Shape'), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13))), if (e.groupId != null) const Icon(Icons.link, size: 14, color: Colors.blue)]), trailing: Row(mainAxisSize: MainAxisSize.min, children: [IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(e.isHidden ? Icons.visibility_off : Icons.visibility, size: 18, color: e.isHidden ? Colors.red : Colors.black54), onPressed: () { saveState(); setState(() => e.isHidden = !e.isHidden); setModalState((){}); }), const SizedBox(width: 8), IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(e.isLocked ? Icons.lock : Icons.lock_open, size: 18, color: e.isLocked ? Colors.red : Colors.black54), onPressed: () { saveState(); setState(() { e.isLocked = !e.isLocked; if(e.isLocked && isSel) selectedId = null; }); setModalState((){}); }), const SizedBox(width: 8), IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.arrow_upward, size: 18, color: Colors.black54), onPressed: () { if (actualIndex < elements.length - 1) { saveState(); setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex + 1, item); }); setModalState((){}); } }), const SizedBox(width: 8), IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.arrow_downward, size: 18, color: Colors.black54), onPressed: () { if (actualIndex > 0) { saveState(); setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex - 1, item); }); setModalState((){}); } })]), onTap: () { if(!e.isLocked && !e.isHidden) { setState(() => selectedId = e.id); setModalState((){}); } })); },)),]));});}); }
   void showPagesPanel() { showModalBottomSheet(context: context, backgroundColor: Colors.transparent, builder: (context) { return StatefulBuilder(builder: (BuildContext context, StateSetter setModalState) { return Container(height: 400, decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))), padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Pages (صفحات)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const Divider(), Expanded(child: ListView.builder(itemCount: pages.length, itemBuilder: (context, index) { bool isCurrent = currentPageIndex == index; return Card(color: isCurrent ? const Color(0xFFF3E8FF) : Colors.white, elevation: 0, margin: const EdgeInsets.only(bottom: 8), shape: RoundedRectangleBorder(side: BorderSide(color: isCurrent ? const Color(0xFF8B5CF6) : Colors.grey.shade300), borderRadius: BorderRadius.circular(8)), child: ListTile(leading: Icon(Icons.description, color: isCurrent ? const Color(0xFF8B5CF6) : Colors.grey), title: Text(pages[index].title, style: TextStyle(fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal)), trailing: Row(mainAxisSize: MainAxisSize.min, children: [ IconButton(icon: const Icon(Icons.copy, color: Colors.blue, size: 20), onPressed: () { setState(() { pages.insert(index + 1, DesignPage(title: '${pages[index].title} Copy', elements: pages[index].elements.map((e) => e.clone()).toList(), pageColor: pages[index].pageColor, bgImageBytes: pages[index].bgImageBytes, canvasRatio: pages[index].canvasRatio, bgGradient: pages[index].bgGradient)); currentPageIndex = index + 1; }); setModalState(() {}); }), if(pages.length > 1) IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20), onPressed: () { setState(() { pages.removeAt(index); if (currentPageIndex >= pages.length) currentPageIndex = pages.length - 1; }); setModalState(() {}); }) ]), onTap: () { setState(() { currentPageIndex = index; selectedId = null; }); Navigator.pop(context); },)); },)), const SizedBox(height: 10), SizedBox(width: double.infinity, child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)), onPressed: () { setState(() { pages.add(DesignPage(title: 'Page ${pages.length + 1}', elements: [DesignElement(id: Random().nextInt(10000).toString(), x: 60, y: 100, content: 'نیا صفحہ', width: 250)], pageColor: Colors.white)); currentPageIndex = pages.length - 1; selectedId = null; }); Navigator.pop(context); }, child: const Text('Add New Page', style: TextStyle(color: Colors.white)))),]));});}); }
+
+  void _showCurveModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 250, padding: const EdgeInsets.all(20), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Curve Text (گولائی)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const SizedBox(height: 10), Row(children: [const Text('Bend:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), Expanded(child: Slider(value: sel.textCurveRadius, min: -150.0, max: 150.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.textCurveRadius = val); setModalState((){}); }))]), Row(children: [const Text('Spacing:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), Expanded(child: Slider(value: sel.letterSpacing, min: -5.0, max: 20.0, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.letterSpacing = val); setModalState((){}); }))]), ElevatedButton(onPressed: () { saveState(); setState(() => sel.textCurveRadius = 0.0); setModalState((){}); }, style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade200), child: const Text('Reset Curve', style: TextStyle(color: Colors.black))) ])); }); }); }
+  void _showBlendModeModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 350, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Blend Modes (مکس کرنا)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const Divider(), Expanded(child: ListView.builder(itemCount: AppConstants.blendModes.length, itemBuilder: (context, index) { String bName = AppConstants.blendModes[index].toString().replaceAll('BlendMode.', '').toUpperCase(); return ListTile(title: Text(bName, style: const TextStyle(fontWeight: FontWeight.bold)), trailing: sel.blendModeIndex == index ? const Icon(Icons.check_circle, color: Color(0xFF8B5CF6)) : null, onTap: () { saveState(); setState(() => sel.blendModeIndex = index); Navigator.pop(context); }); }))])); }); }); }
 
   @override
   Widget build(BuildContext context) {
@@ -488,7 +482,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           if (e.hasShadow) textShadows.add(Shadow(color: e.shadowColor, blurRadius: e.shadowBlur, offset: Offset(e.shadowOffsetX, e.shadowOffsetY)));
 
                                           Widget buildTextWidget(Color c, [List<Shadow>? shadow]) {
-                                            TextStyle st = TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, letterSpacing: e.letterSpacing, color: c, fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal, height: e.lineHeight, wordSpacing: e.wordSpacing, shadows: shadow);
+                                            TextStyle st = TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, letterSpacing: e.letterSpacing, color: c, fontWeight: FontWeight.normal, height: e.lineHeight, wordSpacing: e.wordSpacing, shadows: shadow);
                                             if (e.textCurveRadius != 0) return CurvedTextWidget(text: e.content, radius: e.textCurveRadius, style: st, letterSpacing: e.letterSpacing);
                                             return SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, softWrap: true, textDirection: TextDirection.rtl, style: st.copyWith(letterSpacing: e.letterSpacing)));
                                           }
@@ -506,7 +500,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           Widget txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: blockLayers);
 
                                           if (e.hasStroke) {
-                                            TextStyle stStroke = TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, letterSpacing: e.letterSpacing, foreground: Paint()..style = PaintingStyle.stroke..strokeWidth = e.strokeWidth..color = e.strokeColor, fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal, height: e.lineHeight, wordSpacing: e.wordSpacing);
+                                            TextStyle stStroke = TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, letterSpacing: e.letterSpacing, foreground: Paint()..style = PaintingStyle.stroke..strokeWidth = e.strokeWidth..color = e.strokeColor, fontWeight: FontWeight.normal, height: e.lineHeight, wordSpacing: e.wordSpacing);
                                             Widget strokeTxt = e.textCurveRadius != 0 ? CurvedTextWidget(text: e.content, radius: e.textCurveRadius, style: stStroke, letterSpacing: e.letterSpacing) : SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, softWrap: true, textDirection: TextDirection.rtl, style: stStroke.copyWith(letterSpacing: e.letterSpacing)));
                                             txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [strokeTxt, txt]);
                                           }
@@ -571,7 +565,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                         Positioned(
                                                           top: -45, left: currentWidth/2 - 12, 
                                                           child: GestureDetector(
-                                                            onPanUpdate: (d) => _handleRotate(d.delta.dx, d.delta.dy, e, currentWidth, currentHeight),
+                                                            onPanUpdate: (d) { setState(() { e.angle += d.delta.dx * 0.015; }); },
                                                             child: _buildIconCircle(Icons.refresh)
                                                           )
                                                         ),
@@ -679,7 +673,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                 const SizedBox(width: 10),
                 if (sel.isText || sel.isTable) _buildToolBtn(Icons.text_fields, 'Size', () => showSizeSliderModal(sel)),
                 if (sel.isText) _buildToolBtn(Icons.height, 'Spacing', () => showSpacingModal(sel)),
-                if (sel.isText) _buildToolBtn(Icons.format_bold, 'Bold', () { saveState(); setState(() => sel.isBold = !sel.isBold); }),
                 if (sel.isText) _buildToolBtn(Icons.format_color_fill, 'Text BG', () => _showTextBgPickerModal(sel)),
                 if (sel.isText) _buildToolBtn(Icons.gradient, 'Gradient', () => _showGradientPickerModal(sel)),
                 if (sel.isText) _buildToolBtn(Icons.data_usage, 'Curve', () => _showCurveModal(sel)),
