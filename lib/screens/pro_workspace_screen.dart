@@ -37,7 +37,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   bool _isCanvasLocked = false;
   bool _showGrid = false; 
 
-  // 🔥 Canvas Dimensions Tracking for 100% Perfect Alignment
   double currentCanvasW = 1000;
   double currentCanvasH = 1000;
 
@@ -96,14 +95,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   void _triggerCanvasUpdate() { _canvasNotifier.value++; }
 
-  // 🔥 Element Sizes for Perfect Math Calculation
   double _getElWidth(DesignElement e) => e.width > 50 ? e.width : 280;
   double _getElHeight(DesignElement e) {
     if (!e.isText && e.height > 20) return e.height;
     if (e.isShape) return 90;
     if (e.isText) {
       int lines = e.content.isEmpty ? 1 : e.content.split('\n').length;
-      return lines * e.fontSize * e.lineHeight; // Exact height of text
+      return lines * e.fontSize * e.lineHeight; 
     }
     return 150;
   }
@@ -139,11 +137,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void undoAction() { if (undoStack.isNotEmpty) { redoStack.add(elements.map((e) => e.clone()).toList()); setState(() { elements = undoStack.removeLast(); selectedId = null; }); HapticFeedback.lightImpact(); } }
   void redoAction() { if (redoStack.isNotEmpty) { undoStack.add(elements.map((e) => e.clone()).toList()); setState(() { elements = redoStack.removeLast(); selectedId = null; }); HapticFeedback.lightImpact(); } }
 
-  // 🔥 8-HANDLE SYSTEM LOGIC
+  // 🔥 ERROR-FREE HANDLE SYSTEM
   void _handleResize(double dx, double dy, Alignment align, DesignElement e, double currentW, double currentH) {
     setState(() {
       if (e.isText && (align == Alignment.topLeft || align == Alignment.topRight || align == Alignment.bottomLeft || align == Alignment.bottomRight)) {
-        // Text Resizing (Proportional font scaling)
         double scaleFactor = 1.0;
         if (align == Alignment.topRight || align == Alignment.bottomRight) scaleFactor = (currentW + dx) / currentW;
         else scaleFactor = (currentW - dx) / currentW;
@@ -160,7 +157,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
           }
         }
       } else {
-        // Free Resize for Edges and Non-Text elements
         double newW = currentW;
         double newH = currentH;
         double shiftX = 0;
@@ -426,14 +422,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void duplicateSelected() { if (selectedId != null) { saveState(); DesignElement sel = elements.firstWhere((e) => e.id == selectedId); setState(() { var newEl = sel.clone()..id = Random().nextInt(10000).toString()..x += 20..y += 20; elements.add(newEl); selectedId = newEl.id; }); } }
   void bringForward() { if (selectedId == null) return; saveState(); int idx = elements.indexWhere((e) => e.id == selectedId); if (idx < elements.length - 1) setState(() { var item = elements.removeAt(idx); elements.insert(idx + 1, item); }); }
   void sendBackward() { if (selectedId == null) return; saveState(); int idx = elements.indexWhere((e) => e.id == selectedId); if (idx > 0) setState(() { var item = elements.removeAt(idx); elements.insert(idx - 1, item); }); }
-  
-  // 🔥 PERFECT ALIGNMENT FUNCTION
-  void _toggleAlignment(DesignElement sel) { 
-    saveState(); 
-    setState(() { 
-      sel.textAlign = (sel.textAlign == TextAlign.right) ? TextAlign.center : (sel.textAlign == TextAlign.center ? TextAlign.left : TextAlign.right); 
-    }); 
-  }
+  void _toggleAlignment(DesignElement sel) { saveState(); setState(() { sel.textAlign = (sel.textAlign == TextAlign.right) ? TextAlign.center : (sel.textAlign == TextAlign.center ? TextAlign.left : TextAlign.right); }); }
 
   void _pickCustomGradColor(DesignElement sel, int colorNum, StateSetter parentSetState) { showModalBottomSheet(context: context, builder: (ctx) => Container(height: 300, padding: const EdgeInsets.all(20), child: Column(children: [const Text('Pick a Color', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), const SizedBox(height: 10), Expanded(child: GridView.builder(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 10, mainAxisSpacing: 10), itemCount: AppConstants.proColorPalette.length, itemBuilder: (ctx, index) { return InkWell(onTap: () { if(colorNum == 1) sel.customGradColor1 = AppConstants.proColorPalette[index]; else sel.customGradColor2 = AppConstants.proColorPalette[index]; parentSetState((){}); Navigator.pop(ctx); }, child: Container(decoration: BoxDecoration(color: AppConstants.proColorPalette[index], shape: BoxShape.circle, border: Border.all(color: Colors.black26)))); }))]))); }
   void _showCanvasBgColorModal() { TextEditingController hexCtrl = TextEditingController(); showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Padding(padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom), child: Container(height: 480, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Canvas Color', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), Padding(padding: const EdgeInsets.only(bottom: 10), child: Row(children: [Expanded(child: TextField(controller: hexCtrl, decoration: const InputDecoration(hintText: 'Hex Code: #FF0000', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 10)))), const SizedBox(width: 10), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), padding: const EdgeInsets.symmetric(vertical: 12)), onPressed: () { String hex = hexCtrl.text.replaceAll('#', ''); if(hex.length == 6) hex = 'FF$hex'; if(hex.length == 8) { saveState(); setState((){ pageColor = Color(int.parse('0x$hex')); bgImageBytes = null; bgGradient = null; }); setModalState((){}); Navigator.pop(context); } }, child: const Text('Apply', style: TextStyle(color: Colors.white)))])), const Divider(), Expanded(child: GridView.builder(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 12, mainAxisSpacing: 12), itemCount: AppConstants.proColorPalette.length, itemBuilder: (context, index) { Color c = AppConstants.proColorPalette[index]; bool isSelected = pageColor.value == c.value; return GestureDetector(onTap: () { saveState(); setState(() { pageColor = c; bgImageBytes = null; bgGradient = null; }); setModalState((){}); Navigator.pop(context); }, child: Container(decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300, width: 1.5), boxShadow: isSelected ? [BoxShadow(color: c.withOpacity(0.5), blurRadius: 8, spreadRadius: 2)] : null), child: isSelected ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white, size: 20) : null)); }))]))); }); }); }
@@ -452,8 +441,165 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void showSpacingModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 300, padding: const EdgeInsets.all(20), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Spacing (فاصلہ)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const SizedBox(height: 10), Row(children: [const Text('Line:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), Expanded(child: Slider(value: sel.lineHeight, min: 0.5, max: 3.5, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.lineHeight = val); setModalState((){}); }))]), Row(children: [const Text('Word:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), Expanded(child: Slider(value: sel.wordSpacing, min: -10.0, max: 30.0, activeColor: const Color(0xFF10B981), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.wordSpacing = val); setModalState((){}); }))]), Row(children: [const Text('Letter:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), Expanded(child: Slider(value: sel.letterSpacing, min: -5.0, max: 20.0, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.letterSpacing = val); setModalState((){}); }))]) ])); }); }); }
   void showSizeSliderModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 180, padding: const EdgeInsets.all(20), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Size: ${sel.fontSize.toInt()}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), Slider(value: sel.fontSize, min: 10.0, max: 300.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.fontSize = val); setModalState((){}); })])); }); }); }
   void showRotationModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 200, padding: const EdgeInsets.all(20), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Rotate (گھمائیں)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const SizedBox(height: 10), Slider(value: sel.angle, min: -pi, max: pi, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.angle = val); setModalState((){}); }), Text('${(sel.angle * 180 / pi).toInt()}°', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))])); }); }); }
+  void show3DModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 280, padding: const EdgeInsets.all(20), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('3D Perspective (تھری ڈی زاویہ)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const SizedBox(height: 10), Row(children: [const Text('X-Axis:', style: TextStyle(fontWeight: FontWeight.bold)), Expanded(child: Slider(value: sel.pitch, min: -pi/2, max: pi/2, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.pitch = val); setModalState((){}); }))]), Row(children: [const Text('Y-Axis:', style: TextStyle(fontWeight: FontWeight.bold)), Expanded(child: Slider(value: sel.yaw, min: -pi/2, max: pi/2, activeColor: Colors.green, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.yaw = val); setModalState((){}); }))]), ElevatedButton(onPressed: () { saveState(); setState((){ sel.pitch=0; sel.yaw=0; }); setModalState((){}); }, style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade200), child: const Text('Reset Perspective', style: TextStyle(color: Colors.black))) ])); }); }); }
   
-  // 🔥 PERFECT POSITION (Alignment fix)
+  void showNudgeModal(DesignElement sel) { 
+    showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { 
+      return StatefulBuilder(builder: (context, setModalState) { 
+        void move(double dx, double dy) { 
+          saveState(); 
+          setState(() { 
+            sel.x += dx; sel.y += dy; 
+            if (sel.groupId != null) {
+              for (var other in elements) {
+                if (other.id != sel.id && other.groupId == sel.groupId && !other.isLocked) {
+                  other.x += dx; other.y += dy;
+                }
+              }
+            }
+          }); 
+          setModalState((){}); 
+        } 
+        return Container(height: 260, padding: const EdgeInsets.all(20), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Nudge Tool (خردبینی حرکت)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const SizedBox(height: 10), Row(mainAxisAlignment: MainAxisAlignment.center, children: [IconButton(icon: const Icon(Icons.arrow_upward, size: 35, color: const Color(0xFF8B5CF6)), onPressed: () => move(0, -2))]), Row(mainAxisAlignment: MainAxisAlignment.center, children: [IconButton(icon: const Icon(Icons.arrow_back, size: 35, color: const Color(0xFF8B5CF6)), onPressed: () => move(-2, 0)), const SizedBox(width: 40), IconButton(icon: const Icon(Icons.arrow_forward, size: 35, color: const Color(0xFF8B5CF6)), onPressed: () => move(2, 0))]), Row(mainAxisAlignment: MainAxisAlignment.center, children: [IconButton(icon: const Icon(Icons.arrow_downward, size: 35, color: const Color(0xFF8B5CF6)), onPressed: () => move(0, 2))]),])); 
+      }); 
+    }); 
+  }
+
+  Future<void> _importCustomFont() async { try { FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['ttf', 'otf']); if (result != null && result.files.single.path != null) { String filePath = result.files.single.path!; String fontName = result.files.single.name.replaceAll('.ttf', '').replaceAll('.otf', ''); var fontLoader = FontLoader(fontName); fontLoader.addFont(Future.value(ByteData.view(File(filePath).readAsBytesSync().buffer))); await fontLoader.load(); setState(() { if (!customFonts.contains(fontName)) customFonts.add(fontName); }); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Font "$fontName" import ho gaya! 🎉'))); } } catch (e) { debugPrint("Font Import Error: $e"); } }
+  
+  void showFontPickerModal(DesignElement sel) { 
+    showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.transparent, builder: (context) { 
+      return StatefulBuilder(builder: (context, setModalState) { 
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.75, 
+          padding: const EdgeInsets.all(20), 
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              const Text('Select Font (فونٹ)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF8B5CF6))), 
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))), 
+                onPressed: () async { await _importCustomFont(); setModalState(() {}); }, 
+                icon: const Icon(Icons.add, color: Colors.white, size: 16), 
+                label: const Text('Add Font', style: TextStyle(color: Colors.white, fontSize: 11))
+              ) 
+            ]), 
+            const Divider(), 
+            
+            Expanded(child: ListView(
+              physics: const BouncingScrollPhysics(),
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                  child: Text('Pre-installed Premium Fonts', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF64748B), fontSize: 12, letterSpacing: 0.5)),
+                ),
+                
+                ...availableFontsData.map((font) {
+                  bool isSelected = sel.fontFamily == font['name'];
+                  return Card(
+                    elevation: 0,
+                    color: isSelected ? const Color(0xFFF5F3FF) : Colors.white,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(color: isSelected ? const Color(0xFF8B5CF6) : Colors.grey.shade200, width: isSelected ? 1.5 : 1.0), 
+                      borderRadius: BorderRadius.circular(16)
+                    ),
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () {
+                        saveState(); 
+                        setState(() => sel.fontFamily = font['name']!); 
+                        Navigator.pop(context);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(font['name']!, style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? const Color(0xFF8B5CF6) : const Color(0xFF1E293B), fontSize: 14)),
+                                  const SizedBox(height: 2),
+                                  Text(font['desc']!, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                font['title']!, 
+                                textAlign: TextAlign.right, 
+                                textDirection: TextDirection.rtl, 
+                                style: TextStyle(fontFamily: font['name'], fontSize: 24, color: Colors.black87),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Icon(
+                              isSelected ? Icons.check_circle : Icons.radio_button_unchecked, 
+                              color: isSelected ? const Color(0xFF8B5CF6) : Colors.grey.shade300, 
+                              size: 20
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+                
+                if (customFonts.isNotEmpty) ...[
+                  const Padding(
+                    padding: EdgeInsets.only(top: 15, bottom: 8.0, left: 4.0),
+                    child: Text('My Custom Fonts', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF64748B), fontSize: 12, letterSpacing: 0.5)),
+                  ),
+                  ...customFonts.map((fontName) {
+                    bool isSelected = sel.fontFamily == fontName;
+                    return Card(
+                      elevation: 0,
+                      color: isSelected ? const Color(0xFFF5F3FF) : Colors.white,
+                      shape: RoundedRectangleBorder(
+                        side: BorderSide(color: isSelected ? const Color(0xFF8B5CF6) : Colors.grey.shade200, width: isSelected ? 1.5 : 1.0), 
+                        borderRadius: BorderRadius.circular(16)
+                      ),
+                      margin: const EdgeInsets.only(bottom: 10),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () {
+                          saveState(); 
+                          setState(() => sel.fontFamily = fontName); 
+                          Navigator.pop(context);
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(fontName, style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? const Color(0xFF8B5CF6) : const Color(0xFF1E293B), fontSize: 14)),
+                                    const Text('Imported TTF', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                                  ],
+                                ),
+                              ),
+                              Text('نمونہ تحریر', textAlign: TextAlign.right, textDirection: TextDirection.rtl, style: TextStyle(fontFamily: fontName, fontSize: 24, color: Colors.black87)),
+                              const SizedBox(width: 12),
+                              Icon(isSelected ? Icons.check_circle : Icons.radio_button_unchecked, color: isSelected ? const Color(0xFF8B5CF6) : Colors.grey.shade300, size: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ]
+              ],
+            ))
+          ])); 
+      }); 
+    }); 
+  }
+
   void _showAlignmentModal(DesignElement sel) { 
     showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { 
       return Container(height: 250, padding: const EdgeInsets.all(20), child: Column(children: [
@@ -475,6 +621,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   }
   
   Widget _buildAlignButton(IconData icon, String label, VoidCallback onTap) { return InkWell(onTap: onTap, child: Container(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade300)), child: Column(children: [Icon(icon, color: const Color(0xFF8B5CF6)), const SizedBox(height: 5), Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold))]),),); }
+  
   void _showResizeModal() { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return Container(height: 300, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Resize Canvas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const Divider(), Expanded(child: ListView(children: [ListTile(leading: const Icon(Icons.crop_square), title: const Text('1:1 (Square / Logo / DP)'), onTap: (){ saveState(); setState(()=> canvasRatio = 1.0); Navigator.pop(context); }), ListTile(leading: const Icon(Icons.crop_16_9), title: const Text('16:9 (YouTube / Post)'), onTap: (){ saveState(); setState(()=> canvasRatio = 16/9); Navigator.pop(context); }), ListTile(leading: const Icon(Icons.crop_portrait), title: const Text('9:16 (Story / Reel / Status)'), onTap: (){ saveState(); setState(()=> canvasRatio = 9/16); Navigator.pop(context); }), ListTile(leading: const Icon(Icons.description), title: const Text('1:1.414 (A4 Print / Letter)'), onTap: (){ saveState(); setState(()=> canvasRatio = 1/1.414); Navigator.pop(context); }),]))])); }); }
 
   void showLayersPanel() { 
@@ -591,7 +738,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     aspectRatio: canvasRatio,
                     child: LayoutBuilder(
                       builder: (context, constraints) {
-                        
                         currentCanvasW = constraints.maxWidth - 32;
                         currentCanvasH = constraints.maxHeight - 32;
 
@@ -729,7 +875,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                               else setState(() => selectedId = e.id);
                                             },
                                             onPanStart: (d) { if(!e.isLocked) saveState(); },
-                                            // 🔥 MAGNETIC SNAP REMOVED COMPLETELY
                                             onPanUpdate: (d) {
                                               if(!e.isLocked) {
                                                 setState(() { 
@@ -749,7 +894,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                               transform: matrix, alignment: Alignment.center,
                                               child: isSel 
                                                 ? Padding(
-                                                    padding: const EdgeInsets.all(20), // Exact padding to fit handles nicely
+                                                    padding: const EdgeInsets.all(20), 
                                                     child: Column(
                                                       mainAxisSize: MainAxisSize.min,
                                                       children: [
@@ -765,7 +910,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                               child: Opacity(opacity: e.opacity, child: contentWidget)
                                                             ),
                                                             
-                                                            // 🔥 8 PROFESSIONAL HANDLES 🔥
+                                                            // 🔥 8 PROFESSIONAL HANDLES (SAFE IMPLEMENTATION)
                                                             Positioned(
                                                               top: -7, left: -7, right: -7, bottom: -7,
                                                               child: Stack(
