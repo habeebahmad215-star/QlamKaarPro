@@ -60,7 +60,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   final Map<String, List<String>> _urduPoetryLibrary = {
     'اسلامی (Islamic)': ['بے شک اللہ صبر کرنے والوں کے ساتھ ہے۔', 'جو اللہ کا ہو جاتا ہے، اللہ اس کا ہو جاتا ہے۔', 'نماز تمام بیماریوں کی شفا ہے۔', 'حسبنا اللہ ونعم الوکیل\n(ہمیں اللہ ہی کافی ہے اور وہی سب سے بہتر کارساز ہے)', 'اے اللہ! ہمارے دلوں کو اپنے دین پر ثابت قدم رکھ۔', 'قرآن وہ کتاب ہے جو اندھیروں سے نکال کر روشنی کی طرف لاتی ہے۔', 'تمہارا بہترین دوست وہ ہے جو تمہیں اللہ کی یاد دلائے۔'],
     'اقوال (Quotes)': ['وقت وہ واحد سکہ ہے جو آپ کی زندگی بناتا ہے۔', 'خاموشی سب سے بہترین جواب ہے اس کے لیے جو آپ کے الفاظ کی قدر نہ کرے۔', 'علم ایک ایسا خزانہ ہے جسے کوئی چوری نہیں کر سکتا۔', 'زندگی میں کبھی ہار نہ مانو، کیونکہ گچھے کی آخری چابی بھی تالا کھول سکتی ہے۔', 'اچھے اخلاق وہ واحد خوبصورتی ہے جو کبھی ختم نہیں ہوتی۔'],
-    'علامہ اقبال (Allama Iqbal)': ['ہزاروں سال نرگس اپنی بے نوری پہ روتی ہے\nبڑی مشکل سے ہوتا ہے چمن میں دیدہ ور پیدا', 'عمل سے زندگی بنتی ہے جنت بھی جہنم بھی\nیہ خاکی اپنی فطرت میں نہ نوری ہے نہ ناری ہے', 'ستاروں سے آگے جہاں اور بھی ہیں\nابھی عشق کے امتحاں اور بھی ہیں', 'خودی کو کر بلند اتنا کہ ہر تقدیر سے پہلے\nخدا بندے سے خود پوچھے بتا تیری رضا کیا ہے'],
+    'علامہ اقبال (Allama Iqbal)': ['ہزاروں سال نرگس আপনی بے نوری پہ روتی ہے\nبڑی مشکل سے ہوتا ہے چمن میں دیدہ ور پیدا', 'عمل سے زندگی بنتی ہے جنت بھی جہنم بھی\nیہ خاکی اپنی فطرت میں نہ نوری ہے نہ ناری ہے', 'ستاروں سے آگے جہاں اور بھی ہیں\nابھی عشق کے امتحاں اور بھی ہیں', 'خودی کو کر بلند اتنا کہ ہر تقدیر سے پہلے\nخدا بندے سے خود پوچھے بتا تیری رضا کیا ہے'],
     'محبت (Love)': ['دل دھڑکنے کا سبب یاد آیا\nوہ تری یاد تھی اب یاد آیا', 'تمہارے بعد کسی اور کو چاہا نہ گیا\nیہ وہ سچ ہے جو کبھی ہم سے چھپایا نہ گیا', 'محبت میں نہیں ہے شرطِ ملنا اور بچھڑ جانا\nمحبت تو بس اک احساس ہے جو دل میں رہتا ہے'],
     'اداس (Sad)': ['ہم نے سینے سے لگایا دل نہ اپنا بن سکا\nمسکراہٹ کو ترستے ہی رہے روتے رہے', 'دل کے ٹوٹنے کی کوئی آواز نہیں ہوتی\nبس ایک خاموشی ہوتی ہے جو عمر بھر رلاتی ہے', 'تجھ سے بچھڑ کر ہم بھی کہاں پہلے جیسے رہے\nبس سانسیں چلتی ہیں اور زندگی کٹ رہی ہے'],
   };
@@ -179,7 +179,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     });
   }
 
-  // 🔥 NAYA VIP RTL/LTR COMPOSER - SIRF EK BAAR YAHAN HAI 🔥
   void _showTextComposerDialog({DesignElement? existingElement}) { 
     TextEditingController controller = TextEditingController(text: existingElement?.content ?? ''); 
     bool isRTL = existingElement?.textAlign == TextAlign.right ? true : (existingElement?.textAlign == TextAlign.left ? false : true); 
@@ -195,23 +194,15 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
               padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom), 
               child: Container(
                 height: MediaQuery.of(context).size.height * 0.75, 
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24))
-                ),
+                decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
                 padding: const EdgeInsets.all(20), 
                 child: Column(
                   children: [
                     Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10))),
                     const SizedBox(height: 20),
 
-                    // LTR/RTL Toggle Switch
                     Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100, 
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.grey.shade300)
-                      ), 
+                      decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade300)), 
                       padding: const EdgeInsets.all(4),
                       child: Row(
                         mainAxisSize: MainAxisSize.min, 
@@ -220,11 +211,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                             onTap: () => setModalState(() => isRTL = false),
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), 
-                              decoration: BoxDecoration(
-                                color: !isRTL ? Colors.white : Colors.transparent, 
-                                borderRadius: BorderRadius.circular(10), 
-                                boxShadow: !isRTL ? [const BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))] : null
-                              ), 
+                              decoration: BoxDecoration(color: !isRTL ? Colors.white : Colors.transparent, borderRadius: BorderRadius.circular(10), boxShadow: !isRTL ? [const BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))] : null), 
                               child: Text('English (LTR)', style: TextStyle(fontWeight: !isRTL ? FontWeight.w900 : FontWeight.w600, color: !isRTL ? const Color(0xFF6366F1) : Colors.grey.shade500, fontSize: 13, letterSpacing: 0.5))
                             )
                           ), 
@@ -232,11 +219,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                             onTap: () => setModalState(() => isRTL = true),
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), 
-                              decoration: BoxDecoration(
-                                color: isRTL ? Colors.white : Colors.transparent, 
-                                borderRadius: BorderRadius.circular(10), 
-                                boxShadow: isRTL ? [const BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))] : null
-                              ), 
+                              decoration: BoxDecoration(color: isRTL ? Colors.white : Colors.transparent, borderRadius: BorderRadius.circular(10), boxShadow: isRTL ? [const BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))] : null), 
                               child: Text('اردو (RTL)', style: TextStyle(fontWeight: isRTL ? FontWeight.w900 : FontWeight.w600, color: isRTL ? const Color(0xFF10B981) : Colors.grey.shade500, fontSize: 16, fontFamily: 'JameelNoori'))
                             )
                           )
@@ -249,28 +232,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.all(16), 
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
-                          border: Border.all(color: isRTL ? const Color(0xFF10B981).withOpacity(0.3) : const Color(0xFF6366F1).withOpacity(0.3), width: 1.5), 
-                          borderRadius: BorderRadius.circular(16), 
-                        ), 
+                        decoration: BoxDecoration(color: Colors.grey.shade50, border: Border.all(color: isRTL ? const Color(0xFF10B981).withOpacity(0.3) : const Color(0xFF6366F1).withOpacity(0.3), width: 1.5), borderRadius: BorderRadius.circular(16)), 
                         child: TextField(
-                          controller: controller, 
-                          maxLines: null, 
-                          textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr, 
-                          textAlign: isRTL ? TextAlign.right : TextAlign.left,
-                          style: TextStyle(
-                            fontFamily: isRTL ? 'JameelNoori' : null, 
-                            fontSize: isRTL ? 28 : 20,
-                            height: 1.5,
-                            color: Colors.black87
-                          ), 
-                          decoration: InputDecoration(
-                            border: InputBorder.none, 
-                            hintText: isRTL ? 'یہاں لکھیں...' : 'Type here...', 
-                            hintTextDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
-                            hintStyle: TextStyle(color: Colors.grey.shade400)
-                          )
+                          controller: controller, maxLines: null, textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr, textAlign: isRTL ? TextAlign.right : TextAlign.left,
+                          style: TextStyle(fontFamily: isRTL ? 'JameelNoori' : null, fontSize: isRTL ? 28 : 20, height: 1.5, color: Colors.black87), 
+                          decoration: InputDecoration(border: InputBorder.none, hintText: isRTL ? 'یہاں لکھیں...' : 'Type here...', hintTextDirection: isRTL ? TextDirection.rtl : TextDirection.ltr, hintStyle: TextStyle(color: Colors.grey.shade400))
                         )
                       )
                     ), 
@@ -303,27 +269,14 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                         Expanded(
                           flex: 2, 
                           child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isRTL ? const Color(0xFF10B981) : const Color(0xFF6366F1), 
-                              padding: const EdgeInsets.symmetric(vertical: 15), 
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              elevation: 4
-                            ), 
+                            style: ElevatedButton.styleFrom(backgroundColor: isRTL ? const Color(0xFF10B981) : const Color(0xFF6366F1), padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 4), 
                             onPressed: () { 
                               if (controller.text.isNotEmpty) { 
                                 saveState(); 
                                 if (existingElement != null) { 
-                                  setState(() {
-                                    existingElement.content = controller.text; 
-                                    existingElement.textAlign = isRTL ? TextAlign.right : TextAlign.left;
-                                  }); 
+                                  setState(() { existingElement.content = controller.text; existingElement.textAlign = isRTL ? TextAlign.right : TextAlign.left; }); 
                                 } else { 
-                                  var newEl = DesignElement(
-                                    id: Random().nextInt(10000).toString(), 
-                                    x: 40, y: 100, 
-                                    content: controller.text, 
-                                    width: 280
-                                  ); 
+                                  var newEl = DesignElement(id: Random().nextInt(10000).toString(), x: 40, y: 100, content: controller.text, width: 280); 
                                   newEl.textAlign = isRTL ? TextAlign.right : TextAlign.left;
                                   setState(() { elements.add(newEl); selectedId = newEl.id; }); 
                                 } 
@@ -350,30 +303,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     return InkWell(onTap: onTap, child: Column(children: [Icon(icon, color: const Color(0xFF8B5CF6)), const SizedBox(height: 4), Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87))])); 
   }
 
-  // 🔥 ADD NEW MODAL - YAHAN SIRF EK BAAR HAI 🔥
   void showAddNewModal() { 
     showModalBottomSheet(context: context, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (context) => Container(height: MediaQuery.of(context).size.height * 0.65, decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))), padding: const EdgeInsets.all(20), child: Column(children: [Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)))), const SizedBox(height: 20), Expanded(child: GridView.count(crossAxisCount: 3, crossAxisSpacing: 15, mainAxisSpacing: 15, children: [_buildGridItem(Icons.image, 'Gallery Pic', Colors.blue.shade100, Colors.blue, () => addImageFromGallery(fromModal: true)), _buildGridItem(Icons.gradient, 'Backgrounds', Colors.indigo.shade100, Colors.indigo, () { Navigator.pop(context); _showCanvasBgGradientModal(); }), _buildGridItem(Icons.folder, 'My Folder', Colors.teal.shade100, Colors.teal, () { Navigator.pop(context); Navigator.pop(context); }), _buildGridItem(Icons.text_fields, 'Add Text', Colors.orange.shade100, Colors.orange, () { Navigator.pop(context); _showTextComposerDialog(); }), _buildGridItem(Icons.border_outer, 'Borders', Colors.amber.shade100, Colors.amber.shade800, () => showGenericStockModal('Borders', 'royal_islamic', Icons.border_outer, fromModal: true)), _buildGridItem(Icons.category, 'Shapes', Colors.pink.shade100, Colors.pink, () => showGenericStockModal('Shapes', 'shape_rect', Icons.category, fromModal: true)), _buildGridItem(Icons.table_chart, 'Table', Colors.cyan.shade100, Colors.cyan.shade800, () { Navigator.pop(context); _addTable(); })]))]))); 
   }
 
   void _addTable() {
     saveState();
-    setState(() {
-      elements.add(
-        DesignElement(
-          id: Random().nextInt(10000).toString(),
-          x: 40, y: 100,
-          content: 'Table',
-          width: 300, height: 150,
-          isText: false, isTable: true,
-          tableData: [
-            ['Column 1', 'Column 2', 'Column 3'],
-            ['Data 1', 'Data 2', 'Data 3'],
-            ['Data 4', 'Data 5', 'Data 6'],
-          ],
-        )
-      );
-      selectedId = elements.last.id;
-    });
+    setState(() { elements.add(DesignElement(id: Random().nextInt(10000).toString(), x: 40, y: 100, content: 'Table', width: 300, height: 150, isText: false, isTable: true, tableData: [['Column 1', 'Column 2', 'Column 3'], ['Data 1', 'Data 2', 'Data 3'], ['Data 4', 'Data 5', 'Data 6'],])); selectedId = elements.last.id; });
   }
 
   Widget _buildGridItem(IconData icon, String label, Color bgColor, Color iconColor, [VoidCallback? onTap]) { 
@@ -392,14 +328,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     if(fromModal && Navigator.canPop(context)) { Navigator.pop(context); }
   }
 
-  // 🔥 TABLE EDITOR - SIRF EK BAAR YAHAN HAI 🔥
   void _showTableEditorModal(DesignElement sel) {
     if (sel.tableData == null) return;
     List<List<String>> tempTable = [];
     for (var row in sel.tableData!) {
       tempTable.add(List.from(row));
     }
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -411,10 +345,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
               padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
               child: Container(
                 height: MediaQuery.of(context).size.height * 0.8,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24))
-                ),
+                decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
@@ -467,16 +398,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                   ...row.asMap().entries.map((colEntry) {
                                     int colIndex = colEntry.key;
                                     return Container(
-                                      width: 100,
-                                      margin: const EdgeInsets.all(4),
+                                      width: 100, margin: const EdgeInsets.all(4),
                                       child: TextField(
                                         controller: TextEditingController(text: tempTable[rowIndex][colIndex]),
-                                        textDirection: TextDirection.rtl,
-                                        style: const TextStyle(fontFamily: 'JameelNoori'),
-                                        decoration: const InputDecoration(
-                                          border: OutlineInputBorder(),
-                                          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8)
-                                        ),
+                                        textDirection: TextDirection.rtl, style: const TextStyle(fontFamily: 'JameelNoori'),
+                                        decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8)),
                                         onChanged: (val) { tempTable[rowIndex][colIndex] = val; },
                                       )
                                     );
@@ -1137,4 +1063,59 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   Widget _buildTopBtn(IconData icon, String label, [VoidCallback? onTap]) { return InkWell(onTap: onTap, child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, color: Colors.grey.shade800, size: 22), Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey))])); }
   Widget _buildToolBtn(IconData icon, String label, [VoidCallback? onTap]) { return InkWell(onTap: onTap, child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, color: Colors.grey.shade700, size: 24), const SizedBox(height: 4), Text(label, style: TextStyle(fontSize: 10, color: Colors.grey.shade700))]))); }
+}
+
+// 🔥 NAYA FEATURE: TABLE WIDGET AB DIRECT IS FILE MEIN HAI 🔥
+class CustomTableWidget extends StatelessWidget {
+  final List<List<String>> tableData;
+  final double width;
+  final double height;
+  final String fontFamily;
+  final Color textColor;
+  final Color borderColor;
+  final bool hasBorder;
+
+  const CustomTableWidget({
+    Key? key,
+    required this.tableData,
+    required this.width,
+    required this.height,
+    required this.fontFamily,
+    required this.textColor,
+    required this.borderColor,
+    required this.hasBorder,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    if (tableData.isEmpty) return const SizedBox.shrink();
+
+    return SizedBox(
+      width: width,
+      height: height,
+      child: Table(
+        border: hasBorder ? TableBorder.all(color: borderColor, width: 1.5) : null,
+        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+        children: tableData.map((row) {
+          return TableRow(
+            children: row.map((cellText) {
+              return Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  cellText,
+                  textAlign: TextAlign.center,
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(
+                    fontFamily: fontFamily,
+                    color: textColor,
+                    fontSize: 16,
+                  ),
+                ),
+              );
+            }).toList(),
+          );
+        }).toList(),
+      ),
+    );
+  }
 }
