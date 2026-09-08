@@ -27,24 +27,22 @@ flutter:
   assets:
     - assets/
   fonts:
-    # 🔥 Old Jameel Font Path Restored (Jo aapke build system ko chahiye)
     - family: JameelNoori
       fonts:
         - asset: assets/jameel.ttf
 
-    # 🔥 Naye Fonts with Quotes (Taaki spaces ki wajah se error na aaye)
     - family: AlMajeed
       fonts:
-        - asset: "Al Majeed Quranic Font_shiped.ttf"
+        - asset: al_majeed.ttf
 
     - family: AlviNastaleeq
       fonts:
-        - asset: "Alvi Nastaleeq Regular.ttf"
+        - asset: alvi.ttf
 
     - family: Mehr
       fonts:
-        - asset: "Mehr_Nastaliq_Web v. 2.0.ttf"
+        - asset: mehr.ttf
 
     - family: BombayBlack
       fonts:
-        - asset: "Bombay Black.ttf"
+        - asset: bombay.ttf
