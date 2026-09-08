@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
-import 'package:google_fonts/google_fonts.dart'; // 🔥 Naya Google Fonts engine
+import 'package:google_fonts/google_fonts.dart'; // 🔥 Google Fonts Package
 
 class UrduFontsManagerModal extends StatefulWidget {
   const UrduFontsManagerModal({Key? key}) : super(key: key);
@@ -13,13 +13,14 @@ class UrduFontsManagerModal extends StatefulWidget {
 
 class _UrduFontsManagerModalState extends State<UrduFontsManagerModal> {
   
-  // 🔥 Jameel Noori ko bilkul safe rakha gaya hai (isGoogle: false)
+  // 🔥 Exact Google Fonts Names jo 100% Workable hain
   final List<Map<String, dynamic>> preloadedFonts = [
     {'name': 'JameelNoori', 'title': 'جمیل نوری نستعلیق', 'desc': 'Classic Standard Urdu Font', 'isGoogle': false},
     {'name': 'Amiri', 'title': 'امیری عربی فونٹ', 'desc': 'Clean Arabic & Urdu Style', 'isGoogle': true},
     {'name': 'Noto Nastaliq Urdu', 'title': 'نوٹو نستعلیق', 'desc': 'Modern Standard Nastaliq', 'isGoogle': true},
     {'name': 'Lateef', 'title': 'لطیف سندھی و اردو', 'desc': 'Classic Sindhi/Urdu Style', 'isGoogle': true},
     {'name': 'Aref Ruqaa', 'title': 'عارف رقعہ', 'desc': 'Thick Header & Title Font', 'isGoogle': true},
+    {'name': 'Cairo', 'title': 'قاہرہ بولڈ', 'desc': 'Modern Bold Arabic', 'isGoogle': true},
   ];
 
   List<String> importedFonts = [];
@@ -58,19 +59,22 @@ class _UrduFontsManagerModalState extends State<UrduFontsManagerModal> {
     }
   }
 
-  Widget _buildPreviewText() {
-    if (isSelectedGoogle) {
-      return Text('قلم کار پرو - فن خطاطی اور ڈیزائننگ', textAlign: TextAlign.center, textDirection: TextDirection.rtl, style: GoogleFonts.getFont(selectedFontName, fontSize: 24, color: const Color(0xFF1E293B)));
-    } else {
-      return Text('قلم کار پرو - فن خطاطی اور ڈیزائننگ', textAlign: TextAlign.center, textDirection: TextDirection.rtl, style: TextStyle(fontSize: 24, color: const Color(0xFF1E293B), fontFamily: selectedFontName));
-    }
-  }
-
-  Widget _buildFontTitle(String title, String fontName, bool isGoogle) {
+  // 🔥 POWERFUL ENGINE: Yeh ensure karega ke Google Fonts work karein
+  TextStyle _getDynamicTextStyle(String fontName, bool isGoogle, double fontSize, Color color) {
     if (isGoogle) {
-      return Text(title, textAlign: TextAlign.right, textDirection: TextDirection.rtl, style: GoogleFonts.getFont(fontName, fontSize: 24, color: Colors.black87));
+      try {
+        return GoogleFonts.getFont(
+          fontName, 
+          fontSize: fontSize, 
+          color: color,
+        );
+      } catch (e) {
+        // Agar net slow ho toh crash na ho
+        return TextStyle(fontSize: fontSize, color: color); 
+      }
     } else {
-      return Text(title, textAlign: TextAlign.right, textDirection: TextDirection.rtl, style: TextStyle(fontFamily: fontName, fontSize: 24, color: Colors.black87));
+      // Jameel Noori ya custom imported .ttf ke liye
+      return TextStyle(fontSize: fontSize, color: color, fontFamily: fontName);
     }
   }
 
@@ -123,7 +127,12 @@ class _UrduFontsManagerModalState extends State<UrduFontsManagerModal> {
               children: [
                 const Text('Live Preview', style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
                 const SizedBox(height: 10),
-                _buildPreviewText(),
+                Text(
+                  'قلم کار پرو - فن خطاطی اور ڈیزائننگ', 
+                  textAlign: TextAlign.center, 
+                  textDirection: TextDirection.rtl, 
+                  style: _getDynamicTextStyle(selectedFontName, isSelectedGoogle, 24, const Color(0xFF1E293B)),
+                ),
               ],
             ),
           ),
@@ -135,7 +144,7 @@ class _UrduFontsManagerModalState extends State<UrduFontsManagerModal> {
               children: [
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-                  child: Text('Pre-installed Fonts', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF64748B), fontSize: 12, letterSpacing: 0.5)),
+                  child: Text('Pre-installed & Google Fonts', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF64748B), fontSize: 12, letterSpacing: 0.5)),
                 ),
                 
                 ...preloadedFonts.map((font) {
@@ -166,7 +175,12 @@ class _UrduFontsManagerModalState extends State<UrduFontsManagerModal> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(font['name']!, style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? const Color(0xFF8B5CF6) : const Color(0xFF1E293B), fontSize: 14)),
+                                  Row(
+                                    children: [
+                                      Expanded(child: Text(font['name']!, style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? const Color(0xFF8B5CF6) : const Color(0xFF1E293B), fontSize: 14))),
+                                      if (isGoogle) const Icon(Icons.cloud_download_outlined, size: 14, color: Colors.blue), // Cloud icon for Google fonts
+                                    ],
+                                  ),
                                   const SizedBox(height: 2),
                                   Text(font['desc']!, style: const TextStyle(fontSize: 10, color: Colors.grey)),
                                 ],
@@ -174,7 +188,12 @@ class _UrduFontsManagerModalState extends State<UrduFontsManagerModal> {
                             ),
                             Expanded(
                               flex: 3,
-                              child: _buildFontTitle(font['title']!, font['name']!, isGoogle),
+                              child: Text(
+                                font['title']!, 
+                                textAlign: TextAlign.right, 
+                                textDirection: TextDirection.rtl, 
+                                style: _getDynamicTextStyle(font['name']!, isGoogle, 24, Colors.black87),
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Icon(
