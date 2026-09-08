@@ -86,11 +86,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     super.dispose();
   }
 
+  // YAHAN SE FAST UPDATE HOGA (NO LAG)
   void _triggerCanvasUpdate() { 
     _canvasNotifier.value++; 
   }
 
-  // Box size strictly fits content now
   double _getElWidth(DesignElement e) => e.width > 30 ? e.width : 80;
   
   double _getElHeight(DesignElement e) {
@@ -98,7 +98,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     if (e.isShape) return 90;
     if (e.isText) {
       int lines = e.content.isEmpty ? 1 : e.content.split('\n').length;
-      return (lines * e.fontSize * e.lineHeight) + 15; // Added slight padding
+      return (lines * e.fontSize * e.lineHeight) + 15;
     }
     return 150;
   }
@@ -148,6 +148,58 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       _triggerCanvasUpdate();
     }
   }
+
+  // --- FAST MATHEMATICAL HANDLE LOGIC (NO LAG, NO TEXT HIDING) ---
+  void _resizeEdge(DragUpdateDetails d, String edge, DesignElement e) {
+    double ldx = d.delta.dx;
+    double ldy = d.delta.dy;
+    
+    // Rotation Angle Adjustment for Smooth Pull
+    if (e.angle != 0) {
+       double cosA = cos(-e.angle);
+       double sinA = sin(-e.angle);
+       ldx = d.delta.dx * cosA - d.delta.dy * sinA;
+       ldy = d.delta.dx * sinA + d.delta.dy * cosA;
+    }
+    
+    if (edge == 'R') {
+      e.width = max(80.0, e.width + ldx); // Minimum 80 width so text never hides
+    } else if (edge == 'L') {
+      double oldW = e.width; 
+      e.width = max(80.0, e.width - ldx); 
+      e.x += (oldW - e.width) * cos(e.angle); 
+      e.y += (oldW - e.width) * sin(e.angle);
+    } else if (edge == 'B') { 
+      if(!e.isText) e.height = max(30.0, e.height + ldy); 
+    } else if (edge == 'T') { 
+      if(!e.isText) { 
+        double oldH = e.height; 
+        e.height = max(30.0, e.height - ldy); 
+        e.x -= (oldH - e.height) * sin(e.angle); 
+        e.y += (oldH - e.height) * cos(e.angle); 
+      }
+    }
+    _triggerCanvasUpdate(); // Fast screen refresh
+  }
+
+  void _scaleCorner(DragUpdateDetails d, DesignElement e) {
+    double delta = (d.delta.dx + d.delta.dy) * 0.5;
+    if (e.width + delta > 80) { // Limit min width to 80
+      double ratio = e.width / (e.height > 0 ? e.height : 1);
+      e.width += delta;
+      if (!e.isText) e.height += delta / ratio;
+      if (e.isText) e.fontSize = max(10.0, e.fontSize + delta * 0.2);
+      e.x -= delta / 2;
+      e.y -= (e.isText ? 0 : delta / ratio) / 2;
+    }
+    _triggerCanvasUpdate(); // Fast screen refresh
+  }
+
+  void _rotateHandle(DragUpdateDetails d, DesignElement e) {
+    e.angle += (d.delta.dx + d.delta.dy) * 0.01;
+    _triggerCanvasUpdate(); // Fast screen refresh
+  }
+  // ----------------------------------------------------------------
 
   void _showExportMenu() {
     showModalBottomSheet(
@@ -774,6 +826,81 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       setState(() { var item = elements.removeAt(idx); elements.insert(idx - 1, item); });
       _triggerCanvasUpdate();
     }
+  }
+
+  // FIXED TEXT ALIGNMENT THAT WORKS ON CANVAS
+  void _toggleAlignment(DesignElement sel) {
+    saveState();
+    setState(() {
+      if (sel.textAlign == TextAlign.right) {
+        sel.textAlign = TextAlign.center;
+      } else if (sel.textAlign == TextAlign.center) {
+        sel.textAlign = TextAlign.left;
+      } else {
+        sel.textAlign = TextAlign.right;
+      }
+    });
+    _triggerCanvasUpdate(); // Refreshes Canvas Immediately
+  }
+
+  void _showAlignmentModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return Container(
+          height: 250,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Position on Page سیدھ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
+                ]
+              ),
+              const Divider(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildAlignButton(Icons.align_horizontal_left, 'Left', () { saveState(); setState(() => sel.x = 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_horizontal_center, 'Center', () { saveState(); setState(() => sel.x = (currentCanvasW - _getElWidth(sel)) / 2); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_horizontal_right, 'Right', () { saveState(); setState(() => sel.x = currentCanvasW - _getElWidth(sel) - 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                ]
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildAlignButton(Icons.align_vertical_top, 'Top', () { saveState(); setState(() => sel.y = 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_vertical_center, 'Middle', () { saveState(); setState(() => sel.y = (currentCanvasH - _getElHeight(sel)) / 2); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_vertical_bottom, 'Bottom', () { saveState(); setState(() => sel.y = currentCanvasH - _getElHeight(sel) - 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                ]
+              )
+            ]
+          )
+        );
+      }
+    );
+  }
+
+  Widget _buildAlignButton(IconData icon, String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade300)),
+        child: Column(
+          children: [
+            Icon(icon, color: const Color(0xFF8B5CF6)),
+            const SizedBox(height: 5),
+            Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold))
+          ]
+        )
+      )
+    );
   }
 
   void _pickCustomGradColor(DesignElement sel, int colorNum, StateSetter parentSetState) {
@@ -1956,317 +2083,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // FIXED: Text Alignment function restored!
-  void _toggleAlignment(DesignElement sel) {
-    saveState();
-    setState(() {
-      if (sel.textAlign == TextAlign.right) {
-        sel.textAlign = TextAlign.center;
-      } else if (sel.textAlign == TextAlign.center) {
-        sel.textAlign = TextAlign.left;
-      } else {
-        sel.textAlign = TextAlign.right;
-      }
-    });
-    _triggerCanvasUpdate();
-  }
-
-  void _showAlignmentModal(DesignElement sel) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) {
-        return Container(
-          height: 250,
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Position on Page سیدھ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
-                ]
-              ),
-              const Divider(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildAlignButton(Icons.align_horizontal_left, 'Left', () { saveState(); setState(() => sel.x = 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                  _buildAlignButton(Icons.align_horizontal_center, 'Center', () { saveState(); setState(() => sel.x = (currentCanvasW - _getElWidth(sel)) / 2); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                  _buildAlignButton(Icons.align_horizontal_right, 'Right', () { saveState(); setState(() => sel.x = currentCanvasW - _getElWidth(sel) - 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                ]
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildAlignButton(Icons.align_vertical_top, 'Top', () { saveState(); setState(() => sel.y = 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                  _buildAlignButton(Icons.align_vertical_center, 'Middle', () { saveState(); setState(() => sel.y = (currentCanvasH - _getElHeight(sel)) / 2); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                  _buildAlignButton(Icons.align_vertical_bottom, 'Bottom', () { saveState(); setState(() => sel.y = currentCanvasH - _getElHeight(sel) - 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                ]
-              )
-            ]
-          )
-        );
-      }
-    );
-  }
-
-  Widget _buildAlignButton(IconData icon, String label, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade300)),
-        child: Column(
-          children: [
-            Icon(icon, color: const Color(0xFF8B5CF6)),
-            const SizedBox(height: 5),
-            Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold))
-          ]
-        )
-      )
-    );
-  }
-
-  void _showResizeModal() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) {
-        return Container(
-          height: 300,
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Resize Canvas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
-                ]
-              ),
-              const Divider(),
-              Expanded(
-                child: ListView(
-                  children: [
-                    ListTile(leading: const Icon(Icons.crop_square), title: const Text('1:1 (Square/Logo/DP)'), onTap: (){ saveState(); setState(()=> canvasRatio = 1.0); Navigator.pop(context); }),
-                    ListTile(leading: const Icon(Icons.crop_16_9), title: const Text('16:9 (YouTube/Post)'), onTap: (){ saveState(); setState(()=> canvasRatio = 16/9); Navigator.pop(context); }),
-                    ListTile(leading: const Icon(Icons.crop_portrait), title: const Text('9:16 (Story/ Reel/Status)'), onTap: (){ saveState(); setState(()=> canvasRatio = 9/16); Navigator.pop(context); }),
-                    ListTile(leading: const Icon(Icons.description), title: const Text('1:1.414 (A4 Print/Letter)'), onTap: (){ saveState(); setState(()=> canvasRatio = 1/1.414); Navigator.pop(context); }),
-                  ]
-                )
-              )
-            ]
-          )
-        );
-      }
-    );
-  }
-
-  void showLayersPanel() {
-    Set<String> selectedForGroup = {};
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return Container(
-              height: 450,
-              decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Layers & Groups', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      if (selectedForGroup.length > 1)
-                        ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), padding: const EdgeInsets.symmetric(horizontal: 10)), icon: const Icon(Icons.link, size: 16, color: Colors.white), label: const Text('Group', style: TextStyle(color: Colors.white, fontSize: 12)), onPressed: () { String newGroup = DateTime.now().millisecondsSinceEpoch.toString(); saveState(); for (var e in elements) { if (selectedForGroup.contains(e.id)) e.groupId = newGroup; } selectedForGroup.clear(); setModalState((){}); setState((){}); _triggerCanvasUpdate(); }),
-                      if (selectedForGroup.isNotEmpty)
-                        ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, padding: const EdgeInsets.symmetric(horizontal: 10)), icon: const Icon(Icons.link_off, size: 16, color: Colors.white), label: const Text('Ungroup', style: TextStyle(color: Colors.white, fontSize: 12)), onPressed: () { saveState(); for (var e in elements) { if (selectedForGroup.contains(e.id)) e.groupId = null; } selectedForGroup.clear(); setModalState((){}); setState((){}); _triggerCanvasUpdate(); }),
-                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
-                    ]
-                  ),
-                  const Text('Tick boxes to group layers together', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                  const Divider(),
-                  Expanded(
-                    child: elements.isEmpty 
-                      ? const Center(child: Text('No elements yet.', style: TextStyle(color: Colors.grey))) 
-                      : ListView.builder(
-                          itemCount: elements.length,
-                          itemBuilder: (context, index) {
-                            int actualIndex = elements.length - 1 - index;
-                            DesignElement e = elements[actualIndex];
-                            bool isSel = selectedId == e.id;
-                            bool isGroupChecked = selectedForGroup.contains(e.id);
-                            return Card(
-                              color: isSel ? const Color(0xFFF3E8FF) : (e.groupId != null ? Colors.blue.shade50 : Colors.white),
-                              elevation: 0,
-                              margin: const EdgeInsets.only(bottom: 8),
-                              shape: RoundedRectangleBorder(side: BorderSide(color: isSel ? const Color(0xFF8B5CF6) : (e.groupId != null ? Colors.blue.shade300 : Colors.grey.shade300)), borderRadius: BorderRadius.circular(8)),
-                              child: ListTile(
-                                leading: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Checkbox(value: isGroupChecked, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setModalState(() { if (val == true) selectedForGroup.add(e.id); else selectedForGroup.remove(e.id); }); }),
-                                    CircleAvatar(radius: 14, backgroundColor: e.isText ? e.textColor : Colors.blueGrey, child: Icon(e.isText ? Icons.title : (e.isBorder ? Icons.filter_frames : Icons.category), size: 14, color: Colors.white))
-                                  ]
-                                ),
-                                title: Row(
-                                  children: [
-                                    Expanded(child: Text(e.isText ? e.content.replaceAll('\n', '') : (e.isBorder ? e.content : 'Shape'), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13))),
-                                    if (e.groupId != null) const Icon(Icons.link, size: 14, color: Colors.blue)
-                                  ]
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(e.isHidden ? Icons.visibility_off : Icons.visibility, size: 18, color: e.isHidden ? Colors.red : Colors.black54), onPressed: () { saveState(); setState(() => e.isHidden = !e.isHidden); setModalState((){}); _triggerCanvasUpdate(); }),
-                                    const SizedBox(width: 8),
-                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(e.isLocked ? Icons.lock : Icons.lock_open, size: 18, color: e.isLocked ? Colors.red : Colors.black54), onPressed: () { saveState(); setState(() { e.isLocked = !e.isLocked; if(e.isLocked && isSel) selectedId = null; }); setModalState((){}); }),
-                                    const SizedBox(width: 8),
-                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.arrow_upward, size: 18, color: Colors.black54), onPressed: () { if (actualIndex < elements.length - 1) { saveState(); setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex + 1, item); }); setModalState((){}); _triggerCanvasUpdate(); } }),
-                                    const SizedBox(width: 8),
-                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.arrow_downward, size: 18, color: Colors.black54), onPressed: () { if (actualIndex > 0) { saveState(); setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex - 1, item); }); setModalState((){}); _triggerCanvasUpdate(); } })
-                                  ]
-                                ),
-                                onTap: () { if(!e.isLocked && !e.isHidden) { setState(() => selectedId = e.id); setModalState((){}); } }
-                              )
-                            );
-                          }
-                        )
-                  )
-                ]
-              )
-            );
-          }
-        );
-      }
-    );
-  }
-
-  void showPagesPanel() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return Container(
-              height: 400,
-              decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Pages صفحات', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
-                    ]
-                  ),
-                  const Divider(),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: pages.length,
-                      itemBuilder: (context, index) {
-                        bool isCurrent = currentPageIndex == index;
-                        return Card(
-                          color: isCurrent ? const Color(0xFFF3E8FF) : Colors.white,
-                          elevation: 0,
-                          margin: const EdgeInsets.only(bottom: 8),
-                          shape: RoundedRectangleBorder(side: BorderSide(color: isCurrent ? const Color(0xFF8B5CF6) : Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
-                          child: ListTile(
-                            leading: Icon(Icons.description, color: isCurrent ? const Color(0xFF8B5CF6) : Colors.grey),
-                            title: Text(pages[index].title, style: TextStyle(fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal)),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(icon: const Icon(Icons.copy, color: Colors.blue, size: 20), onPressed: () { setState(() { pages.insert(index + 1, DesignPage(title: '${pages[index].title} Copy', elements: pages[index].elements.map((e) => e.clone()).toList(), pageColor: pages[index].pageColor, bgImageBytes: pages[index].bgImageBytes, canvasRatio: pages[index].canvasRatio, bgGradient: pages[index].bgGradient)); currentPageIndex = index + 1; }); setModalState((){}); _triggerCanvasUpdate(); }),
-                                if(pages.length > 1)
-                                  IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20), onPressed: () { setState(() { pages.removeAt(index); if (currentPageIndex >= pages.length) currentPageIndex = pages.length - 1; }); setModalState((){}); _triggerCanvasUpdate(); })
-                              ]
-                            ),
-                            onTap: () { setState(() { currentPageIndex = index; selectedId = null; }); _triggerCanvasUpdate(); Navigator.pop(context); }
-                          )
-                        );
-                      }
-                    )
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)),
-                      onPressed: () { setState(() { pages.add(DesignPage(title: 'Page ${pages.length + 1}', elements: [DesignElement(id: Random().nextInt(10000).toString(), x: 60, y: 100, content: 'نیا صفحہ', width: 250)], pageColor: Colors.white)); currentPageIndex = pages.length - 1; selectedId = null; }); _triggerCanvasUpdate(); Navigator.pop(context); },
-                      child: const Text('Add New Page', style: TextStyle(color: Colors.white))
-                    )
-                  )
-                ]
-              )
-            );
-          }
-        );
-      }
-    );
-  }
-
-  void _showCurveModal(DesignElement sel) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Container(
-              height: 250,
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Curve Text گولائی', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
-                    ]
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      const Text('Bend:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                      Expanded(child: Slider(value: sel.textCurveRadius, min: -150.0, max: 150.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.textCurveRadius = val); setModalState((){}); _triggerCanvasUpdate(); }))
-                    ]
-                  ),
-                  Row(
-                    children: [
-                      const Text('Spacing:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                      Expanded(child: Slider(value: sel.letterSpacing, min: -5.0, max: 20.0, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.letterSpacing = val); setModalState((){}); _triggerCanvasUpdate(); }))
-                    ]
-                  ),
-                  ElevatedButton(
-                    onPressed: () { saveState(); setState(() => sel.textCurveRadius = 0.0); setModalState((){}); _triggerCanvasUpdate(); },
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade200),
-                    child: const Text('Reset Curve', style: TextStyle(color: Colors.black))
-                  )
-                ]
-              )
-            );
-          }
-        );
-      }
-    );
-  }
-
   void _showBlendModeModal(DesignElement sel) {
     showModalBottomSheet(
       context: context,
@@ -2311,73 +2127,54 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // FIXED: Logic for Handles
-  void _resizeEdge(DragUpdateDetails d, String edge, DesignElement e) {
-    setState(() {
-      double ldx = d.delta.dx;
-      double ldy = d.delta.dy;
-      if (e.angle != 0) {
-         double cosA = cos(-e.angle);
-         double sinA = sin(-e.angle);
-         ldx = d.delta.dx * cosA - d.delta.dy * sinA;
-         ldy = d.delta.dx * sinA + d.delta.dy * cosA;
-      }
-      if (edge == 'R') {
-        e.width = max(30.0, e.width + ldx);
-      } else if (edge == 'L') {
-        double old = e.width; 
-        e.width = max(30.0, e.width - ldx); 
-        e.x += (old - e.width) * cos(e.angle); 
-        e.y += (old - e.width) * sin(e.angle);
-      } else if (edge == 'B') { 
-        if(!e.isText) e.height = max(30.0, e.height + ldy); 
-      } else if (edge == 'T') { 
-        if(!e.isText) { 
-          double old = e.height; 
-          e.height = max(30.0, e.height - ldy); 
-          e.x -= (old - e.height) * sin(e.angle); 
-          e.y += (old - e.height) * cos(e.angle); 
-        }
-      }
-    });
-    _triggerCanvasUpdate();
-  }
-
-  void _scaleCorner(DragUpdateDetails d, DesignElement e) {
-    setState(() {
-      double delta = (d.delta.dx + d.delta.dy) * 0.5;
-      if (e.width + delta > 30) {
-        double ratio = e.width / (e.height > 0 ? e.height : 1);
-        e.width += delta;
-        if (!e.isText) e.height += delta / ratio;
-        if (e.isText) e.fontSize = max(10.0, e.fontSize + delta * 0.2);
-        e.x -= delta / 2;
-        e.y -= (e.isText ? 0 : delta / ratio) / 2;
-      }
-    });
-    _triggerCanvasUpdate();
-  }
-
-  Widget _buildPill(bool isHorizontal) {
-    return Container(
-      width: isHorizontal ? 24 : 8,
-      height: isHorizontal ? 8 : 24,
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5)),
+  // UI BUILDERS FOR HANDLES
+  Widget _buildPillHandle(bool isHorizontal, Function(DragUpdateDetails) onDrag) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onPanStart: (_) => saveState(),
+      onPanUpdate: onDrag,
+      child: Container(
+        padding: const EdgeInsets.all(10), // Invisible touch target extension
+        color: Colors.transparent,
+        child: Container(
+          width: isHorizontal ? 24 : 8,
+          height: isHorizontal ? 8 : 24,
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5)),
+        ),
+      ),
     );
   }
 
-  Widget _buildCircle() {
-    return Container(
-      width: 12, height: 12,
-      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5)),
+  Widget _buildCircleHandle(Function(DragUpdateDetails) onDrag) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onPanStart: (_) => saveState(),
+      onPanUpdate: onDrag,
+      child: Container(
+        padding: const EdgeInsets.all(10), // Invisible touch target extension
+        color: Colors.transparent,
+        child: Container(
+          width: 12, height: 12,
+          decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5)),
+        ),
+      ),
     );
   }
 
-  Widget _buildIconCircle(IconData icon) {
-    return Container(
-      width: 28, height: 28,
-      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)]),
-      child: Icon(icon, size: 16, color: const Color(0xFF8B5CF6)),
+  Widget _buildIconHandle(IconData icon, Function(DragUpdateDetails) onDrag) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onPanStart: (_) => saveState(),
+      onPanUpdate: onDrag,
+      child: Container(
+        padding: const EdgeInsets.all(10), // Invisible touch target extension
+        color: Colors.transparent,
+        child: Container(
+          width: 28, height: 28,
+          decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)]),
+          child: Icon(icon, size: 16, color: const Color(0xFF8B5CF6)),
+        ),
+      ),
     );
   }
 
@@ -2581,20 +2378,22 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           );
                                         }
                                         
-                                        // 100% PRO SELECTION BOX RENDER (WITH WORKABLE HANDLES)
+                                        // 100% PRO SELECTION BOX WITH EXTENDED HIT AREAS
                                         return Positioned(
-                                          left: e.x, 
-                                          top: e.y,
+                                          left: e.x - 10, // Account for invisible handle padding
+                                          top: e.y - 10,
                                           child: Transform(
                                             transform: matrix, alignment: Alignment.center,
                                             child: SizedBox(
-                                              width: currentWidth, height: currentHeight,
+                                              width: currentWidth + 20, height: currentHeight + 20,
                                               child: Stack(
                                                 clipBehavior: Clip.none,
                                                 children: [
                                                   
-                                                  // MAIN CONTENT DRAG LAYER
-                                                  Positioned.fill(
+                                                  // DRAG LAYER
+                                                  Positioned(
+                                                    left: 10, top: 10,
+                                                    width: currentWidth, height: currentHeight,
                                                     child: GestureDetector(
                                                       behavior: HitTestBehavior.opaque,
                                                       onTap: () {
@@ -2608,17 +2407,15 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                       onPanStart: (d) { if(!e.isLocked) saveState(); },
                                                       onPanUpdate: (d) {
                                                         if(!e.isLocked && selectedId == e.id) {
-                                                          setState(() { 
-                                                            e.x += d.delta.dx; 
-                                                            e.y += d.delta.dy; 
-                                                            if (e.groupId != null) {
-                                                              for (var other in elements) {
-                                                                if (other.id != e.id && other.groupId == e.groupId && !other.isLocked) {
-                                                                  other.x += d.delta.dx; other.y += d.delta.dy;
-                                                                }
+                                                          e.x += d.delta.dx; 
+                                                          e.y += d.delta.dy; 
+                                                          if (e.groupId != null) {
+                                                            for (var other in elements) {
+                                                              if (other.id != e.id && other.groupId == e.groupId && !other.isLocked) {
+                                                                other.x += d.delta.dx; other.y += d.delta.dy;
                                                               }
                                                             }
-                                                          });
+                                                          }
                                                           _triggerCanvasUpdate();
                                                         }
                                                       },
@@ -2632,40 +2429,27 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                   // WORKABLE HANDLES
                                                   if (isSel) ...[
                                                     // Edge Pills
-                                                    Positioned(top: -4, left: currentWidth/2 - 12, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'T', e), child: _buildPill(true))),
-                                                    Positioned(bottom: -4, left: currentWidth/2 - 12, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'B', e), child: _buildPill(true))),
-                                                    Positioned(left: -4, top: currentHeight/2 - 12, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'L', e), child: _buildPill(false))),
-                                                    Positioned(right: -4, top: currentHeight/2 - 12, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'R', e), child: _buildPill(false))),
+                                                    Positioned(top: 10 - 14, left: 10 + currentWidth/2 - 22, child: _buildPillHandle(true, (d) => _resizeEdge(d, 'T', e))),
+                                                    Positioned(bottom: 10 - 14, left: 10 + currentWidth/2 - 22, child: _buildPillHandle(true, (d) => _resizeEdge(d, 'B', e))),
+                                                    Positioned(left: 10 - 14, top: 10 + currentHeight/2 - 22, child: _buildPillHandle(false, (d) => _resizeEdge(d, 'L', e))),
+                                                    Positioned(right: 10 - 14, top: 10 + currentHeight/2 - 22, child: _buildPillHandle(false, (d) => _resizeEdge(d, 'R', e))),
 
                                                     // Corner Circles
-                                                    Positioned(top: -6, left: -6, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e), child: _buildCircle())),
-                                                    Positioned(top: -6, right: -6, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e), child: _buildCircle())),
-                                                    Positioned(bottom: -6, left: -6, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e), child: _buildCircle())),
-                                                    Positioned(bottom: -6, right: -6, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e), child: _buildCircle())),
+                                                    Positioned(top: 10 - 16, left: 10 - 16, child: _buildCircleHandle((d) => _scaleCorner(d, e))),
+                                                    Positioned(top: 10 - 16, right: 10 - 16, child: _buildCircleHandle((d) => _scaleCorner(d, e))),
+                                                    Positioned(bottom: 10 - 16, left: 10 - 16, child: _buildCircleHandle((d) => _scaleCorner(d, e))),
+                                                    Positioned(bottom: 10 - 16, right: 10 - 16, child: _buildCircleHandle((d) => _scaleCorner(d, e))),
 
-                                                    // Rotate Handle
+                                                    // Rotate Handle (Top Right)
                                                     Positioned(
-                                                      top: -35, right: -35, 
-                                                      child: GestureDetector(
-                                                        behavior: HitTestBehavior.opaque,
-                                                        onPanStart: (_) => saveState(),
-                                                        onPanUpdate: (d) { 
-                                                          setState(() { e.angle += (d.delta.dx + d.delta.dy) * 0.01; }); 
-                                                          _triggerCanvasUpdate();
-                                                        },
-                                                        child: _buildIconCircle(Icons.rotate_right)
-                                                      )
+                                                      top: 10 - 45, right: 10 - 45, 
+                                                      child: _buildIconHandle(Icons.rotate_right, (d) => _rotateHandle(d, e))
                                                     ),
                                                     
-                                                    // Scale Handle
+                                                    // Scale Handle (Bottom Left)
                                                     Positioned(
-                                                      bottom: -35, left: -35, 
-                                                      child: GestureDetector(
-                                                        behavior: HitTestBehavior.opaque,
-                                                        onPanStart: (_) => saveState(),
-                                                        onPanUpdate: (d) => _scaleCorner(d, e),
-                                                        child: _buildIconCircle(Icons.open_in_full)
-                                                      )
+                                                      bottom: 10 - 45, left: 10 - 45, 
+                                                      child: _buildIconHandle(Icons.open_in_full, (d) => _scaleCorner(d, e))
                                                     ),
                                                   ]
                                                 ],
