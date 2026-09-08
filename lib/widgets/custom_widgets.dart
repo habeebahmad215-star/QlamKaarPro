@@ -45,3 +45,58 @@ class CurvedTextWidget extends StatelessWidget {
     })));
   }
 }
+
+// 🔥 NAYA FEATURE: TABLE WIDGET YAHAN ADD HUA HAI 🔥
+class CustomTableWidget extends StatelessWidget {
+  final List<List<String>> tableData;
+  final double width;
+  final double height;
+  final String fontFamily;
+  final Color textColor;
+  final Color borderColor;
+  final bool hasBorder;
+
+  const CustomTableWidget({
+    Key? key,
+    required this.tableData,
+    required this.width,
+    required this.height,
+    required this.fontFamily,
+    required this.textColor,
+    required this.borderColor,
+    required this.hasBorder,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    if (tableData.isEmpty) return const SizedBox.shrink();
+
+    return SizedBox(
+      width: width,
+      height: height,
+      child: Table(
+        border: hasBorder ? TableBorder.all(color: borderColor, width: 1.5) : null,
+        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+        children: tableData.map((row) {
+          return TableRow(
+            children: row.map((cellText) {
+              return Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  cellText,
+                  textAlign: TextAlign.center,
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(
+                    fontFamily: fontFamily,
+                    color: textColor,
+                    fontSize: 16,
+                  ),
+                ),
+              );
+            }).toList(),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
