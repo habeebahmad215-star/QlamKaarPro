@@ -30,4 +30,20 @@ flutter:
   fonts:
     - family: JameelNoori
       fonts:
-        - asset: assets/jameel.ttf
+        - asset: jameel-noori-nastaleeq.ttf
+
+    - family: AlMajeed
+      fonts:
+        - asset: Al Majeed Quranic Font_shiped.ttf
+
+    - family: AlviNastaleeq
+      fonts:
+        - asset: Alvi Nastaleeq Regular.ttf
+
+    - family: Mehr
+      fonts:
+        - asset: Mehr_Nastaliq_Web v. 2.0.ttf
+
+    - family: BombayBlack
+      fonts:
+        - asset: Bombay Black.ttf
