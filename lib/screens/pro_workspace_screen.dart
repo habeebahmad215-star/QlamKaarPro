@@ -132,27 +132,129 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void undoAction() { if (undoStack.isNotEmpty) { redoStack.add(elements.map((e) => e.clone()).toList()); setState(() { elements = undoStack.removeLast(); selectedId = null; }); HapticFeedback.lightImpact(); } }
   void redoAction() { if (redoStack.isNotEmpty) { undoStack.add(elements.map((e) => e.clone()).toList()); setState(() { elements = redoStack.removeLast(); selectedId = null; }); HapticFeedback.lightImpact(); } }
 
-  // 🔥 PRO UI BUILDERS (Handles)
-  Widget _buildPill(bool isHorizontal) {
-    return Container(
-      width: isHorizontal ? 24 : 8, height: isHorizontal ? 8 : 24,
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5))
+  // 🔥 1. MATHEMATICAL RESIZE LOGIC (No Jumping)
+  void _handleResize(double dx, double dy, Alignment align, DesignElement e, double currentW, double currentH) {
+    setState(() {
+      double oldW = currentW;
+      double oldH = currentH;
+      
+      // Convert global drag to local element space
+      double c = cos(-e.angle);
+      double s = sin(-e.angle);
+      double lDx = dx * c - dy * s;
+      double lDy = dx * s + dy * c;
+
+      double newW = oldW;
+      double newH = oldH;
+
+      if (align == Alignment.centerRight || align == Alignment.topRight || align == Alignment.bottomRight) newW += lDx;
+      if (align == Alignment.centerLeft || align == Alignment.topLeft || align == Alignment.bottomLeft) newW -= lDx;
+      if (align == Alignment.bottomCenter || align == Alignment.bottomLeft || align == Alignment.bottomRight) newH += lDy;
+      if (align == Alignment.topCenter || align == Alignment.topLeft || align == Alignment.topRight) newH -= lDy;
+
+      if (newW < 50) newW = 50;
+      if (newH < 20) newH = 20;
+
+      // Calculate center shift
+      double localCXShift = 0;
+      double localCYShift = 0;
+
+      if (align == Alignment.centerRight || align == Alignment.topRight || align == Alignment.bottomRight) localCXShift = (newW - oldW) / 2;
+      if (align == Alignment.centerLeft || align == Alignment.topLeft || align == Alignment.bottomLeft) localCXShift = -(newW - oldW) / 2;
+      if (align == Alignment.bottomCenter || align == Alignment.bottomLeft || align == Alignment.bottomRight) localCYShift = (newH - oldH) / 2;
+      if (align == Alignment.topCenter || align == Alignment.topLeft || align == Alignment.topRight) localCYShift = -(newH - oldH) / 2;
+
+      double gShiftX = localCXShift * cos(e.angle) - localCYShift * sin(e.angle);
+      double gShiftY = localCXShift * sin(e.angle) + localCYShift * cos(e.angle);
+
+      double oldCx = e.x + oldW / 2;
+      double oldCy = e.y + oldH / 2;
+
+      e.width = newW;
+      e.height = newH;
+      e.x = (oldCx + gShiftX) - newW / 2;
+      e.y = (oldCy + gShiftY) - newH / 2;
+      
+      if (e.isTable) _triggerCanvasUpdate();
+    });
+  }
+
+  // 🔥 2. MATHEMATICAL SCALE LOGIC (Bottom-Left)
+  void _handleScale(double dx, double dy, DesignElement e, double currentW, double currentH) {
+    setState(() {
+      double c = cos(-e.angle);
+      double s = sin(-e.angle);
+      double lDx = dx * c - dy * s;
+      double lDy = dx * s + dy * c;
+      
+      // Moving left (-lDx) or down (+lDy) increases scale
+      double scaleDelta = (-lDx + lDy) / 2; 
+      double scale = (currentW + scaleDelta) / currentW;
+      
+      if (scale > 0.1 && (currentW * scale) >= 50) {
+        double newW = currentW * scale;
+        double newH = currentH * scale;
+        
+        if(e.isText) e.fontSize *= scale;
+        
+        double localCXShift = -(newW - currentW) / 2; 
+        double localCYShift = (newH - currentH) / 2;  
+        
+        double gShiftX = localCXShift * cos(e.angle) - localCYShift * sin(e.angle);
+        double gShiftY = localCXShift * sin(e.angle) + localCYShift * cos(e.angle);
+        
+        double oldCx = e.x + currentW / 2;
+        double oldCy = e.y + currentH / 2;
+        
+        e.width = newW;
+        e.height = newH;
+        e.x = (oldCx + gShiftX) - newW / 2;
+        e.y = (oldCy + gShiftY) - newH / 2;
+        
+        if (e.isTable) _triggerCanvasUpdate();
+      }
+    });
+  }
+
+  // 🔥 3. MATHEMATICAL ROTATE LOGIC (Top-Center)
+  void _handleRotate(double dx, double dy, DesignElement e, double currentW, double currentH) {
+    setState(() {
+      // Handle is above the box
+      double vx = 0 * cos(e.angle) - (-currentH/2 - 25) * sin(e.angle);
+      double vy = 0 * sin(e.angle) + (-currentH/2 - 25) * cos(e.angle);
+      
+      double tx = -vy;
+      double ty = vx;
+      
+      double tLen = sqrt(tx*tx + ty*ty);
+      if(tLen > 0) {
+          tx /= tLen;
+          ty /= tLen;
+          double angularChange = (dx * tx + dy * ty) / tLen; 
+          e.angle += angularChange * 0.015; 
+      }
+    });
+  }
+
+  Widget _buildPill(bool isHorizontal, Alignment align, DesignElement e, double w, double h) {
+    return GestureDetector(
+      onPanUpdate: (d) => _handleResize(d.delta.dx, d.delta.dy, align, e, w, h),
+      child: Container(
+        width: isHorizontal ? 24 : 8, height: isHorizontal ? 8 : 24,
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5))
+      )
     );
   }
 
-  Widget _buildCircle() {
-    return Container(
-      width: 12, height: 12,
-      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5))
+  Widget _buildCorner(Alignment align, DesignElement e, double w, double h) {
+    return GestureDetector(
+      onPanUpdate: (d) => _handleResize(d.delta.dx, d.delta.dy, align, e, w, h),
+      child: Container(width: 12, height: 12, decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5)))
     );
   }
 
   Widget _buildIconCircle(IconData icon) {
-    return Container(
-      width: 24, height: 24,
-      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)]),
-      child: Icon(icon, size: 14, color: Colors.grey.shade800),
-    );
+    return Container(width: 24, height: 24, decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)]), child: Icon(icon, size: 14, color: const Color(0xFF8B5CF6)));
   }
 
   void _showExportMenu() { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) => Container(height: 350, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Export Design (سیو کریں)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const Divider(), const SizedBox(height: 10), _buildExportOption(Icons.image, 'Save as JPG', 'Solid Background', Colors.blue, () { Navigator.pop(context); _captureAndSave('JPG'); }), const SizedBox(height: 10), _buildExportOption(Icons.layers_clear, 'Save as PNG', 'Transparent Image (Logos)', Colors.purple, () { Navigator.pop(context); _captureAndSave('PNG'); }), const SizedBox(height: 10), _buildExportOption(Icons.picture_as_pdf, 'Save as Print HD PDF', 'High Quality PDF Document', Colors.red, () { Navigator.pop(context); _captureAndSave('PDF'); })]))); }
@@ -209,9 +311,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void showLayersPanel() { Set<String> selectedForGroup = {}; showModalBottomSheet(context: context, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (context) { return StatefulBuilder(builder: (BuildContext context, StateSetter setModalState) { return Container(height: 450, decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))), padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Layers & Groups', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), if (selectedForGroup.length > 1) ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), padding: const EdgeInsets.symmetric(horizontal: 10)), icon: const Icon(Icons.link, size: 16, color: Colors.white), label: const Text('Group', style: TextStyle(color: Colors.white, fontSize: 12)), onPressed: () { String newGroup = DateTime.now().millisecondsSinceEpoch.toString(); saveState(); for (var e in elements) { if (selectedForGroup.contains(e.id)) e.groupId = newGroup; } selectedForGroup.clear(); setModalState((){}); setState((){}); }), if (selectedForGroup.isNotEmpty) ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, padding: const EdgeInsets.symmetric(horizontal: 10)), icon: const Icon(Icons.link_off, size: 16, color: Colors.white), label: const Text('Ungroup', style: TextStyle(color: Colors.white, fontSize: 12)), onPressed: () { saveState(); for (var e in elements) { if (selectedForGroup.contains(e.id)) e.groupId = null; } selectedForGroup.clear(); setModalState((){}); setState((){}); }), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const Text('Tick boxes to group layers together', style: TextStyle(fontSize: 11, color: Colors.grey)), const Divider(), Expanded(child: elements.isEmpty ? const Center(child: Text('No elements yet.', style: TextStyle(color: Colors.grey))) : ListView.builder(itemCount: elements.length, itemBuilder: (context, index) { int actualIndex = elements.length - 1 - index; DesignElement e = elements[actualIndex]; bool isSel = selectedId == e.id; bool isGroupChecked = selectedForGroup.contains(e.id); return Card(color: isSel ? const Color(0xFFF3E8FF) : (e.groupId != null ? Colors.blue.shade50 : Colors.white), elevation: 0, margin: const EdgeInsets.only(bottom: 8), shape: RoundedRectangleBorder(side: BorderSide(color: isSel ? const Color(0xFF8B5CF6) : (e.groupId != null ? Colors.blue.shade300 : Colors.grey.shade300)), borderRadius: BorderRadius.circular(8)), child: ListTile(leading: Row(mainAxisSize: MainAxisSize.min, children: [Checkbox(value: isGroupChecked, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setModalState(() { if (val == true) selectedForGroup.add(e.id); else selectedForGroup.remove(e.id); }); }), CircleAvatar(radius: 14, backgroundColor: e.isText ? e.textColor : Colors.blueGrey, child: Icon(e.isText ? Icons.title : (e.isBorder ? Icons.filter_frames : Icons.category), size: 14, color: Colors.white))]), title: Row(children: [Expanded(child: Text(e.isText ? e.content.replaceAll('\n', ' ') : (e.isBorder ? e.content : 'Shape'), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13))), if (e.groupId != null) const Icon(Icons.link, size: 14, color: Colors.blue)]), trailing: Row(mainAxisSize: MainAxisSize.min, children: [IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(e.isHidden ? Icons.visibility_off : Icons.visibility, size: 18, color: e.isHidden ? Colors.red : Colors.black54), onPressed: () { saveState(); setState(() => e.isHidden = !e.isHidden); setModalState((){}); }), const SizedBox(width: 8), IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(e.isLocked ? Icons.lock : Icons.lock_open, size: 18, color: e.isLocked ? Colors.red : Colors.black54), onPressed: () { saveState(); setState(() { e.isLocked = !e.isLocked; if(e.isLocked && isSel) selectedId = null; }); setModalState((){}); }), const SizedBox(width: 8), IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.arrow_upward, size: 18, color: Colors.black54), onPressed: () { if (actualIndex < elements.length - 1) { saveState(); setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex + 1, item); }); setModalState((){}); } }), const SizedBox(width: 8), IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.arrow_downward, size: 18, color: Colors.black54), onPressed: () { if (actualIndex > 0) { saveState(); setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex - 1, item); }); setModalState((){}); } })]), onTap: () { if(!e.isLocked && !e.isHidden) { setState(() => selectedId = e.id); setModalState((){}); } })); },)),]));});}); }
   void showPagesPanel() { showModalBottomSheet(context: context, backgroundColor: Colors.transparent, builder: (context) { return StatefulBuilder(builder: (BuildContext context, StateSetter setModalState) { return Container(height: 400, decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))), padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Pages (صفحات)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const Divider(), Expanded(child: ListView.builder(itemCount: pages.length, itemBuilder: (context, index) { bool isCurrent = currentPageIndex == index; return Card(color: isCurrent ? const Color(0xFFF3E8FF) : Colors.white, elevation: 0, margin: const EdgeInsets.only(bottom: 8), shape: RoundedRectangleBorder(side: BorderSide(color: isCurrent ? const Color(0xFF8B5CF6) : Colors.grey.shade300), borderRadius: BorderRadius.circular(8)), child: ListTile(leading: Icon(Icons.description, color: isCurrent ? const Color(0xFF8B5CF6) : Colors.grey), title: Text(pages[index].title, style: TextStyle(fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal)), trailing: Row(mainAxisSize: MainAxisSize.min, children: [ IconButton(icon: const Icon(Icons.copy, color: Colors.blue, size: 20), onPressed: () { setState(() { pages.insert(index + 1, DesignPage(title: '${pages[index].title} Copy', elements: pages[index].elements.map((e) => e.clone()).toList(), pageColor: pages[index].pageColor, bgImageBytes: pages[index].bgImageBytes, canvasRatio: pages[index].canvasRatio, bgGradient: pages[index].bgGradient)); currentPageIndex = index + 1; }); setModalState(() {}); }), if(pages.length > 1) IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20), onPressed: () { setState(() { pages.removeAt(index); if (currentPageIndex >= pages.length) currentPageIndex = pages.length - 1; }); setModalState(() {}); }) ]), onTap: () { setState(() { currentPageIndex = index; selectedId = null; }); Navigator.pop(context); },)); },)), const SizedBox(height: 10), SizedBox(width: double.infinity, child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)), onPressed: () { setState(() { pages.add(DesignPage(title: 'Page ${pages.length + 1}', elements: [DesignElement(id: Random().nextInt(10000).toString(), x: 60, y: 100, content: 'نیا صفحہ', width: 250)], pageColor: Colors.white)); currentPageIndex = pages.length - 1; selectedId = null; }); Navigator.pop(context); }, child: const Text('Add New Page', style: TextStyle(color: Colors.white)))),]));});}); }
 
-  void _showCurveModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 250, padding: const EdgeInsets.all(20), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Curve Text (گولائی)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const SizedBox(height: 10), Row(children: [const Text('Bend:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), Expanded(child: Slider(value: sel.textCurveRadius, min: -150.0, max: 150.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.textCurveRadius = val); setModalState((){}); }))]), Row(children: [const Text('Spacing:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), Expanded(child: Slider(value: sel.letterSpacing, min: -5.0, max: 20.0, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.letterSpacing = val); setModalState((){}); }))]), ElevatedButton(onPressed: () { saveState(); setState(() => sel.textCurveRadius = 0.0); setModalState((){}); }, style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade200), child: const Text('Reset Curve', style: TextStyle(color: Colors.black))) ])); }); }); }
-  void _showBlendModeModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 350, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Blend Modes (مکس کرنا)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const Divider(), Expanded(child: ListView.builder(itemCount: AppConstants.blendModes.length, itemBuilder: (context, index) { String bName = AppConstants.blendModes[index].toString().replaceAll('BlendMode.', '').toUpperCase(); return ListTile(title: Text(bName, style: const TextStyle(fontWeight: FontWeight.bold)), trailing: sel.blendModeIndex == index ? const Icon(Icons.check_circle, color: Color(0xFF8B5CF6)) : null, onTap: () { saveState(); setState(() => sel.blendModeIndex = index); Navigator.pop(context); }); }))])); }); }); }
-
   @override
   Widget build(BuildContext context) {
     bool hasSelection = false;
@@ -222,7 +321,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         sel = elements[idx];
         hasSelection = true;
       } else {
-        selectedId = null; // Fixes the crash if selected element was deleted
+        selectedId = null;
       }
     }
 
@@ -458,45 +557,35 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                         ),
                                                         
                                                         // 2. EDGE HANDLES (Pill Shaped)
-                                                        Positioned(top: -4, left: currentWidth/2 - 12, child: GestureDetector(onPanUpdate: (d) { setState(() { double newH = currentHeight - d.delta.dy; if(newH > 20) { e.height = newH; e.y += d.delta.dy; } }); }, child: _buildPill(true))),
-                                                        Positioned(bottom: -4, left: currentWidth/2 - 12, child: GestureDetector(onPanUpdate: (d) { setState(() { double newH = currentHeight + d.delta.dy; if(newH > 20) e.height = newH; }); }, child: _buildPill(true))),
-                                                        Positioned(left: -4, top: currentHeight/2 - 12, child: GestureDetector(onPanUpdate: (d) { setState(() { double newW = currentWidth - d.delta.dx; if(newW > 50) { e.width = newW; e.x += d.delta.dx; } }); }, child: _buildPill(false))),
-                                                        Positioned(right: -4, top: currentHeight/2 - 12, child: GestureDetector(onPanUpdate: (d) { setState(() { double newW = currentWidth + d.delta.dx; if(newW > 50) e.width = newW; }); }, child: _buildPill(false))),
+                                                        Positioned(top: -4, left: currentWidth/2 - 12, child: _buildPill(true, Alignment.topCenter, e, currentWidth, currentHeight)),
+                                                        Positioned(bottom: -4, left: currentWidth/2 - 12, child: _buildPill(true, Alignment.bottomCenter, e, currentWidth, currentHeight)),
+                                                        Positioned(left: -4, top: currentHeight/2 - 12, child: _buildPill(false, Alignment.centerLeft, e, currentWidth, currentHeight)),
+                                                        Positioned(right: -4, top: currentHeight/2 - 12, child: _buildPill(false, Alignment.centerRight, e, currentWidth, currentHeight)),
 
                                                         // 3. CORNER HANDLES
-                                                        Positioned(top: -6, left: -6, child: _buildCircle()),
-                                                        Positioned(bottom: -6, right: -6, child: _buildCircle()),
+                                                        Positioned(top: -6, left: -6, child: _buildCorner(Alignment.topLeft, e, currentWidth, currentHeight)),
+                                                        Positioned(top: -6, right: -6, child: _buildCorner(Alignment.topRight, e, currentWidth, currentHeight)),
+                                                        Positioned(bottom: -6, right: -6, child: _buildCorner(Alignment.bottomRight, e, currentWidth, currentHeight)),
                                                         
-                                                        // 4. TOP-RIGHT ROTATE HANDLE
+                                                        // 4. TOP-CENTER ROTATE HANDLE (Video Style)
                                                         Positioned(
-                                                          top: -12, right: -12, 
+                                                          top: -45, left: currentWidth/2 - 12, 
                                                           child: GestureDetector(
-                                                            onPanUpdate: (d) { setState(() { e.angle += (d.delta.dx + d.delta.dy) * 0.015; }); },
+                                                            onPanUpdate: (d) => _handleRotate(d.delta.dx, d.delta.dy, e, currentWidth, currentHeight),
                                                             child: _buildIconCircle(Icons.refresh)
                                                           )
                                                         ),
 
-                                                        // 5. BOTTOM-LEFT SCALE HANDLE
+                                                        // 5. BOTTOM-LEFT SCALE HANDLE (Video Style)
                                                         Positioned(
                                                           bottom: -12, left: -12, 
                                                           child: GestureDetector(
-                                                            onPanUpdate: (d) { 
-                                                              setState(() { 
-                                                                double delta = -d.delta.dx + d.delta.dy; 
-                                                                double scale = (currentWidth + delta) / currentWidth;
-                                                                if(scale > 0.1 && (currentWidth * scale) > 50) {
-                                                                  e.width *= scale; e.height *= scale;
-                                                                  if(e.isText) e.fontSize *= scale;
-                                                                  e.x -= (e.width - currentWidth) / 2;
-                                                                  e.y -= (e.height - currentHeight) / 2;
-                                                                }
-                                                              }); 
-                                                            },
+                                                            onPanUpdate: (d) => _handleScale(d.delta.dx, d.delta.dy, e, currentWidth, currentHeight),
                                                             child: _buildIconCircle(Icons.open_in_full)
                                                           )
                                                         ),
 
-                                                        // 6. FLOATING ACTION MENU
+                                                        // 6. FLOATING ACTION MENU (Anti-Rotation Applied)
                                                         Positioned(
                                                           bottom: -60, left: 0, right: 0,
                                                           child: Center(
