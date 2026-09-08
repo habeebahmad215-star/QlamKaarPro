@@ -16,7 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/design_models.dart';
 import '../widgets/custom_widgets.dart';
-import '../utils/constants.dart'; // 🔥 Constants yahan link ho gaye
+import '../utils/constants.dart';
 import 'my_folder_screen.dart';
 
 class ProWorkspaceScreen extends StatefulWidget {
@@ -47,7 +47,15 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   List<List<DesignElement>> redoStack = [];
   String? selectedId;
   
-  List<String> availableFonts = ['JameelNoori', 'Amiri', 'Bombay', 'Mehr'];
+  // 🔥 FIXED: Saare naye fonts yahan add kar diye gaye hain taaki Canvas par apply ho sakein
+  final List<Map<String, String>> availableFontsData = [
+    {'name': 'JameelNoori', 'title': 'جمیل نوری نستعلیق', 'desc': 'Classic Standard Urdu Font'},
+    {'name': 'AlviNastaleeq', 'title': 'علوی نستعلیق', 'desc': 'Beautiful Nasta\'liq Style'},
+    {'name': 'Mehr', 'title': 'مہر نستعلیق', 'desc': 'Modern & Elegant Font'},
+    {'name': 'BombayBlack', 'title': 'بمبئی بلیک', 'desc': 'Thick Header & Title Font'},
+    {'name': 'AlMajeed', 'title': 'المجید قرآنی فونٹ', 'desc': 'Classic Arabic/Quranic Font'},
+  ];
+
   List<String> customFonts = [];
 
   final ImagePicker _picker = ImagePicker();
@@ -115,7 +123,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void saveState() { 
     undoStack.add(elements.map((e) => e.clone()).toList()); 
     redoStack.clear(); 
-    if (undoStack.length > 20) { undoStack.removeAt(0); } // Memory optimization
+    if (undoStack.length > 20) { undoStack.removeAt(0); }
   }
   
   void undoAction() { if (undoStack.isNotEmpty) { redoStack.add(elements.map((e) => e.clone()).toList()); setState(() { elements = undoStack.removeLast(); selectedId = null; }); HapticFeedback.lightImpact(); } }
@@ -502,7 +510,140 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   }
 
   Future<void> _importCustomFont() async { try { FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['ttf', 'otf']); if (result != null && result.files.single.path != null) { String filePath = result.files.single.path!; String fontName = result.files.single.name.replaceAll('.ttf', '').replaceAll('.otf', ''); var fontLoader = FontLoader(fontName); fontLoader.addFont(Future.value(ByteData.view(File(filePath).readAsBytesSync().buffer))); await fontLoader.load(); setState(() { if (!customFonts.contains(fontName)) customFonts.add(fontName); }); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Font "$fontName" import ho gaya! 🎉'))); } } catch (e) { debugPrint("Font Import Error: $e"); } }
-  void showFontPickerModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return StatefulBuilder(builder: (context, setModalState) { return Container(height: 450, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Select Font (فونٹ)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)), onPressed: () async { await _importCustomFont(); setModalState(() {}); }, icon: const Icon(Icons.add, color: Colors.white, size: 18), label: const Text('Add Font', style: TextStyle(color: Colors.white))) ]), const Divider(), Expanded(child: ListView(children: [if (customFonts.isNotEmpty) ...[const Padding(padding: EdgeInsets.all(8.0), child: Text('My Fonts (میرے فونٹس)', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold))), ...customFonts.map((fontName) => ListTile(title: Text(fontName, style: TextStyle(fontFamily: fontName, fontSize: 24)), trailing: sel.fontFamily == fontName ? const Icon(Icons.check_circle, color: Color(0xFF8B5CF6)) : null, onTap: () { saveState(); setState(() => sel.fontFamily = fontName); Navigator.pop(context); })).toList(), const Divider()], const Padding(padding: EdgeInsets.all(8.0), child: Text('Default Fonts (بنیادی فونٹس)', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold))), ...availableFonts.map((fontName) => ListTile(title: Text('اردو فونٹ - $fontName', style: TextStyle(fontFamily: fontName, fontSize: 24)), trailing: sel.fontFamily == fontName ? const Icon(Icons.check_circle, color: Color(0xFF8B5CF6)) : null, onTap: () { saveState(); setState(() => sel.fontFamily = fontName); Navigator.pop(context); })).toList(),])),])); }); }); }
+  
+  // 🔥 FIXED: Premium Font Picker Modal jo Home screen wale style mein hai
+  void showFontPickerModal(DesignElement sel) { 
+    showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.transparent, builder: (context) { 
+      return StatefulBuilder(builder: (context, setModalState) { 
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.75, 
+          padding: const EdgeInsets.all(20), 
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              const Text('Select Font (فونٹ)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF8B5CF6))), 
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))), 
+                onPressed: () async { await _importCustomFont(); setModalState(() {}); }, 
+                icon: const Icon(Icons.add, color: Colors.white, size: 16), 
+                label: const Text('Add Font', style: TextStyle(color: Colors.white, fontSize: 11))
+              ) 
+            ]), 
+            const Divider(), 
+            
+            Expanded(child: ListView(
+              physics: const BouncingScrollPhysics(),
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                  child: Text('Pre-installed Premium Fonts', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF64748B), fontSize: 12, letterSpacing: 0.5)),
+                ),
+                
+                ...availableFontsData.map((font) {
+                  bool isSelected = sel.fontFamily == font['name'];
+                  return Card(
+                    elevation: 0,
+                    color: isSelected ? const Color(0xFFF5F3FF) : Colors.white,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(color: isSelected ? const Color(0xFF8B5CF6) : Colors.grey.shade200, width: isSelected ? 1.5 : 1.0), 
+                      borderRadius: BorderRadius.circular(16)
+                    ),
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () {
+                        saveState(); 
+                        setState(() => sel.fontFamily = font['name']!); 
+                        Navigator.pop(context);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(font['name']!, style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? const Color(0xFF8B5CF6) : const Color(0xFF1E293B), fontSize: 14)),
+                                  const SizedBox(height: 2),
+                                  Text(font['desc']!, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                font['title']!, 
+                                textAlign: TextAlign.right, 
+                                textDirection: TextDirection.rtl, 
+                                style: TextStyle(fontFamily: font['name'], fontSize: 24, color: Colors.black87),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Icon(
+                              isSelected ? Icons.check_circle : Icons.radio_button_unchecked, 
+                              color: isSelected ? const Color(0xFF8B5CF6) : Colors.grey.shade300, 
+                              size: 20
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+                
+                if (customFonts.isNotEmpty) ...[
+                  const Padding(
+                    padding: EdgeInsets.only(top: 15, bottom: 8.0, left: 4.0),
+                    child: Text('My Custom Fonts', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF64748B), fontSize: 12, letterSpacing: 0.5)),
+                  ),
+                  ...customFonts.map((fontName) {
+                    bool isSelected = sel.fontFamily == fontName;
+                    return Card(
+                      elevation: 0,
+                      color: isSelected ? const Color(0xFFF5F3FF) : Colors.white,
+                      shape: RoundedRectangleBorder(
+                        side: BorderSide(color: isSelected ? const Color(0xFF8B5CF6) : Colors.grey.shade200, width: isSelected ? 1.5 : 1.0), 
+                        borderRadius: BorderRadius.circular(16)
+                      ),
+                      margin: const EdgeInsets.only(bottom: 10),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () {
+                          saveState(); 
+                          setState(() => sel.fontFamily = fontName); 
+                          Navigator.pop(context);
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(fontName, style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? const Color(0xFF8B5CF6) : const Color(0xFF1E293B), fontSize: 14)),
+                                    const Text('Imported TTF', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                                  ],
+                                ),
+                              ),
+                              Text('نمونہ تحریر', textAlign: TextAlign.right, textDirection: TextDirection.rtl, style: TextStyle(fontFamily: fontName, fontSize: 24, color: Colors.black87)),
+                              const SizedBox(width: 12),
+                              Icon(isSelected ? Icons.check_circle : Icons.radio_button_unchecked, color: isSelected ? const Color(0xFF8B5CF6) : Colors.grey.shade300, size: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ]
+              ],
+            ))
+          ])); 
+      }); 
+    }); 
+  }
 
   void _showAlignmentModal(DesignElement sel) { showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return Container(height: 250, padding: const EdgeInsets.all(20), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Auto Align (سیدھ)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const Divider(), Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [_buildAlignButton(Icons.align_horizontal_left, 'Left', () { saveState(); setState(() => sel.x = 10); Navigator.pop(context); }), _buildAlignButton(Icons.align_horizontal_center, 'Center', () { saveState(); setState(() => sel.x = (MediaQuery.of(context).size.width - 40 - (sel.width > 0 ? sel.width : 280)) / 2); Navigator.pop(context); }), _buildAlignButton(Icons.align_horizontal_right, 'Right', () { saveState(); setState(() => sel.x = MediaQuery.of(context).size.width - 40 - (sel.width > 0 ? sel.width : 280) - 10); Navigator.pop(context); }),]), const SizedBox(height: 20), Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [_buildAlignButton(Icons.align_vertical_top, 'Top', () { saveState(); setState(() => sel.y = 10); Navigator.pop(context); }), _buildAlignButton(Icons.align_vertical_center, 'Middle', () { saveState(); setState(() => sel.y = (MediaQuery.of(context).size.height * 0.5) / 2); Navigator.pop(context); }), _buildAlignButton(Icons.align_vertical_bottom, 'Bottom', () { saveState(); setState(() => sel.y = (MediaQuery.of(context).size.height * 0.6) - 100); Navigator.pop(context); }),]),])); }); }
   Widget _buildAlignButton(IconData icon, String label, VoidCallback onTap) { return InkWell(onTap: onTap, child: Container(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade300)), child: Column(children: [Icon(icon, color: const Color(0xFF8B5CF6)), const SizedBox(height: 5), Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold))]),),); }
