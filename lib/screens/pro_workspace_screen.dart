@@ -86,9 +86,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     super.dispose();
   }
 
-  void _triggerCanvasUpdate() { _canvasNotifier.value++; }
+  void _triggerCanvasUpdate() { 
+    _canvasNotifier.value++; 
+  }
 
   double _getElWidth(DesignElement e) => e.width > 50 ? e.width : 280;
+  
   double _getElHeight(DesignElement e) {
     if (!e.isText && e.height > 20) return e.height;
     if (e.isShape) return 90;
@@ -132,6 +135,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       redoStack.add(elements.map((e) => e.clone()).toList());
       setState(() { elements = undoStack.removeLast(); selectedId = null; });
       HapticFeedback.lightImpact();
+      _triggerCanvasUpdate();
     }
   }
 
@@ -140,6 +144,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       undoStack.add(elements.map((e) => e.clone()).toList());
       setState(() { elements = redoStack.removeLast(); selectedId = null; });
       HapticFeedback.lightImpact();
+      _triggerCanvasUpdate();
     }
   }
 
@@ -166,9 +171,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
               const SizedBox(height: 10),
               _buildExportOption(Icons.image, 'Save as JPG', 'Solid Background', Colors.blue, () { Navigator.pop(context); _captureAndSave('JPG'); }),
               const SizedBox(height: 10),
-              _buildExportOption(Icons.layers_clear, 'Save as PNG', 'Transparent Image (Logos)', Colors.purple, () { Navigator.pop(context); _captureAndSave('PNG'); }),
+              _buildExportOption(Icons.layers_clear, 'Save as PNG', 'Transparent Image', Colors.purple, () { Navigator.pop(context); _captureAndSave('PNG'); }),
               const SizedBox(height: 10),
-              _buildExportOption(Icons.picture_as_pdf, 'Save as Print HD PDF', 'High Quality PDF Document', Colors.red, () { Navigator.pop(context); _captureAndSave('PDF'); })
+              _buildExportOption(Icons.picture_as_pdf, 'Save as Print PDF', 'High Quality PDF', Colors.red, () { Navigator.pop(context); _captureAndSave('PDF'); })
             ]
           )
         );
@@ -423,7 +428,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       children: [
                         Expanded(flex: 1, child: OutlinedButton(style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), onPressed: () => Navigator.pop(context), child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.bold)))),
                         const SizedBox(width: 15),
-                        Expanded(flex: 2, child: ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: isRTL ? const Color(0xFF10B981) : const Color(0xFF6366F1), padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 4), onPressed: () { if (controller.text.isNotEmpty) { saveState(); if (existingElement != null) { setState(() { existingElement.content = controller.text; existingElement.textAlign = isRTL ? TextAlign.right : TextAlign.left; }); } else { var newEl = DesignElement(id: Random().nextInt(10000).toString(), x: 40, y: 100, content: controller.text, width: 280); newEl.textAlign = isRTL ? TextAlign.right : TextAlign.left; setState(() { elements.add(newEl); selectedId = newEl.id; }); } Navigator.pop(context); } }, icon: const Icon(Icons.check_circle_outline, color: Colors.white), label: const Text('Add to Design', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)))),
+                        Expanded(flex: 2, child: ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: isRTL ? const Color(0xFF10B981) : const Color(0xFF6366F1), padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 4), onPressed: () { if (controller.text.isNotEmpty) { saveState(); if (existingElement != null) { setState(() { existingElement.content = controller.text; existingElement.textAlign = isRTL ? TextAlign.right : TextAlign.left; }); } else { var newEl = DesignElement(id: Random().nextInt(10000).toString(), x: 40, y: 100, content: controller.text, width: 280); newEl.textAlign = isRTL ? TextAlign.right : TextAlign.left; setState(() { elements.add(newEl); selectedId = newEl.id; }); } _triggerCanvasUpdate(); Navigator.pop(context); } }, icon: const Icon(Icons.check_circle_outline, color: Colors.white), label: const Text('Add to Design', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)))),
                       ],
                     )
                   ],
@@ -481,6 +486,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       elements.add(DesignElement(id: Random().nextInt(10000).toString(), x: 40, y: 100, content: 'Table', width: 300, height: 150, isText: false, isTable: true, tableData: [['Column 1', 'Column 2', 'Column 3'], ['Data 1', 'Data 2', 'Data 3'], ['Data 4', 'Data 5', 'Data 6']]));
       selectedId = elements.last.id;
     });
+    _triggerCanvasUpdate();
   }
 
   Widget _buildGridItem(IconData icon, String label, Color bgColor, Color iconColor, [VoidCallback? onTap]) {
@@ -494,6 +500,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         final bytes = await image.readAsBytes();
         saveState();
         setState(() => elements.add(DesignElement(id: Random().nextInt(10000).toString(), x: 80, y: 80, content: '', imageBytes: bytes, isText: false, width: 250, height: 250)));
+        _triggerCanvasUpdate();
       }
     } catch (e) {
       debugPrint("Gallery Error: $e");
@@ -608,7 +615,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       width: double.infinity,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), padding: const EdgeInsets.symmetric(vertical: 15)),
-                        onPressed: () { saveState(); setState(() { sel.tableData = tempTable; _triggerCanvasUpdate(); }); Navigator.pop(context); },
+                        onPressed: () { saveState(); setState(() { sel.tableData = tempTable; }); _triggerCanvasUpdate(); Navigator.pop(context); },
                         child: const Text('Update Table', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16))
                       )
                     )
@@ -628,6 +635,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       if (image != null) {
         final bytes = await image.readAsBytes();
         setState(() { bgImageBytes = bytes; bgGradient = null; pageColor = Colors.white; });
+        _triggerCanvasUpdate();
       }
     } catch (e) {
       debugPrint("BG Image Error: $e");
@@ -641,6 +649,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         final bytes = await image.readAsBytes();
         saveState();
         setState(() => sel.textTextureBytes = bytes);
+        _triggerCanvasUpdate();
       }
     } catch (e) {}
   }
@@ -682,6 +691,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           elements.insert(0, DesignElement(id: Random().nextInt(10000).toString(), x: 0, y: 0, content: item['title'], isText: false, isBorder: true, borderStyle: styleName, elementColor: item['color'], borderWidth: 5.0, width: currentCanvasW > 0 ? currentCanvasW : 400, height: currentCanvasH > 0 ? currentCanvasH : 400));
                         }
                       });
+                      _triggerCanvasUpdate();
                       Navigator.pop(context);
                     },
                     child: Container(
@@ -705,10 +715,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
+  // FIXED FLOATING BOX ACTIONS
   void deleteSelected() {
     if (selectedId != null) {
       saveState();
       setState(() { elements.removeWhere((e) => e.id == selectedId); selectedId = null; });
+      _triggerCanvasUpdate();
     }
   }
 
@@ -717,6 +729,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       saveState();
       DesignElement sel = elements.firstWhere((e) => e.id == selectedId);
       setState(() { var newEl = sel.clone()..id = Random().nextInt(10000).toString()..x += 20..y += 20; elements.add(newEl); selectedId = newEl.id; });
+      _triggerCanvasUpdate();
     }
   }
 
@@ -726,6 +739,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     int idx = elements.indexWhere((e) => e.id == selectedId);
     if (idx < elements.length - 1) {
       setState(() { var item = elements.removeAt(idx); elements.insert(idx + 1, item); });
+      _triggerCanvasUpdate();
     }
   }
 
@@ -735,7 +749,23 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     int idx = elements.indexWhere((e) => e.id == selectedId);
     if (idx > 0) {
       setState(() { var item = elements.removeAt(idx); elements.insert(idx - 1, item); });
+      _triggerCanvasUpdate();
     }
+  }
+
+  // FIXED ALIGNMENT FUNCTION (Added here so it doesn't cause error!)
+  void _toggleAlignment(DesignElement sel) {
+    saveState();
+    setState(() {
+      if (sel.textAlign == TextAlign.right) {
+        sel.textAlign = TextAlign.center;
+      } else if (sel.textAlign == TextAlign.center) {
+        sel.textAlign = TextAlign.left;
+      } else {
+        sel.textAlign = TextAlign.right;
+      }
+    });
+    _triggerCanvasUpdate();
   }
 
   void _pickCustomGradColor(DesignElement sel, int colorNum, StateSetter parentSetState) {
@@ -758,6 +788,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       if(colorNum == 1) sel.customGradColor1 = AppConstants.proColorPalette[index];
                       else sel.customGradColor2 = AppConstants.proColorPalette[index];
                       parentSetState((){});
+                      _triggerCanvasUpdate();
                       Navigator.pop(ctx);
                     },
                     child: Container(decoration: BoxDecoration(color: AppConstants.proColorPalette[index], shape: BoxShape.circle, border: Border.all(color: Colors.black26)))
@@ -811,6 +842,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                 saveState();
                                 setState((){ pageColor = Color(int.parse('0x$hex')); bgImageBytes = null; bgGradient = null; });
                                 setModalState((){});
+                                _triggerCanvasUpdate();
                                 Navigator.pop(context);
                               }
                             },
@@ -832,6 +864,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                               saveState();
                               setState(() { pageColor = c; bgImageBytes = null; bgGradient = null; });
                               setModalState((){});
+                              _triggerCanvasUpdate();
                               Navigator.pop(context);
                             },
                             child: Container(
@@ -885,6 +918,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                             saveState();
                             setState(() { bgGradient = g; bgImageBytes = null; pageColor = Colors.white; });
                             setModalState((){});
+                            _triggerCanvasUpdate();
                             Navigator.pop(context);
                           },
                           child: Container(decoration: BoxDecoration(gradient: LinearGradient(colors: g), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade300, width: 1.5)))
@@ -926,7 +960,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   ListTile(
                     leading: const Icon(Icons.block),
                     title: const Text('Remove Background'),
-                    onTap: () { saveState(); setState(() { sel.textBgColor = null; }); Navigator.pop(context); }
+                    onTap: () { saveState(); setState(() { sel.textBgColor = null; }); _triggerCanvasUpdate(); Navigator.pop(context); }
                   ),
                   Expanded(
                     child: GridView.builder(
@@ -936,7 +970,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                         Color c = AppConstants.proColorPalette[index];
                         bool isSelected = sel.textBgColor?.value == c.value;
                         return GestureDetector(
-                          onTap: () { saveState(); setState(() { sel.textBgColor = c; }); setModalState((){}); },
+                          onTap: () { saveState(); setState(() { sel.textBgColor = c; }); setModalState((){}); _triggerCanvasUpdate(); },
                           child: Container(
                             decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300, width: 1.5)),
                             child: isSelected ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white, size: 20) : null
@@ -997,6 +1031,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                   saveState();
                                   setState(() => sel.textGradient = [sel.customGradColor1!, sel.customGradColor2!]);
                                   setModalState((){});
+                                  _triggerCanvasUpdate();
                                   Navigator.pop(context);
                                 }
                               },
@@ -1011,7 +1046,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   ListTile(
                     leading: const Icon(Icons.block),
                     title: const Text('Clear Gradient'),
-                    onTap: () { saveState(); setState(() { sel.textGradient = null; }); Navigator.pop(context); }
+                    onTap: () { saveState(); setState(() { sel.textGradient = null; }); _triggerCanvasUpdate(); Navigator.pop(context); }
                   ),
                   Expanded(
                     child: GridView.builder(
@@ -1020,7 +1055,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       itemBuilder: (context, index) {
                         List<Color> g = AppConstants.proGradientPalette[index];
                         return GestureDetector(
-                          onTap: () { saveState(); setState(() { sel.textGradient = g; }); setModalState((){}); Navigator.pop(context); },
+                          onTap: () { saveState(); setState(() { sel.textGradient = g; }); setModalState((){}); _triggerCanvasUpdate(); Navigator.pop(context); },
                           child: Container(decoration: BoxDecoration(gradient: LinearGradient(colors: g), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade300, width: 1.5)))
                         );
                       }
@@ -1083,6 +1118,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                   }
                                 });
                                 setModalState((){});
+                                _triggerCanvasUpdate();
                                 Navigator.pop(context);
                               }
                             },
@@ -1107,6 +1143,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                 else { sel.elementColor = c; }
                               });
                               setModalState((){});
+                              _triggerCanvasUpdate();
                               Navigator.pop(context);
                             },
                             child: Container(
@@ -1152,14 +1189,14 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     title: const Text('Enable Stroke', style: TextStyle(fontWeight: FontWeight.bold)),
                     activeColor: const Color(0xFF8B5CF6),
                     value: sel.hasStroke,
-                    onChanged: (val) { saveState(); setState(() => sel.hasStroke = val); setModalState((){}); }
+                    onChanged: (val) { saveState(); setState(() => sel.hasStroke = val); setModalState((){}); _triggerCanvasUpdate(); }
                   ),
                   const Divider(),
                   if (sel.hasStroke) ...[
                     Row(
                       children: [
                         const Text('Thickness:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                        Expanded(child: Slider(value: sel.strokeWidth, min: 1.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.strokeWidth = val); setModalState((){}); }))
+                        Expanded(child: Slider(value: sel.strokeWidth, min: 1.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.strokeWidth = val); setModalState((){}); _triggerCanvasUpdate(); }))
                       ]
                     ),
                     const Text('Stroke Color:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
@@ -1172,7 +1209,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           Color c = AppConstants.proColorPalette[index];
                           bool isSel = sel.strokeColor.value == c.value;
                           return GestureDetector(
-                            onTap: () { saveState(); setState(() => sel.strokeColor = c); setModalState((){}); },
+                            onTap: () { saveState(); setState(() => sel.strokeColor = c); setModalState((){}); _triggerCanvasUpdate(); },
                             child: Container(
                               decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300, width: 1.5), boxShadow: isSel ? [BoxShadow(color: c.withOpacity(0.5), blurRadius: 6)] : null),
                               child: isSel ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white, size: 20) : null
@@ -1216,26 +1253,26 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     title: const Text('Enable Shadow', style: TextStyle(fontWeight: FontWeight.bold)),
                     activeColor: const Color(0xFF8B5CF6),
                     value: sel.hasShadow,
-                    onChanged: (val) { saveState(); setState(() => sel.hasShadow = val); setModalState((){}); }
+                    onChanged: (val) { saveState(); setState(() => sel.hasShadow = val); setModalState((){}); _triggerCanvasUpdate(); }
                   ),
                   const Divider(),
                   if (sel.hasShadow) ...[
                     Row(
                       children: [
                         const Text('Blur:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                        Expanded(child: Slider(value: sel.shadowBlur, min: 0.0, max: 30.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.shadowBlur = val); setModalState((){}); }))
+                        Expanded(child: Slider(value: sel.shadowBlur, min: 0.0, max: 30.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.shadowBlur = val); setModalState((){}); _triggerCanvasUpdate(); }))
                       ]
                     ),
                     Row(
                       children: [
                         const Text('X-Offset:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                        Expanded(child: Slider(value: sel.shadowOffsetX, min: -20.0, max: 20.0, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.shadowOffsetX = val); setModalState((){}); }))
+                        Expanded(child: Slider(value: sel.shadowOffsetX, min: -20.0, max: 20.0, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.shadowOffsetX = val); setModalState((){}); _triggerCanvasUpdate(); }))
                       ]
                     ),
                     Row(
                       children: [
                         const Text('Y-Offset:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                        Expanded(child: Slider(value: sel.shadowOffsetY, min: -20.0, max: 20.0, activeColor: Colors.green, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.shadowOffsetY = val); setModalState((){}); }))
+                        Expanded(child: Slider(value: sel.shadowOffsetY, min: -20.0, max: 20.0, activeColor: Colors.green, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.shadowOffsetY = val); setModalState((){}); _triggerCanvasUpdate(); }))
                       ]
                     ),
                     const Text('Shadow Color:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
@@ -1248,7 +1285,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           Color c = AppConstants.proColorPalette[index];
                           bool isSel = sel.shadowColor.value == c.value;
                           return GestureDetector(
-                            onTap: () { saveState(); setState(() => sel.shadowColor = c); setModalState((){}); },
+                            onTap: () { saveState(); setState(() => sel.shadowColor = c); setModalState((){}); _triggerCanvasUpdate(); },
                             child: Container(
                               decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300, width: 1.5), boxShadow: isSel ? [BoxShadow(color: c.withOpacity(0.5), blurRadius: 6)] : null),
                               child: isSel ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white, size: 20) : null
@@ -1267,6 +1304,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
+  // FIXED: Bracket issues solved by fully expanding the layout 
   void _show3DBlockModal(DesignElement sel) {
     showModalBottomSheet(
       context: context,
@@ -1302,6 +1340,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           onChanged: (val) {
                             setState(() => sel.text3dDepth = val);
                             setModalState(() {});
+                            _triggerCanvasUpdate();
                           }
                         )
                       )
@@ -1325,6 +1364,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                             saveState();
                             setState(() => sel.text3dColor = c);
                             setModalState(() {});
+                            _triggerCanvasUpdate();
                           },
                           child: Container(
                             decoration: BoxDecoration(
@@ -1374,7 +1414,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     max: 150.0,
                     activeColor: const Color(0xFF8B5CF6),
                     onChangeStart: (val) => saveState(),
-                    onChanged: (val) { setState(() => sel.cornerRadius = val); setModalState((){}); }
+                    onChanged: (val) { setState(() => sel.cornerRadius = val); setModalState((){}); _triggerCanvasUpdate(); }
                   )
                 ]
               )
@@ -1431,7 +1471,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   Widget _buildShapeOption(DesignElement sel, StateSetter setModalState, String title, int val, IconData icon) {
     bool isSel = sel.clipShape == val;
     return InkWell(
-      onTap: () { saveState(); setState(() => sel.clipShape = val); setModalState((){}); Navigator.pop(context); },
+      onTap: () { saveState(); setState(() => sel.clipShape = val); setModalState((){}); _triggerCanvasUpdate(); Navigator.pop(context); },
       child: Container(
         width: 80,
         margin: const EdgeInsets.only(right: 10),
@@ -1493,7 +1533,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   Widget _buildFilterOption(DesignElement sel, StateSetter setModalState, String title, int filterVal, Color iconColor) {
     bool isSel = sel.imageFilter == filterVal;
     return InkWell(
-      onTap: () { saveState(); setState(() => sel.imageFilter = filterVal); setModalState((){}); Navigator.pop(context); },
+      onTap: () { saveState(); setState(() => sel.imageFilter = filterVal); setModalState((){}); _triggerCanvasUpdate(); Navigator.pop(context); },
       child: Container(
         width: 80,
         margin: const EdgeInsets.only(right: 10),
@@ -1534,19 +1574,19 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   Row(
                     children: [
                       const Text('Line:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                      Expanded(child: Slider(value: sel.lineHeight, min: 0.5, max: 3.5, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.lineHeight = val); setModalState((){}); }))
+                      Expanded(child: Slider(value: sel.lineHeight, min: 0.5, max: 3.5, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.lineHeight = val); setModalState((){}); _triggerCanvasUpdate(); }))
                     ]
                   ),
                   Row(
                     children: [
                       const Text('Word:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                      Expanded(child: Slider(value: sel.wordSpacing, min: -10.0, max: 30.0, activeColor: const Color(0xFF10B981), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.wordSpacing = val); setModalState((){}); }))
+                      Expanded(child: Slider(value: sel.wordSpacing, min: -10.0, max: 30.0, activeColor: const Color(0xFF10B981), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.wordSpacing = val); setModalState((){}); _triggerCanvasUpdate(); }))
                     ]
                   ),
                   Row(
                     children: [
                       const Text('Letter:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                      Expanded(child: Slider(value: sel.letterSpacing, min: -5.0, max: 20.0, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.letterSpacing = val); setModalState((){}); }))
+                      Expanded(child: Slider(value: sel.letterSpacing, min: -5.0, max: 20.0, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.letterSpacing = val); setModalState((){}); _triggerCanvasUpdate(); }))
                     ]
                   )
                 ]
@@ -1584,7 +1624,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     max: 150.0,
                     activeColor: const Color(0xFF8B5CF6),
                     onChangeStart: (val) => saveState(),
-                    onChanged: (val) { setState(() => sel.fontSize = val); setModalState((){}); }
+                    onChanged: (val) { setState(() => sel.fontSize = val); setModalState((){}); _triggerCanvasUpdate(); }
                   )
                 ]
               )
@@ -1622,7 +1662,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     max: pi,
                     activeColor: const Color(0xFF8B5CF6),
                     onChangeStart: (val) => saveState(),
-                    onChanged: (val) { setState(() => sel.angle = val); setModalState((){}); }
+                    onChanged: (val) { setState(() => sel.angle = val); setModalState((){}); _triggerCanvasUpdate(); }
                   ),
                   Text('${(sel.angle * 180 / pi).toInt()}°', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))
                 ]
@@ -1658,17 +1698,17 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   Row(
                     children: [
                       const Text('X-Axis:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Expanded(child: Slider(value: sel.pitch, min: -pi / 2, max: pi / 2, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.pitch = val); setModalState((){}); }))
+                      Expanded(child: Slider(value: sel.pitch, min: -pi / 2, max: pi / 2, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.pitch = val); setModalState((){}); _triggerCanvasUpdate(); }))
                     ]
                   ),
                   Row(
                     children: [
                       const Text('Y-Axis:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Expanded(child: Slider(value: sel.yaw, min: -pi / 2, max: pi / 2, activeColor: Colors.green, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.yaw = val); setModalState((){}); }))
+                      Expanded(child: Slider(value: sel.yaw, min: -pi / 2, max: pi / 2, activeColor: Colors.green, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.yaw = val); setModalState((){}); _triggerCanvasUpdate(); }))
                     ]
                   ),
                   ElevatedButton(
-                    onPressed: () { saveState(); setState((){ sel.pitch = 0; sel.yaw = 0; }); setModalState((){}); },
+                    onPressed: () { saveState(); setState((){ sel.pitch = 0; sel.yaw = 0; }); setModalState((){}); _triggerCanvasUpdate(); },
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade200),
                     child: const Text('Reset Perspective', style: TextStyle(color: Colors.black))
                   )
@@ -1704,6 +1744,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                 }
               });
               setModalState((){});
+              _triggerCanvasUpdate();
             }
             return Container(
               height: 260,
@@ -1811,6 +1852,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                               onTap: () {
                                 saveState();
                                 setState(() => sel.fontFamily = font['name']!);
+                                _triggerCanvasUpdate();
                                 Navigator.pop(context);
                               },
                               child: Padding(
@@ -1869,6 +1911,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                 onTap: () {
                                   saveState();
                                   setState(() => sel.fontFamily = fontName);
+                                  _triggerCanvasUpdate();
                                   Navigator.pop(context);
                                 },
                                 child: Padding(
@@ -1906,19 +1949,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  void _toggleAlignment(DesignElement sel) {
-    saveState();
-    setState(() {
-      if (sel.textAlign == TextAlign.right) {
-        sel.textAlign = TextAlign.center;
-      } else if (sel.textAlign == TextAlign.center) {
-        sel.textAlign = TextAlign.left;
-      } else {
-        sel.textAlign = TextAlign.right;
-      }
-    });
-  }
-
   void _showAlignmentModal(DesignElement sel) {
     showModalBottomSheet(
       context: context,
@@ -1941,18 +1971,18 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildAlignButton(Icons.align_horizontal_left, 'Left', () { saveState(); setState(() => sel.x = 10); Navigator.pop(context); }),
-                  _buildAlignButton(Icons.align_horizontal_center, 'Center', () { saveState(); setState(() => sel.x = (currentCanvasW - _getElWidth(sel)) / 2); Navigator.pop(context); }),
-                  _buildAlignButton(Icons.align_horizontal_right, 'Right', () { saveState(); setState(() => sel.x = currentCanvasW - _getElWidth(sel) - 10); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_horizontal_left, 'Left', () { saveState(); setState(() => sel.x = 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_horizontal_center, 'Center', () { saveState(); setState(() => sel.x = (currentCanvasW - _getElWidth(sel)) / 2); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_horizontal_right, 'Right', () { saveState(); setState(() => sel.x = currentCanvasW - _getElWidth(sel) - 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
                 ]
               ),
               const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildAlignButton(Icons.align_vertical_top, 'Top', () { saveState(); setState(() => sel.y = 10); Navigator.pop(context); }),
-                  _buildAlignButton(Icons.align_vertical_center, 'Middle', () { saveState(); setState(() => sel.y = (currentCanvasH - _getElHeight(sel)) / 2); Navigator.pop(context); }),
-                  _buildAlignButton(Icons.align_vertical_bottom, 'Bottom', () { saveState(); setState(() => sel.y = currentCanvasH - _getElHeight(sel) - 10); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_vertical_top, 'Top', () { saveState(); setState(() => sel.y = 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_vertical_center, 'Middle', () { saveState(); setState(() => sel.y = (currentCanvasH - _getElHeight(sel)) / 2); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_vertical_bottom, 'Bottom', () { saveState(); setState(() => sel.y = currentCanvasH - _getElHeight(sel) - 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
                 ]
               )
             ]
@@ -2037,9 +2067,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     children: [
                       const Text('Layers & Groups', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       if (selectedForGroup.length > 1)
-                        ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), padding: const EdgeInsets.symmetric(horizontal: 10)), icon: const Icon(Icons.link, size: 16, color: Colors.white), label: const Text('Group', style: TextStyle(color: Colors.white, fontSize: 12)), onPressed: () { String newGroup = DateTime.now().millisecondsSinceEpoch.toString(); saveState(); for (var e in elements) { if (selectedForGroup.contains(e.id)) e.groupId = newGroup; } selectedForGroup.clear(); setModalState((){}); setState((){}); }),
+                        ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), padding: const EdgeInsets.symmetric(horizontal: 10)), icon: const Icon(Icons.link, size: 16, color: Colors.white), label: const Text('Group', style: TextStyle(color: Colors.white, fontSize: 12)), onPressed: () { String newGroup = DateTime.now().millisecondsSinceEpoch.toString(); saveState(); for (var e in elements) { if (selectedForGroup.contains(e.id)) e.groupId = newGroup; } selectedForGroup.clear(); setModalState((){}); setState((){}); _triggerCanvasUpdate(); }),
                       if (selectedForGroup.isNotEmpty)
-                        ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, padding: const EdgeInsets.symmetric(horizontal: 10)), icon: const Icon(Icons.link_off, size: 16, color: Colors.white), label: const Text('Ungroup', style: TextStyle(color: Colors.white, fontSize: 12)), onPressed: () { saveState(); for (var e in elements) { if (selectedForGroup.contains(e.id)) e.groupId = null; } selectedForGroup.clear(); setModalState((){}); setState((){}); }),
+                        ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, padding: const EdgeInsets.symmetric(horizontal: 10)), icon: const Icon(Icons.link_off, size: 16, color: Colors.white), label: const Text('Ungroup', style: TextStyle(color: Colors.white, fontSize: 12)), onPressed: () { saveState(); for (var e in elements) { if (selectedForGroup.contains(e.id)) e.groupId = null; } selectedForGroup.clear(); setModalState((){}); setState((){}); _triggerCanvasUpdate(); }),
                       IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
                     ]
                   ),
@@ -2077,13 +2107,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(e.isHidden ? Icons.visibility_off : Icons.visibility, size: 18, color: e.isHidden ? Colors.red : Colors.black54), onPressed: () { saveState(); setState(() => e.isHidden = !e.isHidden); setModalState((){}); }),
+                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(e.isHidden ? Icons.visibility_off : Icons.visibility, size: 18, color: e.isHidden ? Colors.red : Colors.black54), onPressed: () { saveState(); setState(() => e.isHidden = !e.isHidden); setModalState((){}); _triggerCanvasUpdate(); }),
                                     const SizedBox(width: 8),
                                     IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(e.isLocked ? Icons.lock : Icons.lock_open, size: 18, color: e.isLocked ? Colors.red : Colors.black54), onPressed: () { saveState(); setState(() { e.isLocked = !e.isLocked; if(e.isLocked && isSel) selectedId = null; }); setModalState((){}); }),
                                     const SizedBox(width: 8),
-                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.arrow_upward, size: 18, color: Colors.black54), onPressed: () { if (actualIndex < elements.length - 1) { saveState(); setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex + 1, item); }); setModalState((){}); } }),
+                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.arrow_upward, size: 18, color: Colors.black54), onPressed: () { if (actualIndex < elements.length - 1) { saveState(); setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex + 1, item); }); setModalState((){}); _triggerCanvasUpdate(); } }),
                                     const SizedBox(width: 8),
-                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.arrow_downward, size: 18, color: Colors.black54), onPressed: () { if (actualIndex > 0) { saveState(); setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex - 1, item); }); setModalState((){}); } })
+                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.arrow_downward, size: 18, color: Colors.black54), onPressed: () { if (actualIndex > 0) { saveState(); setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex - 1, item); }); setModalState((){}); _triggerCanvasUpdate(); } })
                                   ]
                                 ),
                                 onTap: () { if(!e.isLocked && !e.isHidden) { setState(() => selectedId = e.id); setModalState((){}); } }
@@ -2139,12 +2169,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                IconButton(icon: const Icon(Icons.copy, color: Colors.blue, size: 20), onPressed: () { setState(() { pages.insert(index + 1, DesignPage(title: '${pages[index].title} Copy', elements: pages[index].elements.map((e) => e.clone()).toList(), pageColor: pages[index].pageColor, bgImageBytes: pages[index].bgImageBytes, canvasRatio: pages[index].canvasRatio, bgGradient: pages[index].bgGradient)); currentPageIndex = index + 1; }); setModalState((){}); }),
+                                IconButton(icon: const Icon(Icons.copy, color: Colors.blue, size: 20), onPressed: () { setState(() { pages.insert(index + 1, DesignPage(title: '${pages[index].title} Copy', elements: pages[index].elements.map((e) => e.clone()).toList(), pageColor: pages[index].pageColor, bgImageBytes: pages[index].bgImageBytes, canvasRatio: pages[index].canvasRatio, bgGradient: pages[index].bgGradient)); currentPageIndex = index + 1; }); setModalState((){}); _triggerCanvasUpdate(); }),
                                 if(pages.length > 1)
-                                  IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20), onPressed: () { setState(() { pages.removeAt(index); if (currentPageIndex >= pages.length) currentPageIndex = pages.length - 1; }); setModalState((){}); })
+                                  IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20), onPressed: () { setState(() { pages.removeAt(index); if (currentPageIndex >= pages.length) currentPageIndex = pages.length - 1; }); setModalState((){}); _triggerCanvasUpdate(); })
                               ]
                             ),
-                            onTap: () { setState(() { currentPageIndex = index; selectedId = null; }); Navigator.pop(context); }
+                            onTap: () { setState(() { currentPageIndex = index; selectedId = null; }); _triggerCanvasUpdate(); Navigator.pop(context); }
                           )
                         );
                       }
@@ -2155,7 +2185,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)),
-                      onPressed: () { setState(() { pages.add(DesignPage(title: 'Page ${pages.length + 1}', elements: [DesignElement(id: Random().nextInt(10000).toString(), x: 60, y: 100, content: 'نیا صفحہ', width: 250)], pageColor: Colors.white)); currentPageIndex = pages.length - 1; selectedId = null; }); Navigator.pop(context); },
+                      onPressed: () { setState(() { pages.add(DesignPage(title: 'Page ${pages.length + 1}', elements: [DesignElement(id: Random().nextInt(10000).toString(), x: 60, y: 100, content: 'نیا صفحہ', width: 250)], pageColor: Colors.white)); currentPageIndex = pages.length - 1; selectedId = null; }); _triggerCanvasUpdate(); Navigator.pop(context); },
                       child: const Text('Add New Page', style: TextStyle(color: Colors.white))
                     )
                   )
@@ -2192,17 +2222,17 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   Row(
                     children: [
                       const Text('Bend:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                      Expanded(child: Slider(value: sel.textCurveRadius, min: -150.0, max: 150.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.textCurveRadius = val); setModalState((){}); }))
+                      Expanded(child: Slider(value: sel.textCurveRadius, min: -150.0, max: 150.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.textCurveRadius = val); setModalState((){}); _triggerCanvasUpdate(); }))
                     ]
                   ),
                   Row(
                     children: [
                       const Text('Spacing:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                      Expanded(child: Slider(value: sel.letterSpacing, min: -5.0, max: 20.0, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.letterSpacing = val); setModalState((){}); }))
+                      Expanded(child: Slider(value: sel.letterSpacing, min: -5.0, max: 20.0, activeColor: Colors.blue, onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.letterSpacing = val); setModalState((){}); _triggerCanvasUpdate(); }))
                     ]
                   ),
                   ElevatedButton(
-                    onPressed: () { saveState(); setState(() => sel.textCurveRadius = 0.0); setModalState((){}); },
+                    onPressed: () { saveState(); setState(() => sel.textCurveRadius = 0.0); setModalState((){}); _triggerCanvasUpdate(); },
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade200),
                     child: const Text('Reset Curve', style: TextStyle(color: Colors.black))
                   )
@@ -2244,8 +2274,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                         String bName = AppConstants.blendModes[index].toString().replaceAll('BlendMode.', '').toUpperCase();
                         return ListTile(
                           title: Text(bName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          trailing: sel.blendModeIndex == index ? const Icon(Icons.check_circle, color: const Color(0xFF8B5CF6)) : null,
-                          onTap: () { saveState(); setState(() => sel.blendModeIndex = index); Navigator.pop(context); }
+                          trailing: sel.blendModeIndex == index ? const Icon(Icons.check_circle, color: Color(0xFF8B5CF6)) : null,
+                          onTap: () { saveState(); setState(() => sel.blendModeIndex = index); _triggerCanvasUpdate(); Navigator.pop(context); }
                         );
                       }
                     )
@@ -2276,9 +2306,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   Widget _buildIconCircle(IconData icon) {
     return Container(
-      width: 24, height: 24,
+      width: 28, height: 28,
       decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)]),
-      child: Icon(icon, size: 14, color: const Color(0xFF8B5CF6)),
+      child: Icon(icon, size: 16, color: const Color(0xFF8B5CF6)),
     );
   }
 
@@ -2341,7 +2371,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
             
           Expanded(
             child: GestureDetector(
-              onTap: () => setState(() => selectedId = null), 
+              onTap: () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, 
               child: Center(
                 child: InteractiveViewer(
                   transformationController: _transformController,
@@ -2392,7 +2422,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                         
                                       ...elements.map((e) {
                                         if (e.isHidden) return const SizedBox.shrink();
-                                        bool isSel = e.id == selectedId;
+                                        bool isSel = (e.id == selectedId) && !_isExporting;
                                         
                                         Matrix4 matrix = Matrix4.identity()
                                           ..setEntry(3, 2, 0.002) 
@@ -2413,14 +2443,18 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           universalBorder = Border.all(color: e.strokeColor, width: e.strokeWidth);
                                         }
 
+                                        double pad = 75.0; // The touch-safe zone for selection box
                                         double currentWidth = _getElWidth(e); 
                                         double currentHeight = _getElHeight(e);
+                                        double boxW = currentWidth + (pad * 2);
+                                        double boxH = currentHeight + (pad * 2);
+                                        
                                         Widget contentWidget;
 
                                         if (e.isBorder) {
                                           return Positioned.fill(
                                             child: GestureDetector(
-                                              onTap: () { if(!e.isLocked) setState(() => selectedId = e.id); },
+                                              onTap: () { if(!e.isLocked) { setState(() => selectedId = e.id); _triggerCanvasUpdate(); } },
                                               child: Transform(
                                                 transform: matrix, alignment: Alignment.center,
                                                 child: Container(margin: const EdgeInsets.all(8), decoration: BoxDecoration(border: Border.all(color: e.elementColor, width: e.borderWidth), borderRadius: BorderRadius.circular(10), color: isSel && !_isExporting ? Colors.purple.withOpacity(0.05) : Colors.transparent))
@@ -2475,97 +2509,128 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                         }
 
                                         if (_isExporting) { 
-                                          return Positioned(left: e.x, top: e.y, child: Transform(transform: matrix, alignment: Alignment.center, child: Opacity(opacity: e.opacity, child: Padding(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15), child: contentWidget))));
+                                          return Positioned(
+                                            left: e.x, top: e.y, 
+                                            child: Transform(transform: matrix, alignment: Alignment.center, child: Opacity(opacity: e.opacity, child: contentWidget))
+                                          );
                                         }
                                         
+                                        // 100% PRO SELECTION BOX RENDER
                                         return Positioned(
-                                          left: e.x, top: e.y,
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              if (e.isLocked) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Yeh Layer Lock hai.', style: TextStyle(fontFamily: 'JameelNoori')), duration: Duration(seconds: 1)));
-                                              else setState(() => selectedId = e.id);
-                                            },
-                                            onPanStart: (d) { if(!e.isLocked) saveState(); },
-                                            onPanUpdate: (d) {
-                                              if(!e.isLocked && selectedId == e.id) {
-                                                setState(() { 
-                                                  e.x += d.delta.dx; 
-                                                  e.y += d.delta.dy; 
-                                                  if (e.groupId != null) {
-                                                    for (var other in elements) {
-                                                      if (other.id != e.id && other.groupId == e.groupId && !other.isLocked) {
-                                                        other.x += d.delta.dx; other.y += d.delta.dy;
-                                                      }
-                                                    }
-                                                  }
-                                                });
-                                              }
-                                            },
-                                            child: Transform(
-                                              transform: matrix, alignment: Alignment.center,
-                                              child: isSel 
-                                                ? Padding(
-                                                    padding: const EdgeInsets.all(75), // PADDING EXPANDED TO FIX FLOATING MENU CLICK!
-                                                    child: Stack(
-                                                      clipBehavior: Clip.none,
-                                                      alignment: Alignment.center,
-                                                      children: [
-                                                        Container(
-                                                          decoration: BoxDecoration(border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5)),
-                                                          child: Opacity(opacity: e.opacity, child: contentWidget)
-                                                        ),
-                                                        
-                                                        Positioned(top: -4, left: currentWidth/2 - 12, child: _buildPill(true)),
-                                                        Positioned(bottom: -4, left: currentWidth/2 - 12, child: _buildPill(true)),
-                                                        Positioned(left: -4, top: currentHeight/2 - 12, child: _buildPill(false)),
-                                                        Positioned(right: -4, top: currentHeight/2 - 12, child: _buildPill(false)),
-
-                                                        Positioned(top: -6, left: -6, child: _buildCircle()),
-                                                        Positioned(top: -6, right: -6, child: _buildCircle()),
-                                                        Positioned(bottom: -6, left: -6, child: _buildCircle()),
-                                                        Positioned(bottom: -6, right: -6, child: _buildCircle()),
-
-                                                        Positioned(
-                                                          top: -35, right: -35, 
-                                                          child: GestureDetector(
-                                                            onPanStart: (_) => saveState(),
-                                                            onPanUpdate: (d) { setState(() { e.angle += (d.delta.dx + d.delta.dy) * 0.01; }); },
-                                                            child: _buildIconCircle(Icons.rotate_right)
-                                                          )
-                                                        ),
-                                                        
-                                                        Positioned(
-                                                          bottom: -35, left: -35, 
-                                                          child: GestureDetector(
-                                                            onPanStart: (_) => saveState(),
-                                                            onPanUpdate: (d) { 
-                                                              setState(() { 
-                                                                double scaleAmount = (-d.delta.dx + d.delta.dy) * 0.5; 
-                                                                double newW = currentWidth + scaleAmount;
-                                                                if(newW > 50) {
-                                                                  double ratio = currentWidth / currentHeight;
-                                                                  e.width = newW; 
-                                                                  if(!e.isText) e.height = newW / ratio;
-                                                                  if(e.isText) e.fontSize += scaleAmount * 0.2;
-                                                                  e.x -= scaleAmount / 2;
-                                                                  e.y -= (scaleAmount / ratio) / 2;
+                                          left: e.x - pad, 
+                                          top: e.y - pad,
+                                          child: Transform(
+                                            transform: matrix, alignment: Alignment.center,
+                                            child: SizedBox(
+                                              width: boxW, height: boxH,
+                                              child: Stack(
+                                                clipBehavior: Clip.none,
+                                                children: [
+                                                  
+                                                  // MAIN CONTENT DRAG LAYER
+                                                  Positioned(
+                                                    left: pad, top: pad,
+                                                    width: currentWidth, height: currentHeight,
+                                                    child: GestureDetector(
+                                                      behavior: HitTestBehavior.opaque,
+                                                      onTap: () {
+                                                        if (e.isLocked) {
+                                                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Yeh Layer Lock hai.', style: TextStyle(fontFamily: 'JameelNoori')), duration: Duration(seconds: 1)));
+                                                        } else {
+                                                          setState(() => selectedId = e.id);
+                                                          _triggerCanvasUpdate();
+                                                        }
+                                                      },
+                                                      onPanStart: (d) { if(!e.isLocked) saveState(); },
+                                                      onPanUpdate: (d) {
+                                                        if(!e.isLocked && selectedId == e.id) {
+                                                          setState(() { 
+                                                            e.x += d.delta.dx; 
+                                                            e.y += d.delta.dy; 
+                                                            if (e.groupId != null) {
+                                                              for (var other in elements) {
+                                                                if (other.id != e.id && other.groupId == e.groupId && !other.isLocked) {
+                                                                  other.x += d.delta.dx; other.y += d.delta.dy;
                                                                 }
-                                                              }); 
-                                                            },
-                                                            child: _buildIconCircle(Icons.open_in_full)
-                                                          )
-                                                        ),
+                                                              }
+                                                            }
+                                                          });
+                                                          _triggerCanvasUpdate();
+                                                        }
+                                                      },
+                                                      child: Container(
+                                                        decoration: isSel ? BoxDecoration(border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5)) : null,
+                                                        child: Opacity(opacity: e.opacity, child: contentWidget)
+                                                      )
+                                                    )
+                                                  ),
 
-                                                        Positioned(
-                                                          bottom: -70,
+                                                  // HANDLES AND ACTIONS
+                                                  if (isSel) ...[
+                                                    // Edge Pills
+                                                    Positioned(top: pad - 4, left: pad + currentWidth/2 - 12, child: _buildPill(true)),
+                                                    Positioned(top: pad + currentHeight - 4, left: pad + currentWidth/2 - 12, child: _buildPill(true)),
+                                                    Positioned(top: pad + currentHeight/2 - 12, left: pad - 4, child: _buildPill(false)),
+                                                    Positioned(top: pad + currentHeight/2 - 12, left: pad + currentWidth - 4, child: _buildPill(false)),
+
+                                                    // Corner Circles
+                                                    Positioned(top: pad - 6, left: pad - 6, child: _buildCircle()),
+                                                    Positioned(top: pad - 6, left: pad + currentWidth - 6, child: _buildCircle()),
+                                                    Positioned(top: pad + currentHeight - 6, left: pad - 6, child: _buildCircle()),
+                                                    Positioned(top: pad + currentHeight - 6, left: pad + currentWidth - 6, child: _buildCircle()),
+
+                                                    // Rotate Handle
+                                                    Positioned(
+                                                      top: pad - 26, left: pad + currentWidth + 5, 
+                                                      child: GestureDetector(
+                                                        behavior: HitTestBehavior.opaque,
+                                                        onPanStart: (_) => saveState(),
+                                                        onPanUpdate: (d) { 
+                                                          setState(() { e.angle += (d.delta.dx + d.delta.dy) * 0.01; }); 
+                                                          _triggerCanvasUpdate();
+                                                        },
+                                                        child: _buildIconCircle(Icons.rotate_right)
+                                                      )
+                                                    ),
+                                                    
+                                                    // Scale Handle
+                                                    Positioned(
+                                                      top: pad + currentHeight + 5, left: pad + currentWidth + 5, 
+                                                      child: GestureDetector(
+                                                        behavior: HitTestBehavior.opaque,
+                                                        onPanStart: (_) => saveState(),
+                                                        onPanUpdate: (d) { 
+                                                          setState(() { 
+                                                            double delta = (d.delta.dx + d.delta.dy) * 0.5; 
+                                                            double newW = currentWidth + delta;
+                                                            if(newW > 50) {
+                                                              double ratio = currentWidth / currentHeight;
+                                                              e.width = newW; 
+                                                              if(!e.isText) e.height = newW / ratio;
+                                                              if(e.isText) e.fontSize = max(10.0, e.fontSize + delta * 0.2);
+                                                            }
+                                                          }); 
+                                                          _triggerCanvasUpdate();
+                                                        },
+                                                        child: _buildIconCircle(Icons.open_in_full)
+                                                      )
+                                                    ),
+
+                                                    // Floating Menu
+                                                    Positioned(
+                                                      top: pad + currentHeight + 30, left: 0, right: 0,
+                                                      child: Center(
+                                                        child: Transform.rotate(
+                                                          angle: -e.angle,
                                                           child: Material(
                                                             elevation: 6, borderRadius: BorderRadius.circular(20), color: Colors.white,
                                                             child: Padding(
-                                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                                               child: Row(
                                                                 mainAxisSize: MainAxisSize.min,
                                                                 children: [
                                                                   GestureDetector(
+                                                                    behavior: HitTestBehavior.opaque,
                                                                     onPanStart: (_) => saveState(),
                                                                     onPanUpdate: (d) { 
                                                                       setState(() { 
@@ -2578,22 +2643,32 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                                           }
                                                                         }
                                                                       }); 
+                                                                      _triggerCanvasUpdate();
                                                                     },
-                                                                    child: Container(padding: const EdgeInsets.all(6), color: Colors.transparent, child: const Icon(Icons.open_with, size: 20, color: Colors.black54))
+                                                                    child: Container(padding: const EdgeInsets.all(6), child: const Icon(Icons.open_with, size: 22, color: Colors.black54))
                                                                   ),
-                                                                  const SizedBox(width: 12),
-                                                                  GestureDetector(onTap: duplicateSelected, child: Container(padding: const EdgeInsets.all(6), color: Colors.transparent, child: const Icon(Icons.copy, size: 20, color: Colors.black54))),
-                                                                  const SizedBox(width: 12),
-                                                                  GestureDetector(onTap: deleteSelected, child: Container(padding: const EdgeInsets.all(6), color: Colors.transparent, child: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent))),
+                                                                  const SizedBox(width: 15),
+                                                                  GestureDetector(
+                                                                    behavior: HitTestBehavior.opaque,
+                                                                    onTap: duplicateSelected, 
+                                                                    child: Container(padding: const EdgeInsets.all(6), child: const Icon(Icons.copy, size: 22, color: Colors.black54))
+                                                                  ),
+                                                                  const SizedBox(width: 15),
+                                                                  GestureDetector(
+                                                                    behavior: HitTestBehavior.opaque,
+                                                                    onTap: deleteSelected, 
+                                                                    child: Container(padding: const EdgeInsets.all(6), child: const Icon(Icons.delete_outline, size: 22, color: Colors.redAccent))
+                                                                  ),
                                                                 ]
                                                               )
                                                             )
                                                           )
-                                                        ),
-                                                      ],
+                                                        )
+                                                      )
                                                     ),
-                                                  )
-                                                : Padding(padding: const EdgeInsets.all(75), child: Opacity(opacity: e.opacity, child: contentWidget)),
+                                                  ]
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         );
@@ -2637,7 +2712,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   _buildToolBtn(Icons.image, 'BG Image', _setCanvasBackground),
                   _buildToolBtn(Icons.format_color_fill, 'BG Color', _showCanvasBgColorModal),
                   _buildToolBtn(Icons.gradient, 'BG Gradient', _showCanvasBgGradientModal),
-                  _buildToolBtn(Icons.layers_clear, 'Clear BG', () { saveState(); setState((){ pageColor = Colors.transparent; bgImageBytes = null; bgGradient = null; }); }), 
+                  _buildToolBtn(Icons.layers_clear, 'Clear BG', () { saveState(); setState((){ pageColor = Colors.transparent; bgImageBytes = null; bgGradient = null; }); _triggerCanvasUpdate(); }), 
                 ],
               ),
             ),
@@ -2660,16 +2735,16 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                 const SizedBox(width: 10),
                 if (sel.isText || sel.isTable) _buildToolBtn(Icons.text_fields, 'Size', () => showSizeSliderModal(sel)),
                 if (sel.isText) _buildToolBtn(Icons.height, 'Spacing', () => showSpacingModal(sel)),
-                if (sel.isText) _buildToolBtn(Icons.format_bold, 'Bold', () { saveState(); setState(() => sel.isBold = !sel.isBold); }),
+                if (sel.isText) _buildToolBtn(Icons.format_bold, 'Bold', () { saveState(); setState(() => sel.isBold = !sel.isBold); _triggerCanvasUpdate(); }),
                 if (sel.isText) _buildToolBtn(Icons.format_color_fill, 'Text BG', () => _showTextBgPickerModal(sel)),
                 if (sel.isText) _buildToolBtn(Icons.gradient, 'Gradient', () => _showGradientPickerModal(sel)),
                 if (sel.isText) _buildToolBtn(Icons.data_usage, 'Curve', () => _showCurveModal(sel)),
                 if (sel.isText) _buildToolBtn(Icons.texture, 'Texture', () => _addTextureToText(sel)),
-                if (sel.isText && sel.textTextureBytes != null) _buildToolBtn(Icons.layers_clear, 'Clear Texture', () { saveState(); setState(() => sel.textTextureBytes = null); }),
+                if (sel.isText && sel.textTextureBytes != null) _buildToolBtn(Icons.layers_clear, 'Clear Texture', () { saveState(); setState(() => sel.textTextureBytes = null); _triggerCanvasUpdate(); }),
                 if (sel.isText) _buildToolBtn(Icons.format_align_left, 'Align Text', () => _toggleAlignment(sel)),
                 _buildToolBtn(Icons.center_focus_strong, 'Position', () => _showAlignmentModal(sel)),
                 if (sel.isText) _buildToolBtn(Icons.view_in_ar_outlined, '3D Block', () => _show3DBlockModal(sel)),
-                if (sel.imageBytes != null) _buildToolBtn(Icons.format_paint, 'Tint Color', () { saveState(); setState(() => sel.isTinted = !sel.isTinted); if(sel.isTinted)_showColorPickerModal(sel); }),
+                if (sel.imageBytes != null) _buildToolBtn(Icons.format_paint, 'Tint Color', () { saveState(); setState(() => sel.isTinted = !sel.isTinted); _triggerCanvasUpdate(); if(sel.isTinted)_showColorPickerModal(sel); }),
                 if (sel.imageBytes != null) _buildToolBtn(Icons.auto_awesome_motion, 'Blend', () => _showBlendModeModal(sel)),
                 if (!sel.isBorder) _buildToolBtn(Icons.border_color, 'Stroke', () => _showAdvancedStrokeModal(sel)),
                 if (!sel.isBorder && !sel.isTable) _buildToolBtn(Icons.brightness_6, 'Shadow', () => _showAdvancedShadowModal(sel)),
@@ -2677,9 +2752,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                 if (sel.imageBytes != null && !sel.isTinted) _buildToolBtn(Icons.photo_filter, 'Filters', () => _showImageFiltersModal(sel)),
                 if (sel.imageBytes != null) _buildToolBtn(Icons.crop, 'Crop Shape', () => _showShapeClipModal(sel)),
                 if (sel.isTable) _buildToolBtn(Icons.table_rows, 'Edit Table', () => _showTableEditorModal(sel)),
-                _buildToolBtn(Icons.flip, 'Flip H', () { saveState(); setState(() => sel.flipX = !sel.flipX); }),
-                _buildToolBtn(Icons.flip_camera_android, 'Flip V', () { saveState(); setState(() => sel.flipY = !sel.flipY); }),
-                _buildToolBtn(Icons.opacity, 'Opacity', () { saveState(); setState(() => sel.opacity = sel.opacity == 1.0 ? 0.5 : 1.0); }),
+                _buildToolBtn(Icons.flip, 'Flip H', () { saveState(); setState(() => sel.flipX = !sel.flipX); _triggerCanvasUpdate(); }),
+                _buildToolBtn(Icons.flip_camera_android, 'Flip V', () { saveState(); setState(() => sel.flipY = !sel.flipY); _triggerCanvasUpdate(); }),
+                _buildToolBtn(Icons.opacity, 'Opacity', () { saveState(); setState(() => sel.opacity = sel.opacity == 1.0 ? 0.5 : 1.0); _triggerCanvasUpdate(); }),
                 _buildToolBtn(Icons.rotate_right, 'Rotate', () => showRotationModal(sel)), 
                 _buildToolBtn(Icons.view_in_ar, 'Perspective', () => show3DModal(sel)), 
                 _buildToolBtn(Icons.open_with, 'Nudge', () => showNudgeModal(sel)),
@@ -2692,7 +2767,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           child: Row(
             children: [
-              InkWell(onTap: () => setState(() => selectedId = null), child: Container(padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10), decoration: BoxDecoration(border: Border.all(color: const Color(0xFF8B5CF6)), borderRadius: BorderRadius.circular(20)), child: Row(children: const [Icon(Icons.remove_circle_outline, color: Color(0xFF8B5CF6), size: 18), SizedBox(width: 5), Text('DESELECT', style: TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold, fontSize: 12))]))),
+              InkWell(onTap: () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, child: Container(padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10), decoration: BoxDecoration(border: Border.all(color: const Color(0xFF8B5CF6)), borderRadius: BorderRadius.circular(20)), child: Row(children: const [Icon(Icons.remove_circle_outline, color: Color(0xFF8B5CF6), size: 18), SizedBox(width: 5), Text('DESELECT', style: TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold, fontSize: 12))]))),
               const Expanded(child: SizedBox()),
               if (sel.isText) _buildToolBtn(Icons.edit, 'Edit', () => _showTextComposerDialog(existingElement: sel)),
               if (sel.isText || sel.isTable) _buildToolBtn(Icons.font_download, 'Font', () => showFontPickerModal(sel)),
