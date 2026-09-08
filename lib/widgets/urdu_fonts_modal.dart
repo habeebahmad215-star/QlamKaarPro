@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
-import 'package:google_fonts/google_fonts.dart'; // 🔥 Google Fonts Package
+import 'package:google_fonts/google_fonts.dart'; 
 
 class UrduFontsManagerModal extends StatefulWidget {
   const UrduFontsManagerModal({Key? key}) : super(key: key);
@@ -13,13 +13,12 @@ class UrduFontsManagerModal extends StatefulWidget {
 
 class _UrduFontsManagerModalState extends State<UrduFontsManagerModal> {
   
-  // 🔥 Exact Google Fonts Names jo 100% Workable hain
   final List<Map<String, dynamic>> preloadedFonts = [
     {'name': 'JameelNoori', 'title': 'جمیل نوری نستعلیق', 'desc': 'Classic Standard Urdu Font', 'isGoogle': false},
     {'name': 'Amiri', 'title': 'امیری عربی فونٹ', 'desc': 'Clean Arabic & Urdu Style', 'isGoogle': true},
-    {'name': 'Noto Nastaliq Urdu', 'title': 'نوٹو نستعلیق', 'desc': 'Modern Standard Nastaliq', 'isGoogle': true},
+    {'name': 'NotoNastaliq', 'title': 'نوٹو نستعلیق', 'desc': 'Modern Standard Nastaliq', 'isGoogle': true},
     {'name': 'Lateef', 'title': 'لطیف سندھی و اردو', 'desc': 'Classic Sindhi/Urdu Style', 'isGoogle': true},
-    {'name': 'Aref Ruqaa', 'title': 'عارف رقعہ', 'desc': 'Thick Header & Title Font', 'isGoogle': true},
+    {'name': 'ArefRuqaa', 'title': 'عارف رقعہ', 'desc': 'Thick Header & Title Font', 'isGoogle': true},
     {'name': 'Cairo', 'title': 'قاہرہ بولڈ', 'desc': 'Modern Bold Arabic', 'isGoogle': true},
   ];
 
@@ -59,21 +58,28 @@ class _UrduFontsManagerModalState extends State<UrduFontsManagerModal> {
     }
   }
 
-  // 🔥 POWERFUL ENGINE: Yeh ensure karega ke Google Fonts work karein
+  // 🔥 AGGRESSIVE ENGINE: Yeh 100% correct font uthayega
   TextStyle _getDynamicTextStyle(String fontName, bool isGoogle, double fontSize, Color color) {
     if (isGoogle) {
       try {
-        return GoogleFonts.getFont(
-          fontName, 
-          fontSize: fontSize, 
-          color: color,
-        );
+        switch (fontName) {
+          case 'Amiri':
+            return GoogleFonts.amiri(fontSize: fontSize, color: color);
+          case 'NotoNastaliq':
+            return GoogleFonts.notoNastaliqUrdu(fontSize: fontSize, color: color);
+          case 'Lateef':
+            return GoogleFonts.lateef(fontSize: fontSize, color: color);
+          case 'ArefRuqaa':
+            return GoogleFonts.arefRuqaa(fontSize: fontSize, color: color);
+          case 'Cairo':
+            return GoogleFonts.cairo(fontSize: fontSize, color: color);
+          default:
+            return TextStyle(fontSize: fontSize, color: color);
+        }
       } catch (e) {
-        // Agar net slow ho toh crash na ho
         return TextStyle(fontSize: fontSize, color: color); 
       }
     } else {
-      // Jameel Noori ya custom imported .ttf ke liye
       return TextStyle(fontSize: fontSize, color: color, fontFamily: fontName);
     }
   }
@@ -178,7 +184,7 @@ class _UrduFontsManagerModalState extends State<UrduFontsManagerModal> {
                                   Row(
                                     children: [
                                       Expanded(child: Text(font['name']!, style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? const Color(0xFF8B5CF6) : const Color(0xFF1E293B), fontSize: 14))),
-                                      if (isGoogle) const Icon(Icons.cloud_download_outlined, size: 14, color: Colors.blue), // Cloud icon for Google fonts
+                                      if (isGoogle) const Icon(Icons.cloud_download_outlined, size: 14, color: Colors.blue),
                                     ],
                                   ),
                                   const SizedBox(height: 2),
