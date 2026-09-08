@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
-import 'package:google_fonts/google_fonts.dart'; 
 
 class UrduFontsManagerModal extends StatefulWidget {
   const UrduFontsManagerModal({Key? key}) : super(key: key);
@@ -13,18 +12,17 @@ class UrduFontsManagerModal extends StatefulWidget {
 
 class _UrduFontsManagerModalState extends State<UrduFontsManagerModal> {
   
-  final List<Map<String, dynamic>> preloadedFonts = [
-    {'name': 'JameelNoori', 'title': 'جمیل نوری نستعلیق', 'desc': 'Classic Standard Urdu Font', 'isGoogle': false},
-    {'name': 'Amiri', 'title': 'امیری عربی فونٹ', 'desc': 'Clean Arabic & Urdu Style', 'isGoogle': true},
-    {'name': 'NotoNastaliq', 'title': 'نوٹو نستعلیق', 'desc': 'Modern Standard Nastaliq', 'isGoogle': true},
-    {'name': 'Lateef', 'title': 'لطیف سندھی و اردو', 'desc': 'Classic Sindhi/Urdu Style', 'isGoogle': true},
-    {'name': 'ArefRuqaa', 'title': 'عارف رقعہ', 'desc': 'Thick Header & Title Font', 'isGoogle': true},
-    {'name': 'Cairo', 'title': 'قاہرہ بولڈ', 'desc': 'Modern Bold Arabic', 'isGoogle': true},
+  // 🔥 Aapke upload kiye gaye 100% workable fonts
+  final List<Map<String, String>> preloadedFonts = [
+    {'name': 'JameelNoori', 'title': 'جمیل نوری نستعلیق', 'desc': 'Classic Standard Urdu Font'},
+    {'name': 'AlviNastaleeq', 'title': 'علوی نستعلیق', 'desc': 'Beautiful Nasta\'liq Style'},
+    {'name': 'Mehr', 'title': 'مہر نستعلیق', 'desc': 'Modern & Elegant Font'},
+    {'name': 'BombayBlack', 'title': 'بمبئی بلیک', 'desc': 'Thick Header & Title Font'},
+    {'name': 'AlMajeed', 'title': 'المجید قرآنی فونٹ', 'desc': 'Classic Arabic/Quranic Font'},
   ];
 
   List<String> importedFonts = [];
   String selectedFontName = 'JameelNoori'; 
-  bool isSelectedGoogle = false;
 
   Future<void> _importFont() async {
     try {
@@ -45,7 +43,6 @@ class _UrduFontsManagerModalState extends State<UrduFontsManagerModal> {
             importedFonts.add(fontName);
           }
           selectedFontName = fontName; 
-          isSelectedGoogle = false;
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -55,32 +52,6 @@ class _UrduFontsManagerModalState extends State<UrduFontsManagerModal> {
       }
     } catch (e) {
       debugPrint("Font Import Error: $e");
-    }
-  }
-
-  // 🔥 AGGRESSIVE ENGINE: Yeh 100% correct font uthayega
-  TextStyle _getDynamicTextStyle(String fontName, bool isGoogle, double fontSize, Color color) {
-    if (isGoogle) {
-      try {
-        switch (fontName) {
-          case 'Amiri':
-            return GoogleFonts.amiri(fontSize: fontSize, color: color);
-          case 'NotoNastaliq':
-            return GoogleFonts.notoNastaliqUrdu(fontSize: fontSize, color: color);
-          case 'Lateef':
-            return GoogleFonts.lateef(fontSize: fontSize, color: color);
-          case 'ArefRuqaa':
-            return GoogleFonts.arefRuqaa(fontSize: fontSize, color: color);
-          case 'Cairo':
-            return GoogleFonts.cairo(fontSize: fontSize, color: color);
-          default:
-            return TextStyle(fontSize: fontSize, color: color);
-        }
-      } catch (e) {
-        return TextStyle(fontSize: fontSize, color: color); 
-      }
-    } else {
-      return TextStyle(fontSize: fontSize, color: color, fontFamily: fontName);
     }
   }
 
@@ -137,7 +108,7 @@ class _UrduFontsManagerModalState extends State<UrduFontsManagerModal> {
                   'قلم کار پرو - فن خطاطی اور ڈیزائننگ', 
                   textAlign: TextAlign.center, 
                   textDirection: TextDirection.rtl, 
-                  style: _getDynamicTextStyle(selectedFontName, isSelectedGoogle, 24, const Color(0xFF1E293B)),
+                  style: TextStyle(fontSize: 24, color: const Color(0xFF1E293B), fontFamily: selectedFontName), 
                 ),
               ],
             ),
@@ -150,12 +121,11 @@ class _UrduFontsManagerModalState extends State<UrduFontsManagerModal> {
               children: [
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-                  child: Text('Pre-installed & Google Fonts', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF64748B), fontSize: 12, letterSpacing: 0.5)),
+                  child: Text('Pre-installed Premium Fonts', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF64748B), fontSize: 12, letterSpacing: 0.5)),
                 ),
                 
                 ...preloadedFonts.map((font) {
                   bool isSelected = selectedFontName == font['name'];
-                  bool isGoogle = font['isGoogle'];
                   return Card(
                     elevation: 0,
                     color: isSelected ? const Color(0xFFF5F3FF) : Colors.white,
@@ -169,7 +139,6 @@ class _UrduFontsManagerModalState extends State<UrduFontsManagerModal> {
                       onTap: () {
                         setState(() { 
                           selectedFontName = font['name']!; 
-                          isSelectedGoogle = isGoogle;
                         });
                       },
                       child: Padding(
@@ -181,12 +150,7 @@ class _UrduFontsManagerModalState extends State<UrduFontsManagerModal> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Expanded(child: Text(font['name']!, style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? const Color(0xFF8B5CF6) : const Color(0xFF1E293B), fontSize: 14))),
-                                      if (isGoogle) const Icon(Icons.cloud_download_outlined, size: 14, color: Colors.blue),
-                                    ],
-                                  ),
+                                  Text(font['name']!, style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? const Color(0xFF8B5CF6) : const Color(0xFF1E293B), fontSize: 14)),
                                   const SizedBox(height: 2),
                                   Text(font['desc']!, style: const TextStyle(fontSize: 10, color: Colors.grey)),
                                 ],
@@ -198,7 +162,7 @@ class _UrduFontsManagerModalState extends State<UrduFontsManagerModal> {
                                 font['title']!, 
                                 textAlign: TextAlign.right, 
                                 textDirection: TextDirection.rtl, 
-                                style: _getDynamicTextStyle(font['name']!, isGoogle, 24, Colors.black87),
+                                style: TextStyle(fontFamily: font['name'], fontSize: 24, color: Colors.black87), 
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -234,7 +198,6 @@ class _UrduFontsManagerModalState extends State<UrduFontsManagerModal> {
                         onTap: () {
                           setState(() { 
                             selectedFontName = fName; 
-                            isSelectedGoogle = false;
                           });
                         },
                         child: Padding(
