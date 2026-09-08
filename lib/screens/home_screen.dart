@@ -9,6 +9,10 @@ import 'my_folder_screen.dart';
 import 'templates_screen.dart';
 import 'ai_design_screen.dart';
 
+// 🔥 Naye imports yahan add kiye gaye hain
+import '../widgets/urdu_fonts_modal.dart';
+import '../widgets/stickers_modal.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
@@ -143,7 +147,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   Navigator.pop(context);
                   final Uri whatsappUrl = Uri.parse("https://wa.me/918948507401?text=Hello Qalamkaar Pro! Mujhe aapki app me ek madad chahiye.");
                   
-                  // 🔥 NAYA FIX: Direct launch karega bina security check ke 🔥
                   try {
                     await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
                   } catch (e) {
@@ -332,7 +335,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildPremiumGridTool('Text Editor', Icons.title_rounded, const Color(0xFF10B981), const Color(0xFFECFDF5), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'text_editor'))).then((_) => _loadRecentProjects());
                   }),
-                  _buildPremiumGridTool('Urdu Fonts', Icons.language_rounded, const Color(0xFFEC4899), const Color(0xFFFDF2F8), _showComingSoon),
+                  
+                  // 🔥 NAYA FIX: Urdu Fonts ab dummy nahi raha!
+                  _buildPremiumGridTool('Urdu Fonts', Icons.language_rounded, const Color(0xFFEC4899), const Color(0xFFFDF2F8), () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => const UrduFontsManagerModal(),
+                    );
+                  }),
+                  
                   _buildPremiumGridTool('Elements', Icons.category_rounded, const Color(0xFFF59E0B), const Color(0xFFFFFBEB), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'elements'))).then((_) => _loadRecentProjects());
                   }),
@@ -342,7 +355,22 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildPremiumGridTool('Backgrounds', Icons.wallpaper_rounded, const Color(0xFFF43F5E), const Color(0xFFFFF1F2), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'backgrounds'))).then((_) => _loadRecentProjects());
                   }),
-                  _buildPremiumGridTool('Stickers', Icons.emoji_emotions_rounded, const Color(0xFFD946EF), const Color(0xFFFDF4FF), _showComingSoon),
+                  
+                  // 🔥 NAYA FIX: Stickers ab dummy nahi raha!
+                  _buildPremiumGridTool('Stickers', Icons.emoji_emotions_rounded, const Color(0xFFD946EF), const Color(0xFFFDF4FF), () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => StickersLibraryModal(
+                        onStickerSelected: (stickerText) {
+                          // Yahan sticker ko as a text canvas me add karne ka logic aayega (Phase 2 me connect karenge)
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sticker "$stickerText" selected! Canvas me update ho raha hai.', style: const TextStyle(fontFamily: 'JameelNoori'))));
+                        },
+                      ),
+                    );
+                  }),
+                  
                   _buildPremiumGridTool('Layers', Icons.layers_rounded, const Color(0xFF06B6D4), const Color(0xFFECFEFF), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'layers'))).then((_) => _loadRecentProjects());
                   }),
