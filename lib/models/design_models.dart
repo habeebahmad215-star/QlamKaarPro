@@ -59,9 +59,9 @@ class DesignElement {
   bool hasShadow; Color shadowColor; double shadowBlur; double shadowOffsetX; double shadowOffsetY;
   String? groupId; 
   
-  // 🔥 NAYA FEATURE: TABLE DATA 🔥
+  // 🔥 NAYA FEATURE: TABLE DATA FIXED 🔥
   bool isTable; 
-  List<List<String>>? tableCells;
+  List<List<String>>? tableData;
 
   DesignElement({
     required this.id, required this.x, required this.y, required this.content, this.imageBytes,
@@ -81,8 +81,8 @@ class DesignElement {
     this.hasShadow = false, this.shadowColor = Colors.black54, this.shadowBlur = 5.0, 
     this.shadowOffsetX = 3.0, this.shadowOffsetY = 3.0,
     this.groupId,
-    this.isTable = false, // 🔥 NAYA
-    this.tableCells,      // 🔥 NAYA
+    this.isTable = false, 
+    this.tableData,      
   });
 
   Map<String, dynamic> toJson() => {
@@ -103,8 +103,8 @@ class DesignElement {
     'hasStroke': hasStroke, 'strokeColor': strokeColor.value, 'strokeWidth': strokeWidth,
     'hasShadow': hasShadow, 'shadowColor': shadowColor.value, 'shadowBlur': shadowBlur, 'shadowOffsetX': shadowOffsetX, 'shadowOffsetY': shadowOffsetY,
     'groupId': groupId,
-    'isTable': isTable, // 🔥 NAYA
-    'tableCells': tableCells, // 🔥 NAYA
+    'isTable': isTable, 
+    'tableData': tableData, 
   };
 
   factory DesignElement.fromJson(Map<String, dynamic> json) {
@@ -145,8 +145,8 @@ class DesignElement {
       hasShadow: json['hasShadow'] as bool? ?? false, shadowColor: Color((json['shadowColor'] as num?)?.toInt() ?? 0x8A000000), 
       shadowBlur: (json['shadowBlur'] as num?)?.toDouble() ?? 5.0, shadowOffsetX: (json['shadowOffsetX'] as num?)?.toDouble() ?? 3.0, shadowOffsetY: (json['shadowOffsetY'] as num?)?.toDouble() ?? 3.0,
       groupId: json['groupId']?.toString(),
-      isTable: json['isTable'] as bool? ?? false, // 🔥 NAYA
-      tableCells: json['tableCells'] != null ? List<List<String>>.from((json['tableCells'] as List).map((row) => List<String>.from(row as List))) : null, // 🔥 NAYA
+      isTable: json['isTable'] as bool? ?? false, 
+      tableData: json['tableData'] != null ? List<List<String>>.from((json['tableData'] as List).map((row) => List<String>.from(row as List))) : null, 
     );
   }
 
