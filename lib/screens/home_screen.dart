@@ -30,7 +30,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadRecentProjects();
   }
 
-  // 🔥 NAYA SAFE STORAGE LOGIC 🔥
   Future<File> _getProjectsFile() async {
     final directory = await getApplicationDocumentsDirectory();
     return File('${directory.path}/qalamkaar_projects.json');
@@ -370,6 +369,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'backgrounds'))).then((_) => _loadRecentProjects());
                   }),
                   
+                  // 🔥 YAHAN STICKER KO CANVAS SE CONNECT KIYA GAYA HAI 🔥
                   _buildPremiumGridTool('Stickers', Icons.emoji_emotions_rounded, const Color(0xFFD946EF), const Color(0xFFFDF4FF), () {
                     showModalBottomSheet(
                       context: context,
@@ -377,7 +377,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       backgroundColor: Colors.transparent,
                       builder: (context) => StickersLibraryModal(
                         onStickerSelected: (stickerText) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sticker "$stickerText" selected! Canvas me update ho raha hai.', style: const TextStyle(fontFamily: 'JameelNoori'))));
+                          Navigator.pop(context); // Bottom sheet ko band karo
+                          // Seedha Workspace me bhejo sticker ke sath
+                          Navigator.push(context, MaterialPageRoute(
+                            builder: (context) => ProWorkspaceScreen(
+                              initialAction: 'add_sticker',
+                              initialData: stickerText, 
+                            )
+                          )).then((_) => _loadRecentProjects());
                         },
                       ),
                     );
