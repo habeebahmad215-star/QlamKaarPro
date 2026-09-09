@@ -44,7 +44,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   List<List<DesignElement>> redoStack = [];
   String? selectedId;
   
-  // 🔥 Naya Feature: Smart Toolbar Menu State 🔥
   String activeToolbarMenu = 'main';
 
   final List<Map<String, String>> availableFontsData = [
@@ -153,6 +152,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     }
   }
 
+  // 🔥 Professional Inward/Outward Scaling Logic 🔥
   void _resizeEdge(DragUpdateDetails d, String edge, DesignElement e) {
     double ldx = d.delta.dx;
     double ldy = d.delta.dy;
@@ -182,15 +182,33 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     _triggerCanvasUpdate();
   }
 
-  void _scaleCorner(DragUpdateDetails d, DesignElement e) {
-    double delta = d.delta.dx + d.delta.dy;
-    if (e.width + delta > 50) {
+  void _scaleCorner(DragUpdateDetails d, DesignElement e, String corner) {
+    double delta = 0;
+    
+    // Directional Scaling Logic (Andar push karein toh chota, bahar kheinchein toh bada)
+    if (corner == 'BR') delta = d.delta.dx + d.delta.dy;
+    else if (corner == 'BL') delta = -d.delta.dx + d.delta.dy;
+    else if (corner == 'TR') delta = d.delta.dx - d.delta.dy;
+    else if (corner == 'TL') delta = -d.delta.dx - d.delta.dy;
+
+    delta *= 0.8; // Smoothness sensitivity
+
+    if (e.width + delta > 40) {
+      double oldWidth = e.width;
       double ratio = e.width / (e.height > 0 ? e.height : 1);
+      
       e.width += delta;
+      
       if (!e.isText && !e.isTable) e.height += delta / ratio;
-      if (e.isText) e.fontSize = max(10.0, e.fontSize + delta * 0.2);
       if (e.isTable) e.height += delta / ratio;
       
+      // Proportional Font Syncing
+      if (e.isText) {
+        double scaleFactor = e.width / oldWidth;
+        e.fontSize = max(10.0, e.fontSize * scaleFactor);
+      }
+      
+      // Keep it anchored dynamically
       e.x -= delta / 2;
       e.y -= (!e.isText ? delta / ratio : 0) / 2;
     }
@@ -2459,30 +2477,30 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
+  // 🔥 Professional Sleek Canva Style Handles 🔥
   Widget _buildPill(bool isHorizontal) {
     return Container(
-      width: isHorizontal ? 30 : 12,
-      height: isHorizontal ? 12 : 30,
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF8B5CF6), width: 2), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 3)])
+      width: isHorizontal ? 24 : 6,
+      height: isHorizontal ? 6 : 24,
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF8B5CF6), width: 1.2), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 2)])
     );
   }
 
   Widget _buildCircle() {
     return Container(
-      width: 16, height: 16,
-      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 2), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 3)])
+      width: 14, height: 14,
+      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 1.2), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 2)])
     );
   }
 
   Widget _buildIconCircle(IconData icon) {
     return Container(
-      width: 32, height: 32,
-      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 2), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)]),
-      child: Icon(icon, size: 18, color: const Color(0xFF8B5CF6)),
+      width: 26, height: 26,
+      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 1.2), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 3)]),
+      child: Icon(icon, size: 14, color: const Color(0xFF8B5CF6)),
     );
   }
 
-  // 🔥 Smart Category Button (Canva Style) 🔥
   Widget _buildCategoryBtn(IconData icon, String label, String category, Color color) {
     return InkWell(
       onTap: () { setState(() => activeToolbarMenu = category); },
@@ -2506,7 +2524,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // 🔥 Professional Toolbar Item Button 🔥
   Widget _buildToolBtn(IconData icon, String label, [VoidCallback? onTap, Color? color]) { 
     Color c = color ?? Colors.black87;
     return InkWell(
@@ -2657,7 +2674,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
                                         double currentWidth = _getElWidth(e); 
                                         double currentHeight = _getElHeight(e);
-                                        double bp = 40.0; // Box Padding to fix handle hit testing!
+                                        double bp = 20.0; // Box Padding - reduced for sleeker look
                                         
                                         Widget contentWidget;
                                         if (e.isBorder) {
@@ -2749,25 +2766,25 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                         }
                                                       },
                                                       child: Container(
-                                                        decoration: isSel ? BoxDecoration(border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5)) : null,
+                                                        decoration: isSel ? BoxDecoration(border: Border.all(color: const Color(0xFF8B5CF6), width: 1.0)) : null,
                                                         child: Opacity(opacity: e.opacity.clamp(0.0, 1.0), child: contentWidget)
                                                       )
                                                     )
                                                   ),
                                                   
                                                   if (isSel) ...[
-                                                    Positioned(top: bp - 8, left: bp + currentWidth/2 - 15, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'T', e), child: _buildPill(true))),
-                                                    Positioned(bottom: bp - 8, left: bp + currentWidth/2 - 15, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'B', e), child: _buildPill(true))),
-                                                    Positioned(left: bp - 8, top: bp + currentHeight/2 - 15, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'L', e), child: _buildPill(false))),
-                                                    Positioned(right: bp - 8, top: bp + currentHeight/2 - 15, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'R', e), child: _buildPill(false))),
+                                                    Positioned(top: bp - 4, left: bp + currentWidth/2 - 12, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'T', e), child: _buildPill(true))),
+                                                    Positioned(bottom: bp - 4, left: bp + currentWidth/2 - 12, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'B', e), child: _buildPill(true))),
+                                                    Positioned(left: bp - 4, top: bp + currentHeight/2 - 12, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'L', e), child: _buildPill(false))),
+                                                    Positioned(right: bp - 4, top: bp + currentHeight/2 - 12, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'R', e), child: _buildPill(false))),
                                                     
-                                                    Positioned(top: bp - 8, left: bp - 8, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e), child: _buildCircle())),
-                                                    Positioned(top: bp - 8, right: bp - 8, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e), child: _buildCircle())),
-                                                    Positioned(bottom: bp - 8, left: bp - 8, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e), child: _buildCircle())),
-                                                    Positioned(bottom: bp - 8, right: bp - 8, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e), child: _buildCircle())),
+                                                    Positioned(top: bp - 7, left: bp - 7, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TL'), child: _buildCircle())),
+                                                    Positioned(top: bp - 7, right: bp - 7, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TR'), child: _buildCircle())),
+                                                    Positioned(bottom: bp - 7, left: bp - 7, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BL'), child: _buildCircle())),
+                                                    Positioned(bottom: bp - 7, right: bp - 7, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BR'), child: _buildCircle())),
                                                     
                                                     Positioned(
-                                                      top: bp - 35, right: bp - 35, 
+                                                      top: bp - 28, right: bp - 28, 
                                                       child: GestureDetector(
                                                         behavior: HitTestBehavior.opaque,
                                                         onPanStart: (_) => saveState(),
@@ -2776,11 +2793,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                       )
                                                     ),
                                                     Positioned(
-                                                      bottom: bp - 35, left: bp - 35, 
+                                                      bottom: bp - 28, left: bp - 28, 
                                                       child: GestureDetector(
                                                         behavior: HitTestBehavior.opaque,
                                                         onPanStart: (_) => saveState(),
-                                                        onPanUpdate: (d) => _scaleCorner(d, e),
+                                                        onPanUpdate: (d) => _scaleCorner(d, e, 'BL'),
                                                         child: _buildIconCircle(Icons.open_in_full)
                                                       )
                                                     ),
@@ -2840,7 +2857,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // 🔥 Smart VIP Toolbar Logic Starts Here 🔥
   Widget _buildSelectedToolBar(DesignElement sel) {
     List<Widget> tools = [];
 
@@ -2857,7 +2873,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         _buildCategoryBtn(Icons.touch_app, 'Actions', 'actions', Colors.blue),
       ];
     } else {
-      // Sub-Menu Back Button
       tools.add(
         InkWell(
           onTap: () { setState(() => activeToolbarMenu = 'main'); },
