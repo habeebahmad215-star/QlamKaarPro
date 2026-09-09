@@ -2526,7 +2526,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                             )
                                           );
                                         } else if (e.isTable && e.tableData != null) {
-                                          contentWidget = CustomTableWidget(tableData: e.tableData!, width: currentWidth, height: currentHeight, fontFamily: e.fontFamily);
+                                          contentWidget = CustomTableWidget(tableData: e.tableData!, width: currentWidth, height: currentHeight, fontFamily: e.fontFamily, textColor: e.textColor, borderColor: e.elementColor, hasBorder: true);
                                         } else if (e.isShape) {
                                           contentWidget = Container(width: currentWidth, height: currentHeight, decoration: BoxDecoration(color: e.elementColor, borderRadius: BorderRadius.circular(e.cornerRadius)));
                                         } else if (e.imageBytes != null) {
