@@ -8,7 +8,7 @@ import 'dart:typed_data';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:image_gallery_saver2_fixed/image_gallery_saver2_fixed.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -63,9 +63,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       projectId = widget.project!.id;
       projectName = widget.project!.name;
       pages = widget.project!.pages;
-      if (pages.isEmpty) {
-        pages = [DesignPage(title: 'Page 1', elements: [], pageColor: Colors.white)];
-      }
     } else {
       projectId = DateTime.now().millisecondsSinceEpoch.toString();
       projectName = 'Design_$projectId';
@@ -89,6 +86,19 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   void _triggerCanvasUpdate() {
     _canvasNotifier.value++;
+  }
+
+  Color? _parseHexColor(String hexString) {
+    try {
+      String hex = hexString.replaceAll('#', '');
+      if (hex.length == 6) hex = 'FF$hex';
+      if (hex.length == 8) {
+        return Color(int.parse('0x$hex'));
+      }
+    } catch (e) {
+      return null;
+    }
+    return null;
   }
 
   double _getElWidth(DesignElement e) => e.width > 80 ? e.width : 80;
@@ -900,14 +910,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), padding: const EdgeInsets.symmetric(vertical: 16)),
                             onPressed: () {
-                              final Color? parsedColor = _parseHexColor(hexCtrl.text);
-                               if (parsedColor == null) {
-                                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid HEX color')));
-                                 return;
-                               }
-                               String hex = hexCtrl.text.replaceAll('#', '');
-                              if(hex.length == 6) hex = 'FF$hex';
-                              if(hex.length == 8) {
+                              Color? parsedColor = _parseHexColor(hexCtrl.text);
+                              if (parsedColor != null) {
                                 saveState();
                                 setState((){ pageColor = parsedColor; bgImageBytes = null; bgGradient = null; });
                                 setModalState((){});
@@ -1174,14 +1178,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), padding: const EdgeInsets.symmetric(vertical: 16)),
                             onPressed: () {
-                              final Color? parsedColor = _parseHexColor(hexCtrl.text);
-                               if (parsedColor == null) {
-                                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid HEX color')));
-                                 return;
-                               }
-                               String hex = hexCtrl.text.replaceAll('#', '');
-                              if(hex.length == 6) hex = 'FF$hex';
-                              if(hex.length == 8) {
+                              Color? parsedColor = _parseHexColor(hexCtrl.text);
+                              if (parsedColor != null) {
                                 saveState();
                                 setState((){
                                   if(sel.isText){
@@ -1864,8 +1862,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         String filePath = result.files.single.path!;
         String fontName = result.files.single.name.replaceAll('.ttf', '').replaceAll('.otf', '');
         var fontLoader = FontLoader(fontName);
-        final Uint8List fontBytes = await File(filePath).readAsBytes();
-        fontLoader.addFont(Future.value(ByteData.sublistView(fontBytes)));
+        fontLoader.addFont(Future.value(ByteData.view(File(filePath).readAsBytesSync().buffer)));
         await fontLoader.load();
         setState(() { if (!customFonts.contains(fontName)) customFonts.add(fontName); });
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Font "$fontName" import ho gaya!')));
@@ -2541,13 +2538,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           );
                                         } else if (e.isTable && e.tableData != null) {
                                           contentWidget = CustomTableWidget(
-                                            tableData: e.tableData!,
-                                            width: currentWidth,
-                                            height: currentHeight,
+                                            tableData: e.tableData!, 
+                                            width: currentWidth, 
+                                            height: currentHeight, 
                                             fontFamily: e.fontFamily,
                                             textColor: e.textColor,
-                                            borderColor: e.elementColor,
-                                            hasBorder: e.isBorder,
+                                            borderColor: e.strokeColor,
+                                            hasBorder: e.hasStroke,
                                           );
                                         } else if (e.isShape) {
                                           contentWidget = Container(width: currentWidth, height: currentHeight, decoration: BoxDecoration(color: e.elementColor, borderRadius: BorderRadius.circular(e.cornerRadius)));
@@ -2559,7 +2556,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                             else if (e.imageFilter == 2) img = ColorFiltered(colorFilter: const ColorFilter.matrix([0.393, 0.769, 0.189, 0, 0, 0.349, 0.686, 0.168, 0, 0, 0.272, 0.534, 0.131, 0, 0, 0, 0, 0, 1, 0]), child: img);
                                             else if (e.imageFilter == 3) img = ColorFiltered(colorFilter: const ColorFilter.matrix([-1, 0, 0, 0, 255, 0, -1, 0, 0, 255, 0, 0, -1, 0, 255, 0, 0, 0, 1, 0]), child: img);
                                           }
-                                          if (e.blendModeIndex != 0) img = ColorFiltered(colorFilter: ColorFilter.mode(Colors.white.withOpacity(0.0), AppConstants.blendModes[e.blendModeIndex.clamp(0, AppConstants.blendModes.length - 1)]), child: img);
+                                          if (e.blendModeIndex != 0) img = ColorFiltered(colorFilter: ColorFilter.mode(Colors.white.withOpacity(0.0), AppConstants.blendModes[e.blendModeIndex]), child: img);
                                           Widget clippedImg = img;
                                           if (e.clipShape == 1) clippedImg = Container(clipBehavior: Clip.antiAlias, decoration: const BoxDecoration(shape: BoxShape.circle), child: img);
                                           else if (e.clipShape == 2) clippedImg = ClipPath(clipper: TriangleClipper(), child: img);
@@ -2580,12 +2577,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           }
                                           Widget mainTxt = buildTextWidget(e.textGradient != null ? Colors.white : e.textColor);
                                           if (e.textGradient != null) mainTxt = ShaderMask(shaderCallback: (bounds) => LinearGradient(colors: e.textGradient!).createShader(bounds), child: mainTxt);
-                                          if (e.textTextureBytes != null) {
-                                            mainTxt = TextureTextWrapper(
-                                              textureBytes: e.textTextureBytes!,
-                                              child: mainTxt,
-                                            );
-                                          }
+                                          if (e.textTextureBytes != null) mainTxt = TextureTextWrapper(textWidget: mainTxt, imageBytes: e.textTextureBytes!);
                                           blockLayers.add(mainTxt);
                                           Widget txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: blockLayers);
                                           if (e.hasStroke) {
