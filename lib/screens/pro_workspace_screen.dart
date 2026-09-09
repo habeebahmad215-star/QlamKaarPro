@@ -2030,7 +2030,525 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // 🔥 YAHAN HAI "MORE OPTIONS" KA NAYA SMART MENU 🔥
+  Future<void> _importCustomFont() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['ttf', 'otf']);
+      if (result != null && result.files.single.path != null) {
+        String filePath = result.files.single.path!;
+        String fontName = result.files.single.name.replaceAll('.ttf', '').replaceAll('.otf', '');
+        var fontLoader = FontLoader(fontName);
+        fontLoader.addFont(Future.value(ByteData.view(File(filePath).readAsBytesSync().buffer)));
+        await fontLoader.load();
+        setState(() { if (!customFonts.contains(fontName)) customFonts.add(fontName); });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Font "$fontName" import ho gaya!')));
+      }
+    } catch (e) {
+      debugPrint("Font Import Error: $e");
+    }
+  }
+
+  void showFontPickerModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.75,
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Select Font فونٹ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                        onPressed: () async { await _importCustomFont(); setModalState(() {}); },
+                        icon: const Icon(Icons.add, color: Colors.white, size: 16),
+                        label: const Text('Add Font', style: TextStyle(color: Colors.white, fontSize: 11))
+                      )
+                    ]
+                  ),
+                  const Divider(),
+                  Expanded(
+                    child: ListView(
+                      physics: const BouncingScrollPhysics(),
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                          child: Text('Pre-installed Premium Fonts', style: TextStyle(fontWeight: FontWeight.bold))
+                        ),
+                        ...availableFontsData.map((font) {
+                          bool isSelected = sel.fontFamily == font['name'];
+                          return Card(
+                            elevation: 0,
+                            color: isSelected ? const Color(0xFFF5F3FF) : Colors.white,
+                            shape: RoundedRectangleBorder(
+                              side: BorderSide(color: isSelected ? const Color(0xFF8B5CF6) : Colors.grey.shade200),
+                              borderRadius: BorderRadius.circular(16)
+                            ),
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(16),
+                              onTap: () {
+                                saveState();
+                                setState(() => sel.fontFamily = font['name']!);
+                                _triggerCanvasUpdate();
+                                Navigator.pop(context);
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 2,
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(font['name']!, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                          const SizedBox(height: 2),
+                                          Text(font['desc']!, style: const TextStyle(fontSize: 10, color: Colors.grey))
+                                        ],
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 3,
+                                      child: Text(
+                                        font['title']!,
+                                        textAlign: TextAlign.right,
+                                        textDirection: TextDirection.rtl,
+                                        style: TextStyle(fontFamily: font['name'], fontSize: 24, color: Colors.black)
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Icon(
+                                      isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                                      color: isSelected ? const Color(0xFF8B5CF6) : Colors.grey.shade300,
+                                      size: 20
+                                    )
+                                  ],
+                                ),
+                              ),
+                            )
+                          );
+                        }),
+                        if (customFonts.isNotEmpty) ...[
+                          const Padding(
+                            padding: EdgeInsets.only(top: 15, bottom: 8.0, left: 4.0),
+                            child: Text('My Custom Fonts', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.black))
+                          ),
+                          ...customFonts.map((fontName) {
+                            bool isSelected = sel.fontFamily == fontName;
+                            return Card(
+                              elevation: 0,
+                              color: isSelected ? const Color(0xFFF5F3FF) : Colors.white,
+                              shape: RoundedRectangleBorder(
+                                side: BorderSide(color: isSelected ? const Color(0xFF8B5CF6) : Colors.grey.shade200),
+                                borderRadius: BorderRadius.circular(16)
+                              ),
+                              margin: const EdgeInsets.only(bottom: 10),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: () {
+                                  saveState();
+                                  setState(() => sel.fontFamily = fontName);
+                                  _triggerCanvasUpdate();
+                                  Navigator.pop(context);
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(fontName, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+                                            const Text('Imported TTF', style: TextStyle(fontSize: 10, color: Colors.grey))
+                                          ],
+                                        )
+                                      ),
+                                      const Text('نمونہ تحریر', textAlign: TextAlign.right, textDirection: TextDirection.rtl, style: TextStyle(fontSize: 24)),
+                                      const SizedBox(width: 12),
+                                      Icon(isSelected ? Icons.check_circle : Icons.radio_button_unchecked, color: isSelected ? const Color(0xFF8B5CF6) : Colors.grey.shade300, size: 20)
+                                    ],
+                                  ),
+                                ),
+                              )
+                            );
+                          })
+                        ]
+                      ],
+                    )
+                  )
+                ]
+              ),
+            );
+          }
+        );
+      }
+    );
+  }
+
+  void _toggleAlignment(DesignElement sel) {
+    saveState();
+    setState(() {
+      if (sel.textAlign == TextAlign.right) {
+        sel.textAlign = TextAlign.center;
+      } else if (sel.textAlign == TextAlign.center) {
+        sel.textAlign = TextAlign.left;
+      } else {
+        sel.textAlign = TextAlign.right;
+      }
+    });
+    _triggerCanvasUpdate();
+  }
+
+  void _showAlignmentModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return Container(
+          height: 250,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Position on Page سیدھ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
+                ]
+              ),
+              const Divider(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildAlignButton(Icons.align_horizontal_left, 'Left', () { saveState(); setState(() => sel.x = 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_horizontal_center, 'Center', () { saveState(); setState(() => sel.x = (currentCanvasW / 2) - (_getElWidth(sel) / 2)); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_horizontal_right, 'Right', () { saveState(); setState(() => sel.x = currentCanvasW - _getElWidth(sel) - 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                ]
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildAlignButton(Icons.align_vertical_top, 'Top', () { saveState(); setState(() => sel.y = 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_vertical_center, 'Middle', () { saveState(); setState(() => sel.y = (currentCanvasH / 2) - (_getElHeight(sel) / 2)); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_vertical_bottom, 'Bottom', () { saveState(); setState(() => sel.y = currentCanvasH - _getElHeight(sel) - 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                ]
+              )
+            ]
+          )
+        );
+      }
+    );
+  }
+
+  Widget _buildAlignButton(IconData icon, String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
+        child: Column(
+          children: [
+            Icon(icon, color: const Color(0xFF8B5CF6)),
+            const SizedBox(height: 5),
+            Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold))
+          ]
+        )
+      )
+    );
+  }
+
+  void _showResizeModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return Container(
+          height: 300,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Resize Canvas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
+                ]
+              ),
+              const Divider(),
+              Expanded(
+                child: ListView(
+                  children: [
+                    ListTile(leading: const Icon(Icons.crop_square), title: const Text('1:1 (Square/Logo/DP)'), onTap: () { saveState(); setState(() => canvasRatio = 1.0); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                    ListTile(leading: const Icon(Icons.crop_16_9), title: const Text('16:9 (YouTube/Post)'), onTap: () { saveState(); setState(() => canvasRatio = 16/9); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                    ListTile(leading: const Icon(Icons.crop_portrait), title: const Text('9:16 (Story/Reel)'), onTap: () { saveState(); setState(() => canvasRatio = 9/16); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                    ListTile(leading: const Icon(Icons.description), title: const Text('1:1.414 (A4 Print/Letter)'), onTap: () { saveState(); setState(() => canvasRatio = 1/1.414); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  ]
+                )
+              )
+            ]
+          )
+        );
+      }
+    );
+  }
+
+  void showLayersPanel() {
+    Set<String> selectedForGroup = {};
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              height: 450,
+              decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Layers & Groups', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      if (selectedForGroup.length > 1)
+                        ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)), onPressed: () { saveState(); String gId = Random().nextInt(10000).toString(); setState(() { for (var e in elements) { if (selectedForGroup.contains(e.id)) { e.groupId = gId; } } selectedForGroup.clear(); }); _triggerCanvasUpdate(); setModalState((){}); }, icon: const Icon(Icons.group, color: Colors.white, size: 16), label: const Text('Group', style: TextStyle(color: Colors.white))),
+                      if (selectedForGroup.isNotEmpty)
+                        ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent), onPressed: () { saveState(); setState(() { for (var e in elements) { if (selectedForGroup.contains(e.id)) { e.groupId = null; } } selectedForGroup.clear(); }); _triggerCanvasUpdate(); setModalState((){}); }, icon: const Icon(Icons.link_off, color: Colors.white, size: 16), label: const Text('Ungroup', style: TextStyle(color: Colors.white))),
+                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
+                    ]
+                  ),
+                  const Text('Tick boxes to group layers together', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                  const Divider(),
+                  Expanded(
+                    child: elements.isEmpty 
+                      ? const Center(child: Text('No elements yet.', style: TextStyle(color: Colors.grey)))
+                      : ListView.builder(
+                          itemCount: elements.length,
+                          itemBuilder: (context, index) {
+                            int actualIndex = elements.length - 1 - index;
+                            DesignElement e = elements[actualIndex];
+                            bool isSel = selectedId == e.id;
+                            bool isGroupChecked = selectedForGroup.contains(e.id);
+                            return Card(
+                              color: isSel ? const Color(0xFFF3E8FF) : (e.groupId != null ? Colors.blue.shade50 : Colors.white),
+                              elevation: 0,
+                              margin: const EdgeInsets.only(bottom: 8),
+                              shape: RoundedRectangleBorder(side: BorderSide(color: isSel ? const Color(0xFF8B5CF6) : Colors.grey.shade200), borderRadius: BorderRadius.circular(10)),
+                              child: ListTile(
+                                leading: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Checkbox(value: isGroupChecked, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setModalState((){ if(val == true) selectedForGroup.add(e.id); else selectedForGroup.remove(e.id); }); }),
+                                    CircleAvatar(radius: 14, backgroundColor: e.isText ? e.textColor : Colors.grey, child: Icon(e.isText ? Icons.text_fields : (e.isShape ? Icons.category : Icons.image), size: 14, color: Colors.white))
+                                  ]
+                                ),
+                                title: Row(
+                                  children: [
+                                    Expanded(child: Text(e.isText ? e.content.replaceAll('\n', '') : (e.isBorder ? 'Border' : 'Image/Shape'), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: isSel ? FontWeight.bold : FontWeight.normal))),
+                                    if (e.groupId != null) const Icon(Icons.link, size: 14, color: Colors.blue)
+                                  ]
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(e.isHidden ? Icons.visibility_off : Icons.visibility, size: 20, color: Colors.grey), onPressed: () { saveState(); setState(() => e.isHidden = !e.isHidden); _triggerCanvasUpdate(); setModalState((){}); }),
+                                    const SizedBox(width: 8),
+                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(e.isLocked ? Icons.lock : Icons.lock_open, size: 20, color: e.isLocked ? Colors.red : Colors.grey), onPressed: () { saveState(); setState(() { e.isLocked = !e.isLocked; if(e.isLocked && selectedId == e.id) selectedId = null; }); _triggerCanvasUpdate(); setModalState((){}); }),
+                                    const SizedBox(width: 8),
+                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.arrow_upward, size: 20, color: Colors.grey), onPressed: () { saveState(); if (actualIndex < elements.length - 1) { setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex + 1, item); }); _triggerCanvasUpdate(); setModalState((){}); } }),
+                                    const SizedBox(width: 8),
+                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.arrow_downward, size: 20, color: Colors.grey), onPressed: () { saveState(); if (actualIndex > 0) { setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex - 1, item); }); _triggerCanvasUpdate(); setModalState((){}); } })
+                                  ]
+                                ),
+                                onTap: () { if(!e.isLocked && !e.isHidden) { setState(() => selectedId = e.id); _triggerCanvasUpdate(); setModalState((){}); } }
+                              )
+                            );
+                          }
+                        )
+                  )
+                ]
+              )
+            );
+          }
+        );
+      }
+    );
+  }
+
+  void showPagesPanel() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              height: 400,
+              decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Pages صفحات', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
+                    ]
+                  ),
+                  const Divider(),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: pages.length,
+                      itemBuilder: (context, index) {
+                        bool isCurrent = currentPageIndex == index;
+                        return Card(
+                          color: isCurrent ? const Color(0xFFF3E8FF) : Colors.white,
+                          elevation: 0,
+                          margin: const EdgeInsets.only(bottom: 8),
+                          shape: RoundedRectangleBorder(side: BorderSide(color: isCurrent ? const Color(0xFF8B5CF6) : Colors.grey.shade200), borderRadius: BorderRadius.circular(10)),
+                          child: ListTile(
+                            leading: Icon(Icons.description, color: isCurrent ? const Color(0xFF8B5CF6) : Colors.grey),
+                            title: Text(pages[index].title, style: TextStyle(fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal)),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(icon: const Icon(Icons.copy, color: Colors.blue, size: 20), onPressed: () { setState(() { pages.add(DesignPage(title: '${pages[index].title} Copy', elements: pages[index].elements.map((e) => e.clone()).toList(), pageColor: pages[index].pageColor, bgGradient: pages[index].bgGradient, bgImageBytes: pages[index].bgImageBytes, canvasRatio: pages[index].canvasRatio)); }); setModalState((){}); }),
+                                if(pages.length > 1)
+                                  IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20), onPressed: () { setState(() { pages.removeAt(index); if (currentPageIndex >= pages.length) currentPageIndex = pages.length - 1; }); _triggerCanvasUpdate(); setModalState((){}); })
+                              ]
+                            ),
+                            onTap: () { setState(() { currentPageIndex = index; selectedId = null; }); _triggerCanvasUpdate(); Navigator.pop(context); }
+                          )
+                        );
+                      }
+                    )
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)),
+                      onPressed: () { setState(() { pages.add(DesignPage(title: 'Page ${pages.length + 1}', elements: [], pageColor: Colors.white)); }); setModalState((){}); },
+                      child: const Text('Add New Page', style: TextStyle(color: Colors.white))
+                    )
+                  )
+                ]
+              )
+            );
+          }
+        );
+      }
+    );
+  }
+
+  void _showCurveModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              height: 250,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Curve Text گولائی', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
+                    ]
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const Text('Bend:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                      Expanded(child: Slider(value: sel.textCurveRadius.clamp(-150.0, 150.0), min: -150.0, max: 150.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.textCurveRadius = val); setModalState((){}); _triggerCanvasUpdate(); }))
+                    ]
+                  ),
+                  Row(
+                    children: [
+                      const Text('Spacing:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                      Expanded(child: Slider(value: sel.letterSpacing.clamp(-5.0, 20.0), min: -5.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.letterSpacing = val); setModalState((){}); _triggerCanvasUpdate(); }))
+                    ]
+                  ),
+                  ElevatedButton(
+                    onPressed: () { saveState(); setState(() => sel.textCurveRadius = 0.0); setModalState((){}); _triggerCanvasUpdate(); },
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade200),
+                    child: const Text('Reset Curve', style: TextStyle(color: Colors.black))
+                  )
+                ]
+              )
+            );
+          }
+        );
+      }
+    );
+  }
+
+  void _showBlendModeModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              height: 350,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Blend Modes مکس کرنا', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
+                    ]
+                  ),
+                  const Divider(),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: AppConstants.blendModes.length,
+                      itemBuilder: (context, index) {
+                        String bName = AppConstants.blendModes[index].toString().replaceAll('BlendMode.', '');
+                        return ListTile(
+                          title: Text(bName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          trailing: sel.blendModeIndex == index ? const Icon(Icons.check_circle, color: Colors.green) : null,
+                          onTap: () { saveState(); setState(() => sel.blendModeIndex = index); _triggerCanvasUpdate(); Navigator.pop(context); }
+                        );
+                      }
+                    )
+                  )
+                ]
+              )
+            );
+          }
+        );
+      }
+    );
+  }
+
   void _showMoreOptionsModal(DesignElement sel) {
     showModalBottomSheet(
       context: context,
@@ -2093,7 +2611,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // 🔥 NAYA SHARP AUR CLEAN GRID BUTTON 🔥
   Widget _buildGridToolBtn(IconData icon, String label, VoidCallback onTap, [Color? color]) {
     Color c = color ?? Colors.black87;
     return InkWell(
@@ -2140,14 +2657,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // 🔥 NAYA SHARP, CLEAN AUR CHHOTA BUTTON 🔥
   Widget _buildToolBtn(IconData icon, String label, [VoidCallback? onTap, Color? color]) { 
     Color c = color ?? Colors.black87;
     return InkWell(
       onTap: onTap, 
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        width: 60, // Barabar Size rakhne ke liye
+        width: 60, 
         margin: const EdgeInsets.symmetric(horizontal: 4), 
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2), 
         decoration: BoxDecoration(
@@ -2477,12 +2993,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // 🔥 YAHAN SE SHURU HOTA HAI ZABARDAST "TWO-ROW" LAYOUT 🔥
   Widget _buildSelectedToolBar(DesignElement sel) {
     List<Widget> topRow = [];
     List<Widget> bottomRow = [];
 
-    // --- TOP ROW (Most Used Tools) ---
     topRow.add(_buildToolBtn(Icons.close_rounded, 'Deselect', () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, Colors.redAccent));
     if (sel.isText) topRow.add(_buildToolBtn(Icons.edit_rounded, 'Edit', () => _showTextComposerDialog(existingElement: sel)));
     if (sel.isTable) topRow.add(_buildToolBtn(Icons.table_rows_rounded, 'Edit Table', () => _showTableEditorModal(sel), const Color(0xFF10B981)));
@@ -2492,7 +3006,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     topRow.add(_buildToolBtn(Icons.copy_rounded, 'Copy', duplicateSelected, Colors.blue));
     topRow.add(_buildToolBtn(Icons.delete_outline_rounded, 'Delete', () { deleteSelected(); }, Colors.red));
 
-    // --- BOTTOM ROW (Styling & Smart Actions) ---
     if (sel.isText) bottomRow.add(_buildToolBtn(Icons.format_bold_rounded, 'Bold', () { saveState(); setState(() => sel.isBold = !sel.isBold); _triggerCanvasUpdate(); }));
     if (sel.isText) bottomRow.add(_buildToolBtn(Icons.format_align_center_rounded, 'Align', () => _toggleAlignment(sel)));
     if (!sel.isBorder) bottomRow.add(_buildToolBtn(Icons.border_color_rounded, 'Stroke', () => _showAdvancedStrokeModal(sel)));
@@ -2501,7 +3014,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     if (sel.imageBytes != null && !sel.isTinted) bottomRow.add(_buildToolBtn(Icons.photo_filter_rounded, 'Filters', () => _showImageFiltersModal(sel)));
     if (sel.imageBytes != null) bottomRow.add(_buildToolBtn(Icons.crop_rounded, 'Crop', () => _showShapeClipModal(sel)));
 
-    // "More" Button Hamesha Aakhir Me Hoga
     bottomRow.add(_buildToolBtn(Icons.more_horiz_rounded, 'More', () => _showMoreOptionsModal(sel), Colors.grey.shade800));
 
     return Container(
@@ -2515,7 +3027,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
             physics: const BouncingScrollPhysics(),
             child: Row(children: topRow),
           ),
-          const SizedBox(height: 6), // Dono rows ke darmiyan halka sa fasla
+          const SizedBox(height: 6),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
