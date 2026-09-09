@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
 import '../models/design_models.dart';
 import 'pro_workspace_screen.dart';
@@ -15,23 +16,41 @@ class _MyFolderScreenState extends State<MyFolderScreen> {
 
   @override void initState() { super.initState(); _loadProjects(); }
 
+  // 🔥 NAYA SAFE STORAGE LOGIC 🔥
+  Future<File> _getProjectsFile() async {
+    final directory = await getApplicationDocumentsDirectory();
+    return File('${directory.path}/qalamkaar_projects.json');
+  }
+
   Future<void> _loadProjects() async {
-    final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
-    List<String> projStrings = prefs.getStringList('qalamkaar_projects') ?? [];
-    setState(() {
-      savedProjects = projStrings.map((s) => ProjectModel.fromJson(jsonDecode(s) as Map<String, dynamic>)).toList();
-      savedProjects.sort((a, b) => b.lastModified.compareTo(a.lastModified));
-      isLoading = false;
-    });
+    try {
+      final file = await _getProjectsFile();
+      if (await file.exists()) {
+        String contents = await file.readAsString();
+        List<dynamic> jsonList = jsonDecode(contents);
+        setState(() {
+          savedProjects = jsonList.map((s) => ProjectModel.fromJson(s as Map<String, dynamic>)).toList();
+          savedProjects.sort((a, b) => b.lastModified.compareTo(a.lastModified));
+          isLoading = false;
+        });
+      } else {
+        setState(() => isLoading = false);
+      }
+    } catch (e) {
+      setState(() => isLoading = false);
+    }
   }
 
   Future<void> _deleteProject(String id) async {
-    final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
     savedProjects.removeWhere((p) => p.id == id);
-    List<String> projStrings = savedProjects.map((p) => jsonEncode(p.toJson())).toList();
-    await prefs.setStringList('qalamkaar_projects', projStrings);
+    try {
+      final file = await _getProjectsFile();
+      await file.writeAsString(jsonEncode(savedProjects.map((p) => p.toJson()).toList()));
+    } catch (e) {
+      debugPrint("Delete error: $e");
+    }
     setState(() {});
   }
 
