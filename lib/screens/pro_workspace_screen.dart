@@ -88,9 +88,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     _canvasNotifier.value++;
   }
 
-  double _getElWidth(DesignElement e) => e.width > 80 ? e.width : 80;
+  double _getElWidth(DesignElement e) {
+    if (e.isTable) return e.width > 80 ? e.width : 300;
+    return e.width > 80 ? e.width : 80;
+  }
 
   double _getElHeight(DesignElement e) {
+    if (e.isTable) return e.height > 30 ? e.height : 150;
     if (!e.isText && e.height > 20) return e.height;
     if (e.isShape) return 90;
     if (e.isText) {
@@ -180,9 +184,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     if (e.width + delta > 50) {
       double ratio = e.width / (e.height > 0 ? e.height : 1);
       e.width += delta;
-      if (!e.isText && !e.isTable) e.height += delta / ratio;
+      if (!e.isText) e.height += delta / ratio;
       if (e.isText) e.fontSize = max(10.0, e.fontSize + delta * 0.2);
-      if (e.isTable) e.height += delta / ratio;
       
       e.x -= delta / 2;
       e.y -= (!e.isText ? delta / ratio : 0) / 2;
@@ -565,7 +568,20 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void _addTable() {
     saveState();
     setState(() {
-      elements.add(DesignElement(id: Random().nextInt(10000).toString(), x: 40, y: 100, content: 'Table', width: 300, height: 150, isTable: true, tableData: [['سیریل', 'نام طالب علم'], ['1', '']] ));
+      // 🔥 isText: false karna zaroori tha table ke liye, isi se handles properly kaam karenge
+      elements.add(
+        DesignElement(
+          id: Random().nextInt(10000).toString(), 
+          x: 40, y: 100, 
+          content: 'Table', 
+          isText: false, // Table is not text, enables top/bottom drag!
+          isTable: true, 
+          width: 350, height: 200, 
+          tableData: [['سیریل', 'نام طالب علم', 'نمبر'], ['1', '', ''], ['2', '', '']],
+          elementColor: const Color(0xFFD4AF37), // Default Border Color
+          textColor: Colors.black
+        )
+      );
       selectedId = elements.last.id;
     });
     _triggerCanvasUpdate();
@@ -602,7 +618,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // 🔥 ADVANCE MS WORD STYLE TABLE EDITOR 🔥
+  // 🔥 ADVANCE MS WORD / INPAGE STYLE TABLE EDITOR 🔥
   void _showTableEditorModal(DesignElement sel) {
     if (sel.tableData == null) return;
     List<List<String>> tempTable = [];
@@ -668,7 +684,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                         IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
                       ]
                     ),
-                    const Text('خانے پر کلک کریں اور قطار/کالم شامل کریں', style: TextStyle(fontSize: 12, color: Colors.grey, fontFamily: 'JameelNoori'), textDirection: TextDirection.rtl),
+                    const Text('خانے پر کلک کریں اور قطار/کالم شامل کریں', style: TextStyle(fontSize: 14, color: Colors.grey, fontFamily: 'JameelNoori'), textDirection: TextDirection.rtl),
                     const Divider(),
                     
                     SingleChildScrollView(
@@ -705,18 +721,18 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                       return GestureDetector(
                                         onTap: () { setModalState(() { activeR = r; activeC = c; }); },
                                         child: Container(
-                                          width: 120,
+                                          width: 130, // Default width for editor boxes
                                           margin: const EdgeInsets.all(2),
                                           decoration: BoxDecoration(
                                             border: Border.all(color: isActive ? const Color(0xFF8B5CF6) : Colors.grey.shade400, width: isActive ? 2.5 : 1),
-                                            color: isActive ? const Color(0xFF8B5CF6).withOpacity(0.05) : Colors.white,
+                                            color: isActive ? const Color(0xFF8B5CF6).withOpacity(0.05) : (r == 0 ? Colors.grey.shade200 : Colors.white),
                                           ),
                                           child: TextField(
                                             controller: TextEditingController(text: tempTable[r][c])..selection = TextSelection.collapsed(offset: tempTable[r][c].length),
                                             textDirection: TextDirection.rtl,
                                             textAlign: TextAlign.center,
                                             maxLines: null,
-                                            style: const TextStyle(fontFamily: 'JameelNoori', fontSize: 16),
+                                            style: TextStyle(fontFamily: 'JameelNoori', fontSize: r == 0 ? 20 : 18, fontWeight: r == 0 ? FontWeight.bold : FontWeight.normal),
                                             decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.all(8), isDense: true),
                                             onChanged: (val) { tempTable[r][c] = val; },
                                             onTap: () { setModalState(() { activeR = r; activeC = c; }); },
