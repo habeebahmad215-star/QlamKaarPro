@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart'; // Fix: Changed 'Import' to 'import'
+import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
@@ -103,7 +103,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   Future<void> _saveProjectLocally() async {
     final prefs = await SharedPreferences.getInstance();
     List<String> savedStrings = prefs.getStringList('qalamkaar_projects') ?? [];
-    ProjectModel p = ProjectModel(id: projectId, name: projectName, pages: pages, lastModified: DateTime.now());
+    ProjectModel p = ProjectModel(id: projectId, name: projectName, pages: pages, lastModified: DateTime.now().millisecondsSinceEpoch);
     savedStrings.removeWhere((str) => jsonDecode(str)['id'] == projectId);
     savedStrings.add(jsonEncode(p.toJson()));
     await prefs.setStringList('qalamkaar_projects', savedStrings);
@@ -2526,7 +2526,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                             )
                                           );
                                         } else if (e.isTable && e.tableData != null) {
-                                          contentWidget = CustomTableWidget(tableData: e.tableData!, width: currentWidth, height: currentHeight);
+                                          contentWidget = CustomTableWidget(tableData: e.tableData!, width: currentWidth, height: currentHeight, fontFamily: e.fontFamily);
                                         } else if (e.isShape) {
                                           contentWidget = Container(width: currentWidth, height: currentHeight, decoration: BoxDecoration(color: e.elementColor, borderRadius: BorderRadius.circular(e.cornerRadius)));
                                         } else if (e.imageBytes != null) {
@@ -2549,7 +2549,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           if (e.hasShadow) textShadows.add(Shadow(color: e.shadowColor, blurRadius: e.shadowBlur, offset: Offset(e.shadowOffsetX, e.shadowOffsetY)));
                                           Widget buildTextWidget(Color c, [List<Shadow>? shadow]) {
                                             TextStyle st = TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, color: c, letterSpacing: e.letterSpacing, wordSpacing: e.wordSpacing, height: e.lineHeight, shadows: shadow ?? textShadows);
-                                            if (e.textCurveRadius != 0) return CurvedTextWidget(text: e.content, textStyle: st, radius: e.textCurveRadius);
+                                            if (e.textCurveRadius != 0) return CurvedTextWidget(text: e.content, style: st, radius: e.textCurveRadius);
                                             return SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: st));
                                           }
                                           List<Widget> blockLayers = [];
@@ -2563,7 +2563,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           Widget txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: blockLayers);
                                           if (e.hasStroke) {
                                             TextStyle stStroke = TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, letterSpacing: e.letterSpacing, wordSpacing: e.wordSpacing, height: e.lineHeight, foreground: Paint()..style = PaintingStyle.stroke..strokeWidth = e.strokeWidth..color = e.strokeColor);
-                                            Widget strokeTxt = e.textCurveRadius != 0 ? CurvedTextWidget(text: e.content, textStyle: stStroke, radius: e.textCurveRadius) : SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: stStroke));
+                                            Widget strokeTxt = e.textCurveRadius != 0 ? CurvedTextWidget(text: e.content, style: stStroke, radius: e.textCurveRadius) : SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: stStroke));
                                             txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [strokeTxt, txt]);
                                           }
                                           if (e.textBgColor != null) txt = Container(padding: const EdgeInsets.all(5), decoration: BoxDecoration(color: e.textBgColor, borderRadius: BorderRadius.circular(e.cornerRadius)), child: txt);
@@ -2633,7 +2633,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                       child: GestureDetector(
                                                         behavior: HitTestBehavior.opaque,
                                                         onPanStart: (_) => saveState(),
-                                                        // NOTE: Added a placeholder for rotateHandle, as it was in original code but not defined. Assuming it was a custom method or you can use scaleCorner logic.
                                                         onPanUpdate: (d) => _scaleCorner(d, e), 
                                                         child: _buildIconCircle(Icons.rotate_right)
                                                       )
