@@ -1,32 +1,56 @@
 import 'package:flutter/material.dart';
 
 class AppConstants {
-  static const List<double> grayscaleMatrix = [0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0, 0, 0, 1, 0];
-  static const List<double> sepiaMatrix = [0.393, 0.769, 0.189, 0, 0, 0.349, 0.686, 0.168, 0, 0, 0.272, 0.534, 0.131, 0, 0, 0, 0, 0, 1, 0];
-  static const List<double> invertMatrix = [-1, 0, 0, 0, 255, 0, -1, 0, 0, 255, 0, 0, -1, 0, 255, 0, 0, 0, 1, 0];
-  static const List<BlendMode> blendModes = [BlendMode.srcOver, BlendMode.multiply, BlendMode.screen, BlendMode.overlay, BlendMode.darken, BlendMode.colorBurn];
+  static const Map<String, List<String>> urduPoetryLibrary = {
+    'اقوال زریں': [
+      'علم وہ واحد دولت ہے جو بانٹنے سے بڑھتی ہے۔',
+      'وقت ایک ایسا خزانہ ہے جسے سوچ سمجھ کر خرچ کرنا چاہیے۔',
+      'خاموشی سب سے بہترین جواب ہے بے وقوف کے لیے۔',
+      'اچھے اخلاق سے دشمن بھی دوست بن جاتے ہیں۔'
+    ],
+    'شاعری': [
+      'ہزاروں سال نرگس اپنی بے نوری پہ روتی ہے\nبڑی مشکل سے ہوتا ہے چمن میں دیدہ ور پیدا',
+      'عمل سے زندگی بنتی ہے جنت بھی جہنم بھی\nیہ خاکی اپنی فطرت میں نہ نوری ہے نہ ناری',
+      'خودی کو کر بلند اتنا کہ ہر تقدیر سے پہلے\nخدا بندے سے خود پوچھے بتا تیری رضا کیا ہے'
+    ],
+    'دعا': [
+      'یا اللہ! ہمیں سیدھے راستے پر چلنے کی توفیق عطا فرما۔',
+      'اے رب! میرے علم میں اضافہ فرما۔',
+      'یا رب العزت! ہماری پریشانیوں کو دور فرما۔ (آمین)'
+    ]
+  };
 
-  static const List<Color> proColorPalette = [Colors.black, Colors.white, Colors.grey, Color(0xFF800000), Color(0xFFA52A2A), Color(0xFFDC143C), Color(0xFFEF4444), Color(0xFFF87171), Color(0xFF4B0082), Color(0xFF8B5CF6), Color(0xFF9C27B0), Color(0xFFD946EF), Color(0xFFEC4899), Color(0xFFF43F5E), Color(0xFFFFC0CB), Color(0xFF000080), Color(0xFF1E3A8A), Color(0xFF2563EB), Color(0xFF3B82F6), Color(0xFF06B6D4), Color(0xFF38BDF8), Color(0xFFE0F2FE), Color(0xFF004d00), Color(0xFF14532D), Color(0xFF047857), Color(0xFF10B981), Color(0xFF22C55E), Color(0xFF84CC16), Color(0xFF14B8A6), Color(0xFFCCFFCC), Color(0xFFD4AF37), Color(0xFFB8860B), Color(0xFFF59E0B), Color(0xFFF97316), Color(0xFFFF8C00), Color(0xFFEAB308), Color(0xFFFEF08A), Color(0xFFFFD700), Color(0xFF8B4513), Color(0xFFD2B48C), Color(0xFFFFE4C4), Color(0xFFFAEBD7)];
-  
-  static const List<List<Color>> proGradientPalette = [
-    [Color(0xFFBF953F), Color(0xFFFCF6BA), Color(0xFFB38728), Color(0xFFFBF5B7)], [Color(0xFF8E9EAB), Color(0xFFEEF2F3)], [Color(0xFFB87333), Color(0xFFFFCC99), Color(0xFFB87333)], [Color(0xFFB76E79), Color(0xFFE0BFB8)], [Color(0xFFFF4E50), Color(0xFFF9D423)], [Color(0xFF1A2980), Color(0xFF26D0CE)], [Color(0xFF134E5E), Color(0xFF71B280)], [Color(0xFFFF7E5F), Color(0xFFFEB47B)], [Color(0xFF2C3E50), Color(0xFF3498DB)], [Color(0xFF833AB4), Color(0xFFFD1D1D), Color(0xFFFCB045)], [Color(0xFF12C2E9), Color(0xFFC471ED), Color(0xFFF64F59)], [Color(0xFF00C9FF), Color(0xFF92FE9D)], [Color(0xFFF09819), Color(0xFFEDDE5D)], [Color(0xFFDA22FF), Color(0xFF9733EE)], [Color(0xFFEC008C), Color(0xFFFC6767)], [Color(0xFF02AAB0), Color(0xFF00CDAC)], [Color(0xFF434343), Color(0xFF000000)], [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)], [Color(0xFF141E30), Color(0xFF243B55)], [Color(0xFF870000), Color(0xFF190A05)]
+  static const List<Color> proColorPalette = [
+    Colors.black, Colors.white, Colors.red, Colors.green, Colors.blue, Colors.yellow,
+    Colors.orange, Colors.purple, Colors.teal, Colors.cyan, Colors.pink, Colors.amber,
+    Colors.brown, Colors.grey, Colors.indigo, Colors.lime, Color(0xFFD4AF37), // Premium Gold
+    Color(0xFF8B5CF6), Color(0xFF10B981), Color(0xFFE91E63), Color(0xFF3F51B5), Color(0xFF009688)
   ];
 
-  static const Map<String, List<String>> urduPoetryLibrary = {
-    'اسلامی (Islamic)': [
-      'بے شک اللہ صبر کرنے والوں کے ساتھ ہے۔', 'جو اللہ کا ہو جاتا ہے، اللہ اس کا ہو جاتا ہے۔', 'نماز تمام بیماریوں کی شفا ہے۔', 'حسبنا اللہ ونعم الوکیل\n(ہمیں اللہ ہی کافی ہے اور وہی سب سے بہتر کارساز ہے)', 'اے اللہ! ہمارے دلوں کو اپنے دین پر ثابت قدم رکھ۔', 'قرآن وہ کتاب ہے جو اندھیروں سے نکال کر روشنی کی طرف لاتی ہے۔', 'تمہارا بہترین دوست وہ ہے جو تمہیں اللہ کی یاد دلائے۔', 'جب دعائیں قبول نہ ہو رہی ہوں تو سجدے لمبے کر دو۔', 'اللہ کی رحمت سے کبھی مایوس نہ ہونا۔', 'موت کو ہمیشہ یاد رکھو، یہ بہترین نصیحت کرنے والی ہے۔',
-    ],
-    'اقوال (Quotes)': [
-      'وقت وہ واحد سکہ ہے جو آپ کی زندگی بناتا ہے۔', 'خاموشی سب سے بہترین جواب ہے اس کے لیے جو آپ کے الفاظ کی قدر نہ کرے۔', 'علم ایک ایسا خزانہ ہے جسے کوئی چوری نہیں کر سکتا۔', 'زندگی میں کبھی ہار نہ مانو، کیونکہ گچھے کی آخری چابی بھی تالا کھول سکتی ہے۔', 'اچھے اخلاق وہ واحد خوبصورتی ہے جو کبھی ختم نہیں ہوتی۔', 'تجربہ ایک سخت استاد ہے کیونکہ وہ پہلے امتحان لیتا ہے اور بعد میں سبق دیتا ہے۔', 'انسان کی اصل پہچان اس کے الفاظ نہیں، اس کا عمل ہوتا ہے۔', 'جو دوسروں کو معاف کرنا جانتا ہے، وہ اندر سے بہت مضبوط ہوتا ہے۔', 'غصہ ایک ایسا زہر ہے جو انسان خود پیتا ہے اور مرنے کی امید دوسروں کی کرتا ہے۔', 'امید وہ روشنی ہے جو گھنے اندھیرے میں بھی راستہ دکھاتی ہے۔',
-    ],
-    'علامہ اقبال (Allama Iqbal)': [
-      'ہزاروں سال نرگس اپنی بے نوری پہ روتی ہے\nبڑی مشکل سے ہوتا ہے چمن میں دیدہ ور پیدا', 'عمل سے زندگی بنتی ہے جنت بھی جہنم بھی\nیہ خاکی اپنی فطرت میں نہ نوری ہے نہ ناری ہے', 'ستاروں سے آگے جہاں اور بھی ہیں\nابھی عشق کے امتحاں اور بھی ہیں', 'خودی کو کر بلند اتنا کہ ہر تقدیر سے پہلے\nخدا بندے سے خود پوچھے بتا تیری رضا کیا ہے', 'نہیں تیرا نشیمن قصرِ سلطانی کے گنبد پر\nتو شاہیں ہے، بسیرا کر پہاڑوں کی چٹانوں میں', 'خدا تجھے کسی طوفان سے آشنا کر دے\nکہ تیرے بحر کی موجوں میں اضطراب نہیں', 'مٹا دے اپنی ہستی کو اگر کچھ مرتبہ چاہیے\nکہ دانہ خاک میں مل کر گل و گلزار ہوتا ہے', 'کی محمدؐ سے وفا تو نے تو ہم تیرے ہیں\nیہ جہاں چیز ہے کیا لوح و قلم تیرے ہیں',
-    ],
-    'محبت (Love)': [
-      'دل دھڑکنے کا سبب یاد آیا\nوہ تری یاد تھی اب یاد آیا', 'تمہارے بعد کسی اور کو چاہا نہ گیا\nیہ وہ سچ ہے جو کبھی ہم سے چھپایا نہ گیا', 'محبت میں نہیں ہے شرطِ ملنا اور بچھڑ جانا\nمحبت تو بس اک احساس ہے جو دل میں رہتا ہے', 'ہم کو ان سے وفا کی ہے امید\nجو نہیں جانتے وفا کیا ہے', 'تیرے بنا زندگی سے کوئی شکوہ تو نہیں\nتیرے بنا زندگی بھی لیکن زندگی نہیں', 'کسی کو ٹوٹ کر چاہنا اور پھر ٹوٹ جانا\nیہی محبت کی سب سے بڑی حقیقت ہے',
-    ],
-    'اداس (Sad)': [
-      'ہم نے سینے سے لگایا دل نہ اپنا بن سکا\nمسکراہٹ کو ترستے ہی رہے روتے رہے', 'دل کے ٹوٹنے کی کوئی آواز نہیں ہوتی\nبس ایک خاموشی ہوتی ہے جو عمر بھر رلاتی ہے', 'کبھی کبھی ہم غلط نہیں ہوتے\nبس ہمارے پاس وہ الفاظ نہیں ہوتے جو ہمیں صحیح ثابت کر سکیں', 'تجھ سے بچھڑ کر ہم بھی کہاں پہلے جیسے رہے\nبس سانسیں چلتی ہیں اور زندگی کٹ رہی ہے', 'کچھ درد ایسے ہوتے ہیں جو نہ کسی کو بتائے جا سکتے ہیں نہ سہہ جا سکتے ہیں۔', 'وقت کے ساتھ سب کچھ بدل جاتا ہے، حتیٰ کہ وہ لوگ بھی جن پر ہمیں سب سے زیادہ یقین ہوتا ہے۔', 'زندگی کا سب سے بڑا دکھ یہ ہے کہ جب ہم سچ بول رہے ہوں اور کوئی اعتبار نہ کرے۔', 'آنسو وہ الفاظ ہیں جو دل بول نہیں پاتا۔',
-    ],
-  };
+  static const List<List<Color>> proGradientPalette = [
+    [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+    [Color(0xFFF59E0B), Color(0xFFEF4444)],
+    [Color(0xFF10B981), Color(0xFF3B82F6)],
+    [Color(0xFFEC4899), Color(0xFF8B5CF6)],
+    [Color(0xFFFBBF24), Color(0xFFF59E0B)],
+    [Color(0xFF000000), Color(0xFF434343)],
+    [Color(0xFFD4AF37), Color(0xFFFFF200)],
+    [Color(0xFFE2E2E2), Color(0xFFFFFFFF)],
+    [Color(0xFF141E30), Color(0xFF243B55)],
+    [Color(0xFF8360C3), Color(0xFF2EBF91)],
+  ];
+
+  static const List<BlendMode> blendModes = [
+    BlendMode.srcOver,
+    BlendMode.multiply,
+    BlendMode.screen,
+    BlendMode.overlay,
+    BlendMode.darken,
+    BlendMode.lighten,
+    BlendMode.colorDodge,
+    BlendMode.colorBurn,
+    BlendMode.hardLight,
+    BlendMode.softLight,
+    BlendMode.difference,
+  ];
 }
