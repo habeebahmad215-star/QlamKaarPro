@@ -43,6 +43,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   List<List<DesignElement>> undoStack = [];
   List<List<DesignElement>> redoStack = [];
   String? selectedId;
+  
+  // 🔥 Naya Feature: Smart Toolbar Menu State 🔥
+  String activeToolbarMenu = 'main';
 
   final List<Map<String, String>> availableFontsData = [
     {'name': 'JameelNoori', 'title': 'جمیل نوری نستعلیق', 'desc': 'Classic Standard Urdu Font'},
@@ -135,7 +138,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void undoAction() {
     if (undoStack.isNotEmpty) {
       redoStack.add(elements.map((e) => e.clone()).toList());
-      setState(() { elements = undoStack.removeLast(); selectedId = null; });
+      setState(() { elements = undoStack.removeLast(); selectedId = null; activeToolbarMenu = 'main'; });
       HapticFeedback.lightImpact();
       _triggerCanvasUpdate();
     }
@@ -144,7 +147,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void redoAction() {
     if (redoStack.isNotEmpty) {
       undoStack.add(elements.map((e) => e.clone()).toList());
-      setState(() { elements = redoStack.removeLast(); selectedId = null; });
+      setState(() { elements = redoStack.removeLast(); selectedId = null; activeToolbarMenu = 'main'; });
       HapticFeedback.lightImpact();
       _triggerCanvasUpdate();
     }
@@ -184,8 +187,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     if (e.width + delta > 50) {
       double ratio = e.width / (e.height > 0 ? e.height : 1);
       e.width += delta;
-      if (!e.isText) e.height += delta / ratio;
+      if (!e.isText && !e.isTable) e.height += delta / ratio;
       if (e.isText) e.fontSize = max(10.0, e.fontSize + delta * 0.2);
+      if (e.isTable) e.height += delta / ratio;
       
       e.x -= delta / 2;
       e.y -= (!e.isText ? delta / ratio : 0) / 2;
@@ -250,7 +254,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   }
 
   Future<void> _captureAndSave(String format) async {
-    setState(() { selectedId = null; _isExporting = true; });
+    setState(() { selectedId = null; _isExporting = true; activeToolbarMenu = 'main'; });
     await Future.delayed(const Duration(milliseconds: 400));
     try {
       RenderRepaintBoundary boundary = _canvasKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
@@ -504,7 +508,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                 } else { 
                                   var newEl = DesignElement(id: Random().nextInt(10000).toString(), x: 40, y: 100, content: controller.text, isText: true, width: calcW, height: 100, fontSize: 30);
                                   newEl.textAlign = isRTL ? TextAlign.right : TextAlign.left; 
-                                  setState(() { elements.add(newEl); selectedId = newEl.id; }); 
+                                  setState(() { elements.add(newEl); selectedId = newEl.id; activeToolbarMenu = 'main'; }); 
                                 } 
                                 _triggerCanvasUpdate(); 
                                 Navigator.pop(context); 
@@ -568,21 +572,21 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void _addTable() {
     saveState();
     setState(() {
-      // 🔥 isText: false karna zaroori tha table ke liye, isi se handles properly kaam karenge
       elements.add(
         DesignElement(
           id: Random().nextInt(10000).toString(), 
           x: 40, y: 100, 
           content: 'Table', 
-          isText: false, // Table is not text, enables top/bottom drag!
+          isText: false, 
           isTable: true, 
           width: 350, height: 200, 
           tableData: [['سیریل', 'نام طالب علم', 'نمبر'], ['1', '', ''], ['2', '', '']],
-          elementColor: const Color(0xFFD4AF37), // Default Border Color
+          elementColor: const Color(0xFFD4AF37),
           textColor: Colors.black
         )
       );
       selectedId = elements.last.id;
+      activeToolbarMenu = 'main';
     });
     _triggerCanvasUpdate();
   }
@@ -597,7 +601,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       if (image != null) {
         final bytes = await image.readAsBytes();
         saveState();
-        setState(() => elements.add(DesignElement(id: Random().nextInt(10000).toString(), x: 80, y: 80, content: 'Image', isText: false, imageBytes: bytes, width: 200, height: 200)));
+        setState(() { elements.add(DesignElement(id: Random().nextInt(10000).toString(), x: 80, y: 80, content: 'Image', isText: false, imageBytes: bytes, width: 200, height: 200)); activeToolbarMenu = 'main'; });
         _triggerCanvasUpdate();
       }
     } catch (e) {
@@ -618,7 +622,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // 🔥 ADVANCE MS WORD / INPAGE STYLE TABLE EDITOR 🔥
   void _showTableEditorModal(DesignElement sel) {
     if (sel.tableData == null) return;
     List<List<String>> tempTable = [];
@@ -880,7 +883,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void deleteSelected() {
     if (selectedId != null) {
       saveState();
-      setState(() { elements.removeWhere((e) => e.id == selectedId); selectedId = null; });
+      setState(() { elements.removeWhere((e) => e.id == selectedId); selectedId = null; activeToolbarMenu = 'main'; });
       _triggerCanvasUpdate();
     }
   }
@@ -889,7 +892,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     if (selectedId != null) {
       saveState();
       DesignElement sel = elements.firstWhere((e) => e.id == selectedId);
-      setState(() { var newEl = sel.clone()..id = Random().nextInt(10000).toString()..x += 20..y += 20; elements.add(newEl); selectedId = newEl.id; });
+      setState(() { var newEl = sel.clone()..id = Random().nextInt(10000).toString()..x += 20..y += 20; elements.add(newEl); selectedId = newEl.id; activeToolbarMenu = 'main'; });
       _triggerCanvasUpdate();
     }
   }
@@ -982,14 +985,18 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), padding: const EdgeInsets.symmetric(vertical: 16)),
                             onPressed: () {
-                              String hex = hexCtrl.text.replaceAll('#', '');
-                              if(hex.length == 6) hex = 'FF$hex';
-                              if(hex.length == 8) {
-                                saveState();
-                                setState((){ pageColor = Color(int.parse('0x$hex')); bgImageBytes = null; bgGradient = null; });
-                                setModalState((){});
-                                _triggerCanvasUpdate();
-                                Navigator.pop(context);
+                              try {
+                                String hex = hexCtrl.text.replaceAll('#', '');
+                                if(hex.length == 6) hex = 'FF$hex';
+                                if(hex.length == 8) {
+                                  saveState();
+                                  setState((){ pageColor = Color(int.parse('0x$hex')); bgImageBytes = null; bgGradient = null; });
+                                  setModalState((){});
+                                  _triggerCanvasUpdate();
+                                  Navigator.pop(context);
+                                }
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid HEX Code')));
                               }
                             },
                             child: const Text('Apply', style: TextStyle(color: Colors.white))
@@ -1251,21 +1258,25 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), padding: const EdgeInsets.symmetric(vertical: 16)),
                             onPressed: () {
-                              String hex = hexCtrl.text.replaceAll('#', '');
-                              if(hex.length == 6) hex = 'FF$hex';
-                              if(hex.length == 8) {
-                                saveState();
-                                setState((){
-                                  if(sel.isText){
-                                    sel.textColor = Color(int.parse('0x$hex'));
-                                    sel.textGradient = null;
-                                  } else {
-                                    sel.elementColor = Color(int.parse('0x$hex'));
-                                  }
-                                });
-                                setModalState((){});
-                                _triggerCanvasUpdate();
-                                Navigator.pop(context);
+                              try {
+                                String hex = hexCtrl.text.replaceAll('#', '');
+                                if(hex.length == 6) hex = 'FF$hex';
+                                if(hex.length == 8) {
+                                  saveState();
+                                  setState((){
+                                    if(sel.isText || sel.isTable){
+                                      sel.textColor = Color(int.parse('0x$hex'));
+                                      sel.textGradient = null;
+                                    } else {
+                                      sel.elementColor = Color(int.parse('0x$hex'));
+                                    }
+                                  });
+                                  setModalState((){});
+                                  _triggerCanvasUpdate();
+                                  Navigator.pop(context);
+                                }
+                              } catch(e) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid HEX Code')));
                               }
                             },
                             child: const Text('Apply', style: TextStyle(color: Colors.white))
@@ -1285,7 +1296,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                             onTap: () {
                               saveState();
                               setState(() {
-                                if (sel.isText) { sel.textColor = c; sel.textGradient = null; }
+                                if (sel.isText || sel.isTable) { sel.textColor = c; sel.textGradient = null; }
                                 else { sel.elementColor = c; }
                               });
                               setModalState((){});
@@ -2471,6 +2482,54 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
+  // 🔥 Smart Category Button (Canva Style) 🔥
+  Widget _buildCategoryBtn(IconData icon, String label, String category, Color color) {
+    return InkWell(
+      onTap: () { setState(() => activeToolbarMenu = category); },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(height: 4),
+            Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 🔥 Professional Toolbar Item Button 🔥
+  Widget _buildToolBtn(IconData icon, String label, [VoidCallback? onTap, Color? color]) { 
+    Color c = color ?? Colors.black87;
+    return InkWell(
+      onTap: onTap, 
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 6), 
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), 
+        decoration: BoxDecoration(
+          color: c.withOpacity(0.05), 
+          borderRadius: BorderRadius.circular(10)
+        ), 
+        child: Column(
+          mainAxisSize: MainAxisSize.min, 
+          children: [
+            Icon(icon, size: 20, color: c), 
+            const SizedBox(height: 4), 
+            Text(label, style: TextStyle(fontSize: 10, color: c, fontWeight: FontWeight.bold))
+          ]
+        )
+      )
+    ); 
+  }
+
   @override
   Widget build(BuildContext context) {
     bool hasSelection = false;
@@ -2536,7 +2595,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
           
           Expanded(
             child: GestureDetector(
-              onTap: () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, 
+              onTap: () { setState(() { selectedId = null; activeToolbarMenu = 'main'; }); _triggerCanvasUpdate(); }, 
               child: Center(
                 child: InteractiveViewer(
                   transformationController: _transformController,
@@ -2781,71 +2840,88 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
+  // 🔥 Smart VIP Toolbar Logic Starts Here 🔥
   Widget _buildSelectedToolBar(DesignElement sel) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          color: Colors.grey.shade50, padding: const EdgeInsets.symmetric(vertical: 8),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                const SizedBox(width: 10),
-                if (sel.isText || sel.isTable) _buildToolBtn(Icons.text_fields, 'Size', () => showSizeSliderModal(sel)),
-                if (sel.isText) _buildToolBtn(Icons.height, 'Spacing', () => showSpacingModal(sel)),
-                if (sel.isText) _buildToolBtn(Icons.format_bold, 'Bold', () { saveState(); setState(() => sel.isBold = !sel.isBold); _triggerCanvasUpdate(); }),
-                if (sel.isText) _buildToolBtn(Icons.format_color_fill, 'Text BG', () => _showTextBgPickerModal(sel)),
-                if (sel.isText) _buildToolBtn(Icons.gradient, 'Gradient', () => _showGradientPickerModal(sel)),
-                if (sel.isText) _buildToolBtn(Icons.data_usage, 'Curve', () => _showCurveModal(sel)),
-                if (sel.isText) _buildToolBtn(Icons.texture, 'Texture', () => _addTextureToText(sel)),
-                if (sel.isText && sel.textTextureBytes != null) _buildToolBtn(Icons.layers_clear, 'Clear Textr', () { saveState(); setState(() => sel.textTextureBytes = null); _triggerCanvasUpdate(); }),
-                if (sel.isText) _buildToolBtn(Icons.format_align_left, 'Align Text', () => _toggleAlignment(sel)),
-                _buildToolBtn(Icons.center_focus_strong, 'Position', () => _showAlignmentModal(sel)),
-                if (sel.isText) _buildToolBtn(Icons.view_in_ar_outlined, '3D Block', () => _show3DBlockModal(sel)),
-                if (sel.imageBytes != null || sel.isShape) _buildToolBtn(Icons.format_paint, 'Color', () => _showColorPickerModal(sel)),
-                if (sel.imageBytes != null) _buildToolBtn(Icons.auto_awesome_motion, 'Blend', () => _showBlendModeModal(sel)),
-                if (!sel.isBorder) _buildToolBtn(Icons.border_color, 'Stroke', () => _showAdvancedStrokeModal(sel)),
-                if (!sel.isBorder && !sel.isTable) _buildToolBtn(Icons.brightness_6, 'Shadow', () => _showAdvancedShadowModal(sel)),
-                if (!sel.isText && !sel.isBorder && !sel.isTable) _buildToolBtn(Icons.rounded_corner, 'Radius', () => _showRadiusModal(sel)),
-                if (sel.imageBytes != null && !sel.isTinted) _buildToolBtn(Icons.photo_filter, 'Filters', () => _showImageFiltersModal(sel)),
-                if (sel.imageBytes != null) _buildToolBtn(Icons.crop, 'Crop Shape', () => _showShapeClipModal(sel)),
-                if (sel.isTable) _buildToolBtn(Icons.table_rows, 'Edit Table', () => _showTableEditorModal(sel)),
-                _buildToolBtn(Icons.flip, 'Flip H', () { saveState(); setState(() => sel.flipX = !sel.flipX); _triggerCanvasUpdate(); }),
-                _buildToolBtn(Icons.flip_camera_android, 'Flip V', () { saveState(); setState(() => sel.flipY = !sel.flipY); _triggerCanvasUpdate(); }),
-                _buildToolBtn(Icons.opacity, 'Opacity', () { showModalBottomSheet(context: context, builder: (ctx) => Container(height: 150, padding: const EdgeInsets.all(20), child: Slider(value: sel.opacity.clamp(0.0, 1.0), min: 0.0, max: 1.0, onChanged: (v){ setState(()=>sel.opacity=v); _triggerCanvasUpdate(); }))); }),
-                _buildToolBtn(Icons.rotate_right, 'Rotate', () => showRotationModal(sel)), 
-                _buildToolBtn(Icons.view_in_ar, 'Perspective', () => show3DModal(sel)), 
-                _buildToolBtn(Icons.open_with, 'Nudge', () => showNudgeModal(sel)),
-              ],
-            ),
-          ),
+    List<Widget> tools = [];
+
+    if (activeToolbarMenu == 'main') {
+      tools = [
+        InkWell(
+          onTap: () { setState(() { selectedId = null; activeToolbarMenu = 'main'; }); _triggerCanvasUpdate(); },
+          child: Container(padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10), decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(12)), child: const Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.close, color: Colors.black54), SizedBox(height: 4), Text('Deselect', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Colors.black54))])),
         ),
-        const Divider(height: 1),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                InkWell(onTap: () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, child: Container(padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8), decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(10)), child: const Text('Deselect', style: TextStyle(fontWeight: FontWeight.bold)))),
-                const SizedBox(width: 15),
-                _buildToolBtn(Icons.copy, 'Duplicate', duplicateSelected),
-                _buildToolBtn(Icons.delete_outline, 'Delete', deleteSelected),
-                const SizedBox(width: 15),
-                Container(width: 1, height: 30, color: Colors.grey.shade300),
-                const SizedBox(width: 15),
-                if (sel.isText) _buildToolBtn(Icons.edit, 'Edit', () => _showTextComposerDialog(existingElement: sel)),
-                if (sel.isText || sel.isTable) _buildToolBtn(Icons.font_download, 'Font', () => showFontPickerModal(sel)),
-                if (sel.isText || sel.isBorder || sel.isShape || sel.isTinted || sel.isTable) _buildToolBtn(Icons.palette, 'Color', () => _showColorPickerModal(sel)),
-              ],
-            ),
-          ),
+        const SizedBox(width: 8),
+        _buildCategoryBtn(Icons.edit, 'Edit / Style', 'style', const Color(0xFF8B5CF6)),
+        _buildCategoryBtn(Icons.color_lens, 'Colors & FX', 'colors', Colors.pink),
+        _buildCategoryBtn(Icons.transform, 'Transform', 'transform', Colors.orange),
+        _buildCategoryBtn(Icons.touch_app, 'Actions', 'actions', Colors.blue),
+      ];
+    } else {
+      // Sub-Menu Back Button
+      tools.add(
+        InkWell(
+          onTap: () { setState(() => activeToolbarMenu = 'main'); },
+          child: Container(margin: const EdgeInsets.only(right: 10), padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.grey.shade200, shape: BoxShape.circle), child: const Icon(Icons.arrow_back, color: Colors.black87)),
         )
-      ],
+      );
+
+      if (activeToolbarMenu == 'style') {
+        if (sel.isText) tools.add(_buildToolBtn(Icons.edit, 'Edit', () => _showTextComposerDialog(existingElement: sel)));
+        if (sel.isText || sel.isTable) tools.add(_buildToolBtn(Icons.font_download, 'Font', () => showFontPickerModal(sel)));
+        if (sel.isText || sel.isTable) tools.add(_buildToolBtn(Icons.text_fields, 'Size', () => showSizeSliderModal(sel)));
+        if (sel.isText) tools.add(_buildToolBtn(Icons.format_align_left, 'Align', () => _toggleAlignment(sel)));
+        if (sel.isText) tools.add(_buildToolBtn(Icons.format_bold, 'Bold', () { saveState(); setState(() => sel.isBold = !sel.isBold); _triggerCanvasUpdate(); }));
+        if (sel.isText) tools.add(_buildToolBtn(Icons.height, 'Spacing', () => showSpacingModal(sel)));
+        if (sel.isText) tools.add(_buildToolBtn(Icons.data_usage, 'Curve', () => _showCurveModal(sel)));
+      } 
+      else if (activeToolbarMenu == 'colors') {
+        if (sel.isText || sel.isBorder || sel.isShape || sel.isTinted || sel.isTable) tools.add(_buildToolBtn(Icons.palette, 'Color', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
+        if (sel.isText) tools.add(_buildToolBtn(Icons.format_color_fill, 'Text BG', () => _showTextBgPickerModal(sel)));
+        if (sel.isText) tools.add(_buildToolBtn(Icons.gradient, 'Gradient', () => _showGradientPickerModal(sel)));
+        if (sel.isText) tools.add(_buildToolBtn(Icons.texture, 'Texture', () => _addTextureToText(sel)));
+        if (sel.isText && sel.textTextureBytes != null) tools.add(_buildToolBtn(Icons.layers_clear, 'Clear Txtr', () { saveState(); setState(() => sel.textTextureBytes = null); _triggerCanvasUpdate(); }, Colors.red));
+        if (!sel.isBorder) tools.add(_buildToolBtn(Icons.border_color, 'Stroke', () => _showAdvancedStrokeModal(sel)));
+        if (!sel.isBorder && !sel.isTable) tools.add(_buildToolBtn(Icons.brightness_6, 'Shadow', () => _showAdvancedShadowModal(sel)));
+        if (sel.isText) tools.add(_buildToolBtn(Icons.view_in_ar_outlined, '3D Block', () => _show3DBlockModal(sel)));
+        if (sel.imageBytes != null && !sel.isTinted) tools.add(_buildToolBtn(Icons.photo_filter, 'Filters', () => _showImageFiltersModal(sel)));
+        if (sel.imageBytes != null || sel.isShape) tools.add(_buildToolBtn(Icons.format_paint, 'Tint', () => _showColorPickerModal(sel)));
+      }
+      else if (activeToolbarMenu == 'transform') {
+        tools.add(_buildToolBtn(Icons.center_focus_strong, 'Position', () => _showAlignmentModal(sel)));
+        tools.add(_buildToolBtn(Icons.open_with, 'Nudge', () => showNudgeModal(sel)));
+        tools.add(_buildToolBtn(Icons.rotate_right, 'Rotate', () => showRotationModal(sel)));
+        tools.add(_buildToolBtn(Icons.view_in_ar, 'Perspective', () => show3DModal(sel)));
+        tools.add(_buildToolBtn(Icons.flip, 'Flip H', () { saveState(); setState(() => sel.flipX = !sel.flipX); _triggerCanvasUpdate(); }));
+        tools.add(_buildToolBtn(Icons.flip_camera_android, 'Flip V', () { saveState(); setState(() => sel.flipY = !sel.flipY); _triggerCanvasUpdate(); }));
+        tools.add(_buildToolBtn(Icons.opacity, 'Opacity', () { showModalBottomSheet(context: context, builder: (ctx) => Container(height: 150, padding: const EdgeInsets.all(20), child: Slider(value: sel.opacity.clamp(0.0, 1.0), min: 0.0, max: 1.0, onChanged: (v){ setState(()=>sel.opacity=v); _triggerCanvasUpdate(); }))); }));
+        if (!sel.isText && !sel.isBorder && !sel.isTable) tools.add(_buildToolBtn(Icons.rounded_corner, 'Radius', () => _showRadiusModal(sel)));
+        if (sel.imageBytes != null) tools.add(_buildToolBtn(Icons.crop, 'Crop Shape', () => _showShapeClipModal(sel)));
+        if (sel.imageBytes != null) tools.add(_buildToolBtn(Icons.auto_awesome_motion, 'Blend', () => _showBlendModeModal(sel)));
+      }
+      else if (activeToolbarMenu == 'actions') {
+        if (sel.isTable) tools.add(_buildToolBtn(Icons.table_rows, 'Edit Table', () => _showTableEditorModal(sel), const Color(0xFF10B981)));
+        tools.add(_buildToolBtn(Icons.copy, 'Duplicate', duplicateSelected, Colors.blue));
+        tools.add(_buildToolBtn(Icons.arrow_upward, 'Bring Fwd', bringForward));
+        tools.add(_buildToolBtn(Icons.arrow_downward, 'Send Bwd', sendBackward));
+        tools.add(_buildToolBtn(Icons.delete_outline, 'Delete', () {
+            deleteSelected();
+            setState(() => activeToolbarMenu = 'main');
+        }, Colors.red));
+      }
+    }
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: tools,
+        ),
+      ),
     );
   }
 
   Widget _buildTopBtn(IconData icon, String label, [VoidCallback? onTap]) { return InkWell(onTap: onTap, child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), child: Row(children: [Icon(icon, size: 16, color: Colors.black87), const SizedBox(width: 4), Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87))]))); }
-  Widget _buildToolBtn(IconData icon, String label, [VoidCallback? onTap]) { return InkWell(onTap: onTap, child: Container(margin: const EdgeInsets.symmetric(horizontal: 8), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 22, color: Colors.black87), const SizedBox(height: 4), Text(label, style: const TextStyle(fontSize: 10, color: Colors.black87))]))); }
 }
