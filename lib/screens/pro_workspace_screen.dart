@@ -21,7 +21,9 @@ import 'my_folder_screen.dart';
 class ProWorkspaceScreen extends StatefulWidget {
   final ProjectModel? project;
   final String? initialAction;
-  const ProWorkspaceScreen({Key? key, this.project, this.initialAction}) : super(key: key);
+  final String? initialData; // 🔥 NAYA: Bahar se Sticker ya Text receive karne ke liye
+
+  const ProWorkspaceScreen({Key? key, this.project, this.initialAction, this.initialData}) : super(key: key);
   
   @override
   State<ProWorkspaceScreen> createState() => _ProWorkspaceScreenState();
@@ -70,11 +72,16 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       projectName = 'Design_$projectId';
       pages = [DesignPage(title: 'Page 1', elements: [], pageColor: Colors.white)];
     }
+    
+    // 🔥 YAHAN STICKER ADD HONE KA JADOO HAI 🔥
     if (widget.initialAction != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (widget.initialAction == 'text_editor') _showTextComposerDialog();
         else if (widget.initialAction == 'images') addImageFromGallery(fromModal: false);
         else if (widget.initialAction == 'elements') showAddNewModal();
+        else if (widget.initialAction == 'add_sticker' && widget.initialData != null) {
+          _addStickerToCanvas(widget.initialData!);
+        }
       });
     }
   }
@@ -88,6 +95,25 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   void _triggerCanvasUpdate() {
     _canvasNotifier.value++;
+  }
+
+  // 🔥 STICKER KO CANVAS PAR LANE WALA FUNCTION 🔥
+  void _addStickerToCanvas(String stickerStr) {
+    saveState();
+    setState(() {
+      var newEl = DesignElement(
+        id: Random().nextInt(10000).toString(),
+        x: 80, y: 150,
+        content: stickerStr,
+        isText: true,
+        width: 150, height: 150,
+        fontSize: 80, // Sticker ko bada dikhane ke liye
+      );
+      elements.add(newEl);
+      selectedId = newEl.id;
+      activeToolbarMenu = 'main';
+    });
+    _triggerCanvasUpdate();
   }
 
   double _getElWidth(DesignElement e) {
@@ -106,7 +132,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     return 150;
   }
 
-  // 🔥 NAYA SAFE STORAGE LOGIC 🔥
   Future<File> _getProjectsFile() async {
     final directory = await getApplicationDocumentsDirectory();
     return File('${directory.path}/qalamkaar_projects.json');
@@ -123,9 +148,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       
       ProjectModel p = ProjectModel(id: projectId, name: projectName, pages: pages, lastModified: DateTime.now().millisecondsSinceEpoch);
       
-      // Remove existing if it's an update
       jsonList.removeWhere((item) => item['id'] == projectId);
-      // Add new
       jsonList.add(p.toJson());
       
       await file.writeAsString(jsonEncode(jsonList));
