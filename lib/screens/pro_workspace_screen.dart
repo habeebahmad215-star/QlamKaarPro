@@ -88,19 +88,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     _canvasNotifier.value++;
   }
 
-  Color? _parseHexColor(String hexString) {
-    try {
-      String hex = hexString.replaceAll('#', '');
-      if (hex.length == 6) hex = 'FF$hex';
-      if (hex.length == 8) {
-        return Color(int.parse('0x$hex'));
-      }
-    } catch (e) {
-      return null;
-    }
-    return null;
-  }
-
   double _getElWidth(DesignElement e) => e.width > 80 ? e.width : 80;
 
   double _getElHeight(DesignElement e) {
@@ -910,10 +897,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), padding: const EdgeInsets.symmetric(vertical: 16)),
                             onPressed: () {
-                              Color? parsedColor = _parseHexColor(hexCtrl.text);
-                              if (parsedColor != null) {
+                              String hex = hexCtrl.text.replaceAll('#', '');
+                              if(hex.length == 6) hex = 'FF$hex';
+                              if(hex.length == 8) {
                                 saveState();
-                                setState((){ pageColor = parsedColor; bgImageBytes = null; bgGradient = null; });
+                                setState((){ pageColor = Color(int.parse('0x$hex')); bgImageBytes = null; bgGradient = null; });
                                 setModalState((){});
                                 _triggerCanvasUpdate();
                                 Navigator.pop(context);
@@ -1178,15 +1166,16 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), padding: const EdgeInsets.symmetric(vertical: 16)),
                             onPressed: () {
-                              Color? parsedColor = _parseHexColor(hexCtrl.text);
-                              if (parsedColor != null) {
+                              String hex = hexCtrl.text.replaceAll('#', '');
+                              if(hex.length == 6) hex = 'FF$hex';
+                              if(hex.length == 8) {
                                 saveState();
                                 setState((){
                                   if(sel.isText){
-                                    sel.textColor = parsedColor;
+                                    sel.textColor = Color(int.parse('0x$hex'));
                                     sel.textGradient = null;
                                   } else {
-                                    sel.elementColor = parsedColor;
+                                    sel.elementColor = Color(int.parse('0x$hex'));
                                   }
                                 });
                                 setModalState((){});
@@ -2537,15 +2526,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                             )
                                           );
                                         } else if (e.isTable && e.tableData != null) {
-                                          contentWidget = CustomTableWidget(
-                                            tableData: e.tableData!, 
-                                            width: currentWidth, 
-                                            height: currentHeight, 
-                                            fontFamily: e.fontFamily,
-                                            textColor: e.textColor,
-                                            borderColor: e.strokeColor,
-                                            hasBorder: e.hasStroke,
-                                          );
+                                          contentWidget = CustomTableWidget(tableData: e.tableData!, width: currentWidth, height: currentHeight, fontFamily: e.fontFamily);
                                         } else if (e.isShape) {
                                           contentWidget = Container(width: currentWidth, height: currentHeight, decoration: BoxDecoration(color: e.elementColor, borderRadius: BorderRadius.circular(e.cornerRadius)));
                                         } else if (e.imageBytes != null) {
@@ -2577,7 +2558,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           }
                                           Widget mainTxt = buildTextWidget(e.textGradient != null ? Colors.white : e.textColor);
                                           if (e.textGradient != null) mainTxt = ShaderMask(shaderCallback: (bounds) => LinearGradient(colors: e.textGradient!).createShader(bounds), child: mainTxt);
-                                          if (e.textTextureBytes != null) mainTxt = TextureTextWrapper(textWidget: mainTxt, imageBytes: e.textTextureBytes!);
+                                          if (e.textTextureBytes != null) mainTxt = TextureTextWrapper(child: mainTxt, textureBytes: e.textTextureBytes!);
                                           blockLayers.add(mainTxt);
                                           Widget txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: blockLayers);
                                           if (e.hasStroke) {
