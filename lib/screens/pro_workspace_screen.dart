@@ -21,7 +21,7 @@ import 'my_folder_screen.dart';
 class ProWorkspaceScreen extends StatefulWidget {
   final ProjectModel? project;
   final String? initialAction;
-  final String? initialData; // 🔥 اسٹیکر یا ٹیکسٹ ریسیو کرنے کے لیے
+  final String? initialData; 
 
   const ProWorkspaceScreen({Key? key, this.project, this.initialAction, this.initialData}) : super(key: key);
   
@@ -73,7 +73,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       pages = [DesignPage(title: 'Page 1', elements: [], pageColor: Colors.white)];
     }
     
-    // 🔥 کینوس پر اسٹیکر لانے کا لاجک 🔥
     if (widget.initialAction != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (widget.initialAction == 'text_editor') _showTextComposerDialog();
@@ -120,13 +119,34 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     return e.width > 80 ? e.width : 80;
   }
 
+  // 🔥 NAYA DYNAMIC TEXT ENGINE: Text kabhi hide nahi hoga 🔥
   double _getElHeight(DesignElement e) {
     if (e.isTable) return e.height > 30 ? e.height : 150;
     if (!e.isText && e.height > 20) return e.height;
     if (e.isShape) return 90;
     if (e.isText) {
-      int lines = e.content.isEmpty ? 1 : e.content.split('\n').length;
-      return (lines * e.fontSize * e.lineHeight) + 15;
+      if (e.textCurveRadius != 0) {
+        return e.textCurveRadius.abs() * 2.5 + 20;
+      }
+      
+      final TextPainter textPainter = TextPainter(
+        text: TextSpan(
+          text: e.content.isEmpty ? 'Text' : e.content, 
+          style: TextStyle(
+            fontFamily: e.fontFamily, 
+            fontSize: e.fontSize, 
+            letterSpacing: e.letterSpacing, 
+            wordSpacing: e.wordSpacing, 
+            height: e.lineHeight,
+            fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal,
+            fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal,
+          )
+        ),
+        textAlign: e.textAlign,
+        textDirection: TextDirection.ltr,
+      )..layout(maxWidth: e.width > 80 ? e.width : 80);
+      
+      return textPainter.size.height + (e.hasShadow ? e.shadowBlur * 2 : 0) + (e.hasStroke ? e.strokeWidth * 2 : 0) + 10;
     }
     return 150;
   }
@@ -195,6 +215,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     }
   }
 
+  // 🔥 SMOOTH EDGE RESIZING: Ab sirf width change hogi, height automatically text painter set karega 🔥
   void _resizeEdge(DragUpdateDetails d, String edge, DesignElement e) {
     double ldx = d.delta.dx;
     double ldy = d.delta.dy;
@@ -204,6 +225,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       ldx = d.delta.dx * cosA - d.delta.dy * sinA;
       ldy = d.delta.dx * sinA + d.delta.dy * cosA;
     }
+    
     if (edge == 'R') {
       e.width = max(80.0, e.width + ldx);
     } else if (edge == 'L') {
@@ -212,9 +234,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       e.x += (oldW - e.width) * cos(e.angle);
       e.y += (oldW - e.width) * sin(e.angle);
     } else if (edge == 'B') {
-      if(!e.isText) e.height = max(30.0, e.height + ldy);
+      if (!e.isText) e.height = max(30.0, e.height + ldy);
     } else if (edge == 'T') {
-      if(!e.isText) {
+      if (!e.isText) {
         double oldH = e.height;
         e.height = max(30.0, e.height - ldy);
         e.x -= (oldH - e.height) * sin(e.angle);
@@ -224,32 +246,47 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     _triggerCanvasUpdate();
   }
 
+  // 🔥 SMOOTH CORNER SCALING: 100% Perfect Math for Touch Follow 🔥
   void _scaleCorner(DragUpdateDetails d, DesignElement e, String corner) {
-    double delta = 0;
+    double ldx = d.delta.dx;
+    double ldy = d.delta.dy;
     
-    if (corner == 'BR') delta = d.delta.dx + d.delta.dy;
-    else if (corner == 'BL') delta = -d.delta.dx + d.delta.dy;
-    else if (corner == 'TR') delta = d.delta.dx - d.delta.dy;
-    else if (corner == 'TL') delta = -d.delta.dx - d.delta.dy;
+    if (e.angle != 0) {
+      double cosA = cos(-e.angle);
+      double sinA = sin(-e.angle);
+      ldx = d.delta.dx * cosA - d.delta.dy * sinA;
+      ldy = d.delta.dx * sinA + d.delta.dy * cosA;
+    }
 
-    delta *= 0.8;
+    double delta = 0;
+    if (corner == 'BR') delta = ldx;
+    else if (corner == 'BL') delta = -ldx;
+    else if (corner == 'TR') delta = ldx;
+    else if (corner == 'TL') delta = -ldx;
+
+    if (delta == 0 && ldy != 0) {
+      if (corner == 'BR' || corner == 'BL') delta = ldy;
+      else delta = -ldy;
+    }
 
     if (e.width + delta > 40) {
       double oldWidth = e.width;
-      double ratio = e.width / (e.height > 0 ? e.height : 1);
-      
       e.width += delta;
-      
-      if (!e.isText && !e.isTable) e.height += delta / ratio;
-      if (e.isTable) e.height += delta / ratio;
       
       if (e.isText) {
         double scaleFactor = e.width / oldWidth;
         e.fontSize = max(10.0, e.fontSize * scaleFactor);
+      } else {
+        double ratio = oldWidth / (e.height > 0 ? e.height : 1);
+        e.height += delta / ratio;
       }
       
-      e.x -= delta / 2;
-      e.y -= (!e.isText ? delta / ratio : 0) / 2;
+      double wDiff = e.width - oldWidth;
+      
+      if (corner == 'TL' || corner == 'BL') {
+        e.x -= wDiff * cos(e.angle);
+        e.y -= wDiff * sin(e.angle);
+      }
     }
     _triggerCanvasUpdate();
   }
@@ -2740,7 +2777,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           List<Shadow> textShadows = [];
                                           if (e.hasShadow) textShadows.add(Shadow(color: e.shadowColor, blurRadius: e.shadowBlur, offset: Offset(e.shadowOffsetX, e.shadowOffsetY)));
                                           Widget buildTextWidget(Color c, [List<Shadow>? shadow]) {
-                                            TextStyle st = TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, color: c, letterSpacing: e.letterSpacing, wordSpacing: e.wordSpacing, height: e.lineHeight, shadows: shadow ?? textShadows);
+                                            TextStyle st = TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, color: c, letterSpacing: e.letterSpacing, wordSpacing: e.wordSpacing, height: e.lineHeight, shadows: shadow ?? textShadows, fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal, fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal);
                                             if (e.textCurveRadius != 0) return CurvedTextWidget(text: e.content, style: st, radius: e.textCurveRadius);
                                             return SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: st));
                                           }
@@ -2754,7 +2791,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           blockLayers.add(mainTxt);
                                           Widget txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: blockLayers);
                                           if (e.hasStroke) {
-                                            TextStyle stStroke = TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, letterSpacing: e.letterSpacing, wordSpacing: e.wordSpacing, height: e.lineHeight, foreground: Paint()..style = PaintingStyle.stroke..strokeWidth = e.strokeWidth..color = e.strokeColor);
+                                            TextStyle stStroke = TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, letterSpacing: e.letterSpacing, wordSpacing: e.wordSpacing, height: e.lineHeight, foreground: Paint()..style = PaintingStyle.stroke..strokeWidth = e.strokeWidth..color = e.strokeColor, fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal, fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal);
                                             Widget strokeTxt = e.textCurveRadius != 0 ? CurvedTextWidget(text: e.content, style: stStroke, radius: e.textCurveRadius) : SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: stStroke));
                                             txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [strokeTxt, txt]);
                                           }
@@ -2810,33 +2847,34 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                     )
                                                   ),
                                                   
+                                                  // 🔥 HANDLES TOUCH AREA INCREASED 🔥
                                                   if (isSel) ...[
-                                                    Positioned(top: bp - 4, left: bp + currentWidth/2 - 12, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'T', e), child: _buildPill(true))),
-                                                    Positioned(bottom: bp - 4, left: bp + currentWidth/2 - 12, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'B', e), child: _buildPill(true))),
-                                                    Positioned(left: bp - 4, top: bp + currentHeight/2 - 12, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'L', e), child: _buildPill(false))),
-                                                    Positioned(right: bp - 4, top: bp + currentHeight/2 - 12, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'R', e), child: _buildPill(false))),
+                                                    Positioned(top: 0, left: bp + currentWidth/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'T', e), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildPill(true)))),
+                                                    Positioned(bottom: 0, left: bp + currentWidth/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'B', e), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildPill(true)))),
+                                                    Positioned(left: 0, top: bp + currentHeight/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'L', e), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildPill(false)))),
+                                                    Positioned(right: 0, top: bp + currentHeight/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'R', e), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildPill(false)))),
                                                     
-                                                    Positioned(top: bp - 7, left: bp - 7, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TL'), child: _buildCircle())),
-                                                    Positioned(top: bp - 7, right: bp - 7, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TR'), child: _buildCircle())),
-                                                    Positioned(bottom: bp - 7, left: bp - 7, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BL'), child: _buildCircle())),
-                                                    Positioned(bottom: bp - 7, right: bp - 7, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BR'), child: _buildCircle())),
+                                                    Positioned(top: 0, left: 0, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TL'), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildCircle()))),
+                                                    Positioned(top: 0, right: 0, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TR'), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildCircle()))),
+                                                    Positioned(bottom: 0, left: 0, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BL'), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildCircle()))),
+                                                    Positioned(bottom: 0, right: 0, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BR'), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildCircle()))),
                                                     
                                                     Positioned(
-                                                      top: bp - 28, right: bp - 28, 
+                                                      top: 0, right: 0, 
                                                       child: GestureDetector(
                                                         behavior: HitTestBehavior.opaque,
                                                         onPanStart: (_) => saveState(),
                                                         onPanUpdate: (d) => _rotateElement(d, e), 
-                                                        child: _buildIconCircle(Icons.rotate_right)
+                                                        child: Container(padding: const EdgeInsets.only(top: 0, right: 0, bottom: 20, left: 20), color: Colors.transparent, child: _buildIconCircle(Icons.rotate_right))
                                                       )
                                                     ),
                                                     Positioned(
-                                                      bottom: bp - 28, left: bp - 28, 
+                                                      bottom: 0, left: 0, 
                                                       child: GestureDetector(
                                                         behavior: HitTestBehavior.opaque,
                                                         onPanStart: (_) => saveState(),
                                                         onPanUpdate: (d) => _scaleCorner(d, e, 'BL'),
-                                                        child: _buildIconCircle(Icons.open_in_full)
+                                                        child: Container(padding: const EdgeInsets.only(bottom: 0, left: 0, top: 20, right: 20), color: Colors.transparent, child: _buildIconCircle(Icons.open_in_full))
                                                       )
                                                     ),
                                                   ]
