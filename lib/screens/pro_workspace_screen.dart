@@ -146,8 +146,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     }
   }
 
-  // --- Professional Smooth Handles Logic --- //
-
   void _resizeEdge(DragUpdateDetails d, String edge, DesignElement e) {
     double ldx = d.delta.dx;
     double ldy = d.delta.dy;
@@ -196,8 +194,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     e.angle += (d.delta.dx + d.delta.dy) * 0.015;
     _triggerCanvasUpdate();
   }
-
-  // --- End Professional Handles Logic --- //
 
   void _showExportMenu() {
     showModalBottomSheet(
@@ -569,7 +565,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void _addTable() {
     saveState();
     setState(() {
-      elements.add(DesignElement(id: Random().nextInt(10000).toString(), x: 40, y: 100, content: 'Table', width: 300, height: 150, isTable: true, tableData: [['Header 1', 'Header 2'], ['Row 1 Col 1', 'Row 1 Col 2']]));
+      elements.add(DesignElement(id: Random().nextInt(10000).toString(), x: 40, y: 100, content: 'Table', width: 300, height: 150, isTable: true, tableData: [['سیریل', 'نام طالب علم'], ['1', '']] ));
       selectedId = elements.last.id;
     });
     _triggerCanvasUpdate();
@@ -594,11 +590,27 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     if (fromModal && Navigator.canPop(context)) { Navigator.pop(context); }
   }
 
+  Widget _buildTableToolbarBtn(IconData icon, String label, VoidCallback onTap, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(backgroundColor: color.withOpacity(0.1), foregroundColor: color, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
+        onPressed: onTap,
+        icon: Icon(icon, size: 16),
+        label: Text(label, style: const TextStyle(fontSize: 12)),
+      ),
+    );
+  }
+
+  // 🔥 ADVANCE MS WORD STYLE TABLE EDITOR 🔥
   void _showTableEditorModal(DesignElement sel) {
     if (sel.tableData == null) return;
     List<List<String>> tempTable = [];
     for (var row in sel.tableData!) { tempTable.add(List.from(row)); }
-    
+
+    int activeR = 0;
+    int activeC = 0;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -606,76 +618,122 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
+
+            void addRowBelow() {
+              setModalState(() {
+                tempTable.insert(activeR + 1, List.generate(tempTable[0].length, (index) => ''));
+                activeR++;
+              });
+            }
+            void addColRight() {
+              setModalState(() {
+                for (var row in tempTable) { row.insert(activeC, ''); }
+              });
+            }
+            void addColLeft() {
+              setModalState(() {
+                for (var row in tempTable) { row.insert(activeC + 1, ''); }
+                activeC++;
+              });
+            }
+            void deleteRow() {
+              if (tempTable.length > 1) {
+                setModalState(() { 
+                  tempTable.removeAt(activeR); 
+                  if (activeR >= tempTable.length) activeR = tempTable.length - 1; 
+                });
+              }
+            }
+            void deleteCol() {
+              if (tempTable[0].length > 1) {
+                setModalState(() {
+                  for (var row in tempTable) { row.removeAt(activeC); }
+                  if (activeC >= tempTable[0].length) activeC = tempTable[0].length - 1;
+                });
+              }
+            }
+
             return Padding(
               padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
               child: Container(
-                height: MediaQuery.of(context).size.height * 0.85,
+                height: MediaQuery.of(context).size.height * 0.90,
                 decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(15),
                 child: Column(
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Edit Table ٹیبل ایڈٹ کریں', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const Text('Advance Table Editor', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
                       ]
                     ),
-                    const Text('MS Word / InPage Style Advance Table Editing', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const Text('خانے پر کلک کریں اور قطار/کالم شامل کریں', style: TextStyle(fontSize: 12, color: Colors.grey, fontFamily: 'JameelNoori'), textDirection: TextDirection.rtl),
                     const Divider(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        ElevatedButton.icon(
-                          onPressed: () { setModalState(() { List<String> newRow = List.generate(tempTable[0].length, (index) => 'New Row Data'); tempTable.add(newRow); }); },
-                          icon: const Icon(Icons.table_rows),
-                          label: const Text('+ Add Row')
-                        ),
-                        ElevatedButton.icon(
-                          onPressed: () { setModalState(() { for(int i=0; i<tempTable.length; i++) { tempTable[i].add('New Col Data'); } }); },
-                          icon: const Icon(Icons.view_column),
-                          label: const Text('+ Add Col')
-                        ),
-                      ],
+                    
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildTableToolbarBtn(Icons.table_rows, '+ Row', addRowBelow, Colors.blue),
+                          _buildTableToolbarBtn(Icons.view_column, '+ Col Right', addColRight, Colors.blue),
+                          _buildTableToolbarBtn(Icons.view_column, '+ Col Left', addColLeft, Colors.blue),
+                          _buildTableToolbarBtn(Icons.delete_sweep, 'Del Row', deleteRow, Colors.red),
+                          _buildTableToolbarBtn(Icons.delete_forever, 'Del Col', deleteCol, Colors.red),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 10),
+                    
                     Expanded(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
+                      child: Container(
+                        decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), color: Colors.grey.shade50),
                         child: SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: tempTable.asMap().entries.map((rowEntry) {
-                              int rowIndex = rowEntry.key;
-                              List<String> row = rowEntry.value;
-                              return Row(
-                                children: [
-                                  ...row.asMap().entries.map((colEntry) {
-                                    int colIndex = colEntry.key;
-                                    return Container(
-                                      width: 100, margin: const EdgeInsets.all(4),
-                                      child: TextField(
-                                        controller: TextEditingController(text: tempTable[rowIndex][colIndex]),
-                                        textDirection: TextDirection.rtl,
-                                        style: const TextStyle(fontFamily: 'JameelNoori'),
-                                        decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.all(8)),
-                                        onChanged: (val) { tempTable[rowIndex][colIndex] = val; }
-                                      )
-                                    );
-                                  }).toList(),
-                                  if (tempTable.length > 1)
-                                    IconButton(
-                                      icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                                      onPressed: () { setModalState(() { tempTable.removeAt(rowIndex); }); }
-                                    )
-                                ],
-                              );
-                            }).toList(),
-                          ),
+                          scrollDirection: Axis.horizontal,
+                          child: SingleChildScrollView(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: tempTable.asMap().entries.map((rowEntry) {
+                                  int r = rowEntry.key;
+                                  return Row(
+                                    textDirection: TextDirection.rtl,
+                                    children: rowEntry.value.asMap().entries.map((colEntry) {
+                                      int c = colEntry.key;
+                                      bool isActive = (r == activeR && c == activeC);
+                                      return GestureDetector(
+                                        onTap: () { setModalState(() { activeR = r; activeC = c; }); },
+                                        child: Container(
+                                          width: 120,
+                                          margin: const EdgeInsets.all(2),
+                                          decoration: BoxDecoration(
+                                            border: Border.all(color: isActive ? const Color(0xFF8B5CF6) : Colors.grey.shade400, width: isActive ? 2.5 : 1),
+                                            color: isActive ? const Color(0xFF8B5CF6).withOpacity(0.05) : Colors.white,
+                                          ),
+                                          child: TextField(
+                                            controller: TextEditingController(text: tempTable[r][c])..selection = TextSelection.collapsed(offset: tempTable[r][c].length),
+                                            textDirection: TextDirection.rtl,
+                                            textAlign: TextAlign.center,
+                                            maxLines: null,
+                                            style: const TextStyle(fontFamily: 'JameelNoori', fontSize: 16),
+                                            decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.all(8), isDense: true),
+                                            onChanged: (val) { tempTable[r][c] = val; },
+                                            onTap: () { setModalState(() { activeR = r; activeC = c; }); },
+                                          )
+                                        ),
+                                      );
+                                    }).toList(),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          )
                         )
                       )
                     ),
                     const SizedBox(height: 10),
+                    
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
@@ -683,14 +741,14 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                         children: [
                           Row(
                             children: [
-                              const Text('Total Width: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                              Expanded(child: Slider(value: sel.width.clamp(100.0, 800.0), min: 100.0, max: 800.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setModalState((){ sel.width = val; }); }))
+                              const Text('Width: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                              Expanded(child: Slider(value: sel.width.clamp(100.0, 1500.0), min: 100.0, max: 1500.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setModalState((){ sel.width = val; }); }))
                             ]
                           ),
                           Row(
                             children: [
-                              const Text('Total Height: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                              Expanded(child: Slider(value: sel.height.clamp(50.0, 800.0), min: 50.0, max: 800.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setModalState((){ sel.height = val; }); }))
+                              const Text('Height: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                              Expanded(child: Slider(value: sel.height.clamp(50.0, 1500.0), min: 50.0, max: 1500.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setModalState((){ sel.height = val; }); }))
                             ]
                           ),
                         ],
@@ -702,7 +760,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), padding: const EdgeInsets.symmetric(vertical: 15)),
                         onPressed: () { saveState(); setState(() { sel.tableData = tempTable; }); _triggerCanvasUpdate(); Navigator.pop(context); },
-                        child: const Text('Update Table', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16))
+                        child: const Text('Save Table Data (محفوظ کریں)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16))
                       )
                     )
                   ],
