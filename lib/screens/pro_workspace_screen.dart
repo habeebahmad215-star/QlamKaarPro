@@ -12,7 +12,7 @@ import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models/design_models.dart';
 import '../widgets/custom_widgets.dart';
 import '../utils/constants.dart';
@@ -106,15 +106,36 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     return 150;
   }
 
+  // 🔥 NAYA SAFE STORAGE LOGIC 🔥
+  Future<File> _getProjectsFile() async {
+    final directory = await getApplicationDocumentsDirectory();
+    return File('${directory.path}/qalamkaar_projects.json');
+  }
+
   Future<void> _saveProjectLocally() async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String> savedStrings = prefs.getStringList('qalamkaar_projects') ?? [];
-    ProjectModel p = ProjectModel(id: projectId, name: projectName, pages: pages, lastModified: DateTime.now().millisecondsSinceEpoch);
-    savedStrings.removeWhere((str) => jsonDecode(str)['id'] == projectId);
-    savedStrings.add(jsonEncode(p.toJson()));
-    await prefs.setStringList('qalamkaar_projects', savedStrings);
-    HapticFeedback.lightImpact();
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Project Saved Successfully!')));
+    try {
+      final file = await _getProjectsFile();
+      List<dynamic> jsonList = [];
+      if (await file.exists()) {
+        String contents = await file.readAsString();
+        jsonList = jsonDecode(contents);
+      }
+      
+      ProjectModel p = ProjectModel(id: projectId, name: projectName, pages: pages, lastModified: DateTime.now().millisecondsSinceEpoch);
+      
+      // Remove existing if it's an update
+      jsonList.removeWhere((item) => item['id'] == projectId);
+      // Add new
+      jsonList.add(p.toJson());
+      
+      await file.writeAsString(jsonEncode(jsonList));
+      
+      HapticFeedback.lightImpact();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Project Saved Successfully!')));
+    } catch (e) {
+      debugPrint("Save error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error saving project!')));
+    }
   }
 
   List<DesignElement> get elements => pages[currentPageIndex].elements;
@@ -152,7 +173,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     }
   }
 
-  // 🔥 Professional Inward/Outward Scaling Logic 🔥
   void _resizeEdge(DragUpdateDetails d, String edge, DesignElement e) {
     double ldx = d.delta.dx;
     double ldy = d.delta.dy;
@@ -185,13 +205,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void _scaleCorner(DragUpdateDetails d, DesignElement e, String corner) {
     double delta = 0;
     
-    // Directional Scaling Logic (Andar push karein toh chota, bahar kheinchein toh bada)
     if (corner == 'BR') delta = d.delta.dx + d.delta.dy;
     else if (corner == 'BL') delta = -d.delta.dx + d.delta.dy;
     else if (corner == 'TR') delta = d.delta.dx - d.delta.dy;
     else if (corner == 'TL') delta = -d.delta.dx - d.delta.dy;
 
-    delta *= 0.8; // Smoothness sensitivity
+    delta *= 0.8;
 
     if (e.width + delta > 40) {
       double oldWidth = e.width;
@@ -202,13 +221,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       if (!e.isText && !e.isTable) e.height += delta / ratio;
       if (e.isTable) e.height += delta / ratio;
       
-      // Proportional Font Syncing
       if (e.isText) {
         double scaleFactor = e.width / oldWidth;
         e.fontSize = max(10.0, e.fontSize * scaleFactor);
       }
       
-      // Keep it anchored dynamically
       e.x -= delta / 2;
       e.y -= (!e.isText ? delta / ratio : 0) / 2;
     }
@@ -2477,7 +2494,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // 🔥 Professional Sleek Canva Style Handles 🔥
   Widget _buildPill(bool isHorizontal) {
     return Container(
       width: isHorizontal ? 24 : 6,
@@ -2674,7 +2690,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
                                         double currentWidth = _getElWidth(e); 
                                         double currentHeight = _getElHeight(e);
-                                        double bp = 20.0; // Box Padding - reduced for sleeker look
+                                        double bp = 20.0; 
                                         
                                         Widget contentWidget;
                                         if (e.isBorder) {
