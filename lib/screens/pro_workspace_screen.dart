@@ -30,7 +30,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   final GlobalKey _canvasKey = GlobalKey();
   final TransformationController _transformController = TransformationController();
   final ValueNotifier<int> _canvasNotifier = ValueNotifier<int>(0);
-  
+
   bool _isCanvasLocked = false;
   bool _showGrid = false;
   double currentCanvasW = 1000;
@@ -83,12 +83,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     super.dispose();
   }
 
-  void _triggerCanvasUpdate() { 
-    _canvasNotifier.value++; 
+  void _triggerCanvasUpdate() {
+    _canvasNotifier.value++;
   }
 
-  double _getElWidth(DesignElement e) => e.width > 30 ? e.width : 80;
-  
+  double _getElWidth(DesignElement e) => e.width > 80 ? e.width : 80;
+
   double _getElHeight(DesignElement e) {
     if (!e.isText && e.height > 20) return e.height;
     if (e.isShape) return 90;
@@ -148,37 +148,35 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void _resizeEdge(DragUpdateDetails d, String edge, DesignElement e) {
     double ldx = d.delta.dx;
     double ldy = d.delta.dy;
-    
     if (e.angle != 0) {
       double cosA = cos(-e.angle);
       double sinA = sin(-e.angle);
       ldx = d.delta.dx * cosA - d.delta.dy * sinA;
       ldy = d.delta.dx * sinA + d.delta.dy * cosA;
     }
-    
     if (edge == 'R') {
-      e.width = max(80.0, e.width + ldx); 
+      e.width = max(80.0, e.width + ldx);
     } else if (edge == 'L') {
-      double oldW = e.width; 
-      e.width = max(80.0, e.width - ldx); 
-      e.x += (oldW - e.width) * cos(e.angle); 
+      double oldW = e.width;
+      e.width = max(80.0, e.width - ldx);
+      e.x += (oldW - e.width) * cos(e.angle);
       e.y += (oldW - e.width) * sin(e.angle);
-    } else if (edge == 'B') { 
-      if(!e.isText) e.height = max(30.0, e.height + ldy); 
-    } else if (edge == 'T') { 
-      if(!e.isText) { 
-        double oldH = e.height; 
-        e.height = max(30.0, e.height - ldy); 
-        e.x -= (oldH - e.height) * sin(e.angle); 
-        e.y += (oldH - e.height) * cos(e.angle); 
+    } else if (edge == 'B') {
+      if(!e.isText) e.height = max(30.0, e.height + ldy);
+    } else if (edge == 'T') {
+      if(!e.isText) {
+        double oldH = e.height;
+        e.height = max(30.0, e.height - ldy);
+        e.x -= (oldH - e.height) * sin(e.angle);
+        e.y += (oldH - e.height) * cos(e.angle);
       }
     }
-    _triggerCanvasUpdate(); 
+    _triggerCanvasUpdate();
   }
 
   void _scaleCorner(DragUpdateDetails d, DesignElement e) {
     double delta = (d.delta.dx + d.delta.dy) * 0.5;
-    if (e.width + delta > 80) { 
+    if (e.width + delta > 80) {
       double ratio = e.width / (e.height > 0 ? e.height : 1);
       e.width += delta;
       if (!e.isText) e.height += delta / ratio;
@@ -186,12 +184,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       e.x -= delta / 2;
       e.y -= (e.isText ? 0 : delta / ratio) / 2;
     }
-    _triggerCanvasUpdate(); 
-  }
-
-  void _rotateHandle(DragUpdateDetails d, DesignElement e) {
-    e.angle += (d.delta.dx + d.delta.dy) * 0.01;
-    _triggerCanvasUpdate(); 
+    _triggerCanvasUpdate();
   }
 
   void _showExportMenu() {
@@ -253,9 +246,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       double pixelRatio = 3.0;
       ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
       ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      // BUG FIXED HERE: Removed the extra ! after buffer.
       Uint8List pngBytes = byteData!.buffer.asUint8List();
-      
       if (format == 'JPG' || format == 'PNG') {
         final result = await ImageGallerySaver.saveImage(pngBytes, quality: 100, name: "QalamKaarPro_${DateTime.now().millisecondsSinceEpoch}");
         if (mounted && result != null && result['isSuccess'] == true) {
