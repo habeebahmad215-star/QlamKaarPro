@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart'; 
 
@@ -9,7 +10,6 @@ import 'my_folder_screen.dart';
 import 'templates_screen.dart';
 import 'ai_design_screen.dart';
 
-// 🔥 Naye imports yahan add kiye gaye hain
 import '../widgets/urdu_fonts_modal.dart';
 import '../widgets/stickers_modal.dart';
 
@@ -30,15 +30,30 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadRecentProjects();
   }
 
+  // 🔥 NAYA SAFE STORAGE LOGIC 🔥
+  Future<File> _getProjectsFile() async {
+    final directory = await getApplicationDocumentsDirectory();
+    return File('${directory.path}/qalamkaar_projects.json');
+  }
+
   Future<void> _loadRecentProjects() async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String> projStrings = prefs.getStringList('qalamkaar_projects') ?? [];
-    List<ProjectModel> loaded = projStrings.map((s) => ProjectModel.fromJson(jsonDecode(s) as Map<String, dynamic>)).toList();
-    loaded.sort((a, b) => b.lastModified.compareTo(a.lastModified));
-    setState(() {
-      recentProjects = loaded.take(5).toList(); 
-      isLoading = false;
-    });
+    try {
+      final file = await _getProjectsFile();
+      if (await file.exists()) {
+        String contents = await file.readAsString();
+        List<dynamic> jsonList = jsonDecode(contents);
+        List<ProjectModel> loaded = jsonList.map((s) => ProjectModel.fromJson(s as Map<String, dynamic>)).toList();
+        loaded.sort((a, b) => b.lastModified.compareTo(a.lastModified));
+        setState(() {
+          recentProjects = loaded.take(5).toList(); 
+          isLoading = false;
+        });
+      } else {
+        setState(() => isLoading = false);
+      }
+    } catch (e) {
+      setState(() => isLoading = false);
+    }
   }
 
   void _showNewDesignModal(BuildContext context) {
@@ -336,7 +351,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'text_editor'))).then((_) => _loadRecentProjects());
                   }),
                   
-                  // 🔥 NAYA FIX: Urdu Fonts ab dummy nahi raha!
                   _buildPremiumGridTool('Urdu Fonts', Icons.language_rounded, const Color(0xFFEC4899), const Color(0xFFFDF2F8), () {
                     showModalBottomSheet(
                       context: context,
@@ -356,7 +370,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'backgrounds'))).then((_) => _loadRecentProjects());
                   }),
                   
-                  // 🔥 NAYA FIX: Stickers ab dummy nahi raha!
                   _buildPremiumGridTool('Stickers', Icons.emoji_emotions_rounded, const Color(0xFFD946EF), const Color(0xFFFDF4FF), () {
                     showModalBottomSheet(
                       context: context,
@@ -364,7 +377,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       backgroundColor: Colors.transparent,
                       builder: (context) => StickersLibraryModal(
                         onStickerSelected: (stickerText) {
-                          // Yahan sticker ko as a text canvas me add karne ka logic aayega (Phase 2 me connect karenge)
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sticker "$stickerText" selected! Canvas me update ho raha hai.', style: const TextStyle(fontFamily: 'JameelNoori'))));
                         },
                       ),
