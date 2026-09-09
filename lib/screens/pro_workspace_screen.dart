@@ -21,7 +21,7 @@ import 'my_folder_screen.dart';
 class ProWorkspaceScreen extends StatefulWidget {
   final ProjectModel? project;
   final String? initialAction;
-  final String? initialData; // 🔥 NAYA: Bahar se Sticker ya Text receive karne ke liye
+  final String? initialData; // 🔥 اسٹیکر یا ٹیکسٹ ریسیو کرنے کے لیے
 
   const ProWorkspaceScreen({Key? key, this.project, this.initialAction, this.initialData}) : super(key: key);
   
@@ -73,7 +73,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       pages = [DesignPage(title: 'Page 1', elements: [], pageColor: Colors.white)];
     }
     
-    // 🔥 YAHAN STICKER ADD HONE KA JADOO HAI 🔥
+    // 🔥 کینوس پر اسٹیکر لانے کا لاجک 🔥
     if (widget.initialAction != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (widget.initialAction == 'text_editor') _showTextComposerDialog();
@@ -97,7 +97,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     _canvasNotifier.value++;
   }
 
-  // 🔥 STICKER KO CANVAS PAR LANE WALA FUNCTION 🔥
   void _addStickerToCanvas(String stickerStr) {
     saveState();
     setState(() {
@@ -107,7 +106,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         content: stickerStr,
         isText: true,
         width: 150, height: 150,
-        fontSize: 80, // Sticker ko bada dikhane ke liye
+        fontSize: 80, 
       );
       elements.add(newEl);
       selectedId = newEl.id;
@@ -782,7 +781,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                       return GestureDetector(
                                         onTap: () { setModalState(() { activeR = r; activeC = c; }); },
                                         child: Container(
-                                          width: 130, // Default width for editor boxes
+                                          width: 130, 
                                           margin: const EdgeInsets.all(2),
                                           decoration: BoxDecoration(
                                             border: Border.all(color: isActive ? const Color(0xFF8B5CF6) : Colors.grey.shade400, width: isActive ? 2.5 : 1),
@@ -2903,7 +2902,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       tools = [
         InkWell(
           onTap: () { setState(() { selectedId = null; activeToolbarMenu = 'main'; }); _triggerCanvasUpdate(); },
-          child: Container(padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10), decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(12)), child: const Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.close, color: Colors.black54), SizedBox(height: 4), Text('Deselect', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Colors.black54))])),
+          child: Container(padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10), decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(12)), child: const Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.close, color: Colors.black54), SizedBox(height: 4), Text('Deselect', style: fontWeight: FontWeight.bold, fontSize: 10, color: Colors.black54))])),
         ),
         const SizedBox(width: 8),
         _buildCategoryBtn(Icons.edit, 'Edit / Style', 'style', const Color(0xFF8B5CF6)),
