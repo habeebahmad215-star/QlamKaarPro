@@ -1,4 +1,4 @@
-name: Build Flutter APK
+name: Build Flutter APK and AAB
 
 on:
   push:
@@ -46,7 +46,6 @@ jobs:
           cp /tmp/user_code/pubspec.yaml .
           cp -r /tmp/user_code/assets .
 
-      # 🔥 YAHAN HAI MAGIC FIX! Yeh Android error ko hamesha ke liye theek kar dega 🔥
       - name: Fix Android Build Settings (SDK & MultiDex)
         run: |
           sed -i 's/flutter.minSdkVersion/23/g' android/app/build.gradle
@@ -55,12 +54,20 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      # Error ki jadd tak pahonchne ke liye humne -v (Verbose) add kiya hai (optional)
-      - name: Build APK
+      - name: Build APK for Testing
         run: flutter build apk --release
+
+      - name: Build AAB for Play Store
+        run: flutter build appbundle --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: QalamKaarPro-APK
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Upload AAB (Play Store)
+        uses: actions/upload-artifact@v4
+        with:
+          name: QalamKaarPro-AAB
+          path: build/app/outputs/bundle/release/app-release.aab
