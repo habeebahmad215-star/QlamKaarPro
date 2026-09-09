@@ -46,7 +46,7 @@ class CurvedTextWidget extends StatelessWidget {
   }
 }
 
-// 🔥 NAYA FEATURE: TABLE WIDGET YAHAN ADD HUA HAI 🔥
+// 🔥 INPAGE 3 / MS WORD STYLE PROFESSIONAL TABLE 🔥
 class CustomTableWidget extends StatelessWidget {
   final List<List<String>> tableData;
   final double width;
@@ -74,28 +74,36 @@ class CustomTableWidget extends StatelessWidget {
     return SizedBox(
       width: width,
       height: height,
-      child: Table(
-        border: hasBorder ? TableBorder.all(color: borderColor, width: 1.5) : null,
-        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-        children: tableData.map((row) {
-          return TableRow(
-            children: row.map((cellText) {
-              return Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  cellText,
-                  textAlign: TextAlign.center,
-                  textDirection: TextDirection.rtl,
-                  style: TextStyle(
-                    fontFamily: fontFamily,
-                    color: textColor,
-                    fontSize: 16,
+      child: Directionality(
+        textDirection: TextDirection.rtl, // InPage Standard (Right to Left)
+        child: Table(
+          border: hasBorder ? TableBorder.all(color: borderColor, width: 2.0) : null,
+          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+          columnWidths: {
+            for (int i = 0; i < tableData[0].length; i++) i: const FlexColumnWidth()
+          },
+          children: tableData.asMap().entries.map((row) {
+            bool isHeader = row.key == 0; 
+            return TableRow(
+              decoration: isHeader ? BoxDecoration(color: borderColor.withOpacity(0.15)) : null,
+              children: row.value.map((cellText) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 8.0),
+                  child: Text(
+                    cellText,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: fontFamily,
+                      color: textColor,
+                      fontSize: isHeader ? 18 : 16,
+                      fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
+                    ),
                   ),
-                ),
-              );
-            }).toList(),
-          );
-        }).toList(),
+                );
+              }).toList(),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
