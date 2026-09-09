@@ -30,7 +30,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   final GlobalKey _canvasKey = GlobalKey();
   final TransformationController _transformController = TransformationController();
   final ValueNotifier<int> _canvasNotifier = ValueNotifier<int>(0);
-
+  
   bool _isCanvasLocked = false;
   bool _showGrid = false;
   double currentCanvasW = 1000;
@@ -83,12 +83,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     super.dispose();
   }
 
-  void _triggerCanvasUpdate() {
-    _canvasNotifier.value++;
+  void _triggerCanvasUpdate() { 
+    _canvasNotifier.value++; 
   }
 
-  double _getElWidth(DesignElement e) => e.width > 80 ? e.width : 80;
-
+  double _getElWidth(DesignElement e) => e.width > 30 ? e.width : 80;
+  
   double _getElHeight(DesignElement e) {
     if (!e.isText && e.height > 20) return e.height;
     if (e.isShape) return 90;
@@ -148,35 +148,37 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void _resizeEdge(DragUpdateDetails d, String edge, DesignElement e) {
     double ldx = d.delta.dx;
     double ldy = d.delta.dy;
+    
     if (e.angle != 0) {
       double cosA = cos(-e.angle);
       double sinA = sin(-e.angle);
       ldx = d.delta.dx * cosA - d.delta.dy * sinA;
       ldy = d.delta.dx * sinA + d.delta.dy * cosA;
     }
+    
     if (edge == 'R') {
-      e.width = max(80.0, e.width + ldx);
+      e.width = max(80.0, e.width + ldx); 
     } else if (edge == 'L') {
-      double oldW = e.width;
-      e.width = max(80.0, e.width - ldx);
-      e.x += (oldW - e.width) * cos(e.angle);
+      double oldW = e.width; 
+      e.width = max(80.0, e.width - ldx); 
+      e.x += (oldW - e.width) * cos(e.angle); 
       e.y += (oldW - e.width) * sin(e.angle);
-    } else if (edge == 'B') {
-      if(!e.isText) e.height = max(30.0, e.height + ldy);
-    } else if (edge == 'T') {
-      if(!e.isText) {
-        double oldH = e.height;
-        e.height = max(30.0, e.height - ldy);
-        e.x -= (oldH - e.height) * sin(e.angle);
-        e.y += (oldH - e.height) * cos(e.angle);
+    } else if (edge == 'B') { 
+      if(!e.isText) e.height = max(30.0, e.height + ldy); 
+    } else if (edge == 'T') { 
+      if(!e.isText) { 
+        double oldH = e.height; 
+        e.height = max(30.0, e.height - ldy); 
+        e.x -= (oldH - e.height) * sin(e.angle); 
+        e.y += (oldH - e.height) * cos(e.angle); 
       }
     }
-    _triggerCanvasUpdate();
+    _triggerCanvasUpdate(); 
   }
 
   void _scaleCorner(DragUpdateDetails d, DesignElement e) {
     double delta = (d.delta.dx + d.delta.dy) * 0.5;
-    if (e.width + delta > 80) {
+    if (e.width + delta > 80) { 
       double ratio = e.width / (e.height > 0 ? e.height : 1);
       e.width += delta;
       if (!e.isText) e.height += delta / ratio;
@@ -184,7 +186,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       e.x -= delta / 2;
       e.y -= (e.isText ? 0 : delta / ratio) / 2;
     }
-    _triggerCanvasUpdate();
+    _triggerCanvasUpdate(); 
+  }
+
+  void _rotateHandle(DragUpdateDetails d, DesignElement e) {
+    e.angle += (d.delta.dx + d.delta.dy) * 0.01;
+    _triggerCanvasUpdate(); 
   }
 
   void _showExportMenu() {
@@ -246,7 +253,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       double pixelRatio = 3.0;
       ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
       ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      Uint8List pngBytes = byteData!.buffer!.asUint8List();
+      // BUG FIXED HERE: Removed the extra ! after buffer.
+      Uint8List pngBytes = byteData!.buffer.asUint8List();
+      
       if (format == 'JPG' || format == 'PNG') {
         final result = await ImageGallerySaver.saveImage(pngBytes, quality: 100, name: "QalamKaarPro_${DateTime.now().millisecondsSinceEpoch}");
         if (mounted && result != null && result['isSuccess'] == true) {
@@ -601,7 +610,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                         IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
                       ]
                     ),
-                    const Text('MS Word / InPage Style Advance Table Editing (Phase 1)', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const Text('MS Word / InPage Style Advance Table Editing', style: TextStyle(fontSize: 12, color: Colors.grey)),
                     const Divider(),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -2034,18 +2043,18 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildAlignButton(Icons.align_horizontal_left, 'Left', () { saveState(); setState(() => sel.x = 10); _triggerCanvasUpdate(); }),
-                  _buildAlignButton(Icons.align_horizontal_center, 'Center', () { saveState(); setState(() => sel.x = (currentCanvasW / 2) - (_getElWidth(sel) / 2)); _triggerCanvasUpdate(); }),
-                  _buildAlignButton(Icons.align_horizontal_right, 'Right', () { saveState(); setState(() => sel.x = currentCanvasW - _getElWidth(sel) - 10); _triggerCanvasUpdate(); }),
+                  _buildAlignButton(Icons.align_horizontal_left, 'Left', () { saveState(); setState(() => sel.x = 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_horizontal_center, 'Center', () { saveState(); setState(() => sel.x = (currentCanvasW / 2) - (_getElWidth(sel) / 2)); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_horizontal_right, 'Right', () { saveState(); setState(() => sel.x = currentCanvasW - _getElWidth(sel) - 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
                 ]
               ),
               const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildAlignButton(Icons.align_vertical_top, 'Top', () { saveState(); setState(() => sel.y = 10); _triggerCanvasUpdate(); }),
-                  _buildAlignButton(Icons.align_vertical_center, 'Middle', () { saveState(); setState(() => sel.y = (currentCanvasH / 2) - (_getElHeight(sel) / 2)); _triggerCanvasUpdate(); }),
-                  _buildAlignButton(Icons.align_vertical_bottom, 'Bottom', () { saveState(); setState(() => sel.y = currentCanvasH - _getElHeight(sel) - 10); _triggerCanvasUpdate(); }),
+                  _buildAlignButton(Icons.align_vertical_top, 'Top', () { saveState(); setState(() => sel.y = 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_vertical_center, 'Middle', () { saveState(); setState(() => sel.y = (currentCanvasH / 2) - (_getElHeight(sel) / 2)); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_vertical_bottom, 'Bottom', () { saveState(); setState(() => sel.y = currentCanvasH - _getElHeight(sel) - 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
                 ]
               )
             ]
@@ -2377,9 +2386,16 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    bool hasSelection = selectedId != null;
+    bool hasSelection = false;
     DesignElement? sel;
-    if (hasSelection) sel = elements.firstWhere((e) => e.id == selectedId);
+    if (selectedId != null) {
+      try {
+        sel = elements.firstWhere((e) => e.id == selectedId);
+        hasSelection = true;
+      } catch (e) {
+        selectedId = null; 
+      }
+    }
     
     return Scaffold(
       backgroundColor: const Color(0xFFE5E7EB),
@@ -2521,7 +2537,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           }
                                           if (e.blendModeIndex != 0) img = ColorFiltered(colorFilter: ColorFilter.mode(Colors.white.withOpacity(0.0), AppConstants.blendModes[e.blendModeIndex]), child: img);
                                           Widget clippedImg = img;
-                                          if (e.clipShape == 1) clippedImg = Container(clipBehavior: Clip.antiAlias, decoration: BoxDecoration(shape: BoxShape.circle), child: img);
+                                          if (e.clipShape == 1) clippedImg = Container(clipBehavior: Clip.antiAlias, decoration: const BoxDecoration(shape: BoxShape.circle), child: img);
                                           else if (e.clipShape == 2) clippedImg = ClipPath(clipper: TriangleClipper(), child: img);
                                           else if (e.clipShape == 3) clippedImg = ClipPath(clipper: StarClipper(), child: img);
                                           else if (e.clipShape == 4) clippedImg = ClipPath(clipper: HexagonClipper(), child: img);
@@ -2556,7 +2572,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           return Positioned(left: e.x, top: e.y, child: Transform(transform: matrix, alignment: Alignment.center, child: contentWidget));
                                         }
                                         
-                                        // 100% PRO SELECTION BOX RENDER (WITH WORKABLE HANDLES & NO LAG)
                                         return Positioned(
                                           left: e.x, 
                                           top: e.y,
@@ -2567,7 +2582,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                               child: Stack(
                                                 clipBehavior: Clip.none,
                                                 children: [
-                                                  // MAIN CONTENT DRAG LAYER
                                                   Positioned.fill(
                                                     child: GestureDetector(
                                                       behavior: HitTestBehavior.opaque,
@@ -2601,21 +2615,17 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                     )
                                                   ),
                                                   
-                                                  // WORKABLE HANDLES
                                                   if (isSel) ...[
-                                                    // Edge Pills
                                                     Positioned(top: -4, left: currentWidth/2 - 12, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'T', e), child: _buildPill(true))),
                                                     Positioned(bottom: -4, left: currentWidth/2 - 12, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'B', e), child: _buildPill(true))),
                                                     Positioned(left: -4, top: currentHeight/2 - 12, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'L', e), child: _buildPill(false))),
                                                     Positioned(right: -4, top: currentHeight/2 - 12, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'R', e), child: _buildPill(false))),
                                                     
-                                                    // Corner Circles
                                                     Positioned(top: -6, left: -6, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e), child: _buildCircle())),
                                                     Positioned(top: -6, right: -6, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e), child: _buildCircle())),
                                                     Positioned(bottom: -6, left: -6, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e), child: _buildCircle())),
                                                     Positioned(bottom: -6, right: -6, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e), child: _buildCircle())),
                                                     
-                                                    // Rotate Handle
                                                     Positioned(
                                                       top: -35, right: -35, 
                                                       child: GestureDetector(
@@ -2625,7 +2635,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                         child: _buildIconCircle(Icons.rotate_right)
                                                       )
                                                     ),
-                                                    // Scale Handle
                                                     Positioned(
                                                       bottom: -35, left: -35, 
                                                       child: GestureDetector(
@@ -2658,7 +2667,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: SafeArea(child: Container(color: Colors.white, child: hasSelection ? _buildSelectedToolBar(sel!) : _buildDefaultBottomBar())),
+      bottomNavigationBar: SafeArea(child: Container(color: Colors.white, child: (hasSelection && sel != null) ? _buildSelectedToolBar(sel) : _buildDefaultBottomBar())),
     );
   }
 
@@ -2732,7 +2741,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
           ),
         ),
         const Divider(height: 1),
-        // PROFESSIONAL BOTTOM MENU ROW (DELETE, COPY, EDIT INCLUDED)
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           child: SingleChildScrollView(
