@@ -58,8 +58,6 @@ class DesignElement {
   bool hasStroke; Color strokeColor; double strokeWidth;
   bool hasShadow; Color shadowColor; double shadowBlur; double shadowOffsetX; double shadowOffsetY;
   String? groupId; 
-  
-  // 🔥 NAYA FEATURE: TABLE DATA FIXED 🔥
   bool isTable; 
   List<List<String>>? tableData;
 
@@ -150,5 +148,27 @@ class DesignElement {
     );
   }
 
-  DesignElement clone() { return DesignElement.fromJson(toJson()); }
+  // 🔥 YAHAN HAI JADOO! FAST MEMORY CLONE 🔥
+  DesignElement clone() { 
+    return DesignElement(
+      id: id, x: x, y: y, content: content,
+      imageBytes: imageBytes, 
+      isText: isText, fontSize: fontSize, textColor: textColor, opacity: opacity, angle: angle,
+      pitch: pitch, yaw: yaw, clipShape: clipShape, flipX: flipX, flipY: flipY,
+      isLocked: isLocked, isHidden: isHidden, imageFilter: imageFilter,
+      isTinted: isTinted, customGradColor1: customGradColor1, customGradColor2: customGradColor2,
+      cornerRadius: cornerRadius, textTextureBytes: textTextureBytes, letterSpacing: letterSpacing,
+      text3dDepth: text3dDepth, text3dColor: text3dColor,
+      textCurveRadius: textCurveRadius, blendModeIndex: blendModeIndex,
+      isBold: isBold, isItalic: isItalic, textAlign: textAlign, lineHeight: lineHeight, fontFamily: fontFamily,
+      isBorder: isBorder, isShape: isShape, elementColor: elementColor, width: width, height: height,
+      borderWidth: borderWidth, borderStyle: borderStyle,
+      textBgColor: textBgColor, textBgRadius: textBgRadius, wordSpacing: wordSpacing, textGradient: textGradient,
+      hasStroke: hasStroke, strokeColor: strokeColor, strokeWidth: strokeWidth,
+      hasShadow: hasShadow, shadowColor: shadowColor, shadowBlur: shadowBlur, shadowOffsetX: shadowOffsetX, shadowOffsetY: shadowOffsetY,
+      groupId: groupId,
+      isTable: isTable,
+      tableData: tableData?.map((row) => List<String>.from(row)).toList(),
+    );
+  }
 }
