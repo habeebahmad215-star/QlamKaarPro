@@ -46,7 +46,7 @@ class CurvedTextWidget extends StatelessWidget {
   }
 }
 
-// 🔥 INPAGE 3 / MS WORD STYLE PROFESSIONAL TABLE 🔥
+// 🔥 INPAGE / CANVA STYLE PROFESSIONAL TABLE 🔥
 class CustomTableWidget extends StatelessWidget {
   final List<List<String>> tableData;
   final double width;
@@ -74,35 +74,39 @@ class CustomTableWidget extends StatelessWidget {
     return SizedBox(
       width: width,
       height: height,
-      child: Directionality(
-        textDirection: TextDirection.rtl, // InPage Standard (Right to Left)
-        child: Table(
-          border: hasBorder ? TableBorder.all(color: borderColor, width: 2.0) : null,
-          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-          columnWidths: {
-            for (int i = 0; i < tableData[0].length; i++) i: const FlexColumnWidth()
-          },
-          children: tableData.asMap().entries.map((row) {
-            bool isHeader = row.key == 0; 
-            return TableRow(
-              decoration: isHeader ? BoxDecoration(color: borderColor.withOpacity(0.15)) : null,
-              children: row.value.map((cellText) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 8.0),
-                  child: Text(
-                    cellText,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: fontFamily,
-                      color: textColor,
-                      fontSize: isHeader ? 18 : 16,
-                      fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
+      // 🔥 FittedBox se Table ab kabhi nahi katega, Box ke size me perfect scale hoga 🔥
+      child: FittedBox(
+        fit: BoxFit.fill,
+        child: Directionality(
+          textDirection: TextDirection.rtl, // InPage Style (Right to Left)
+          child: Container(
+            width: max(width, 400.0), // Base High-Quality Rendering Width
+            child: Table(
+              border: hasBorder ? TableBorder.all(color: borderColor, width: 2.0) : null,
+              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+              children: tableData.asMap().entries.map((rowEntry) {
+                bool isHeader = rowEntry.key == 0;
+                return TableRow(
+                  decoration: isHeader ? BoxDecoration(color: borderColor.withOpacity(0.15)) : null,
+                  children: rowEntry.value.map((cellText) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 12.0),
+                      child: Text(
+                        cellText,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: fontFamily,
+                          color: textColor,
+                          fontSize: isHeader ? 26 : 22, // High resolution clear font
+                          fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 );
               }).toList(),
-            );
-          }).toList(),
+            ),
+          ),
         ),
       ),
     );
