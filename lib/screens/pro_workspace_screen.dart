@@ -781,7 +781,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                       return GestureDetector(
                                         onTap: () { setModalState(() { activeR = r; activeC = c; }); },
                                         child: Container(
-                                          width: 130, 
+                                          width: 130, // Default width for editor boxes
                                           margin: const EdgeInsets.all(2),
                                           decoration: BoxDecoration(
                                             border: Border.all(color: isActive ? const Color(0xFF8B5CF6) : Colors.grey.shade400, width: isActive ? 2.5 : 1),
@@ -2902,7 +2902,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       tools = [
         InkWell(
           onTap: () { setState(() { selectedId = null; activeToolbarMenu = 'main'; }); _triggerCanvasUpdate(); },
-          child: Container(padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10), decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(12)), child: const Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.close, color: Colors.black54), SizedBox(height: 4), Text('Deselect', style: fontWeight: FontWeight.bold, fontSize: 10, color: Colors.black54))])),
+          child: Container(padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10), decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(12)), child: const Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.close, color: Colors.black54), SizedBox(height: 4), Text('Deselect', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Colors.black54))])),
         ),
         const SizedBox(width: 8),
         _buildCategoryBtn(Icons.edit, 'Edit / Style', 'style', const Color(0xFF8B5CF6)),
