@@ -146,6 +146,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     }
   }
 
+  // --- Professional Smooth Handles Logic --- //
+
   void _resizeEdge(DragUpdateDetails d, String edge, DesignElement e) {
     double ldx = d.delta.dx;
     double ldy = d.delta.dy;
@@ -176,17 +178,26 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   }
 
   void _scaleCorner(DragUpdateDetails d, DesignElement e) {
-    double delta = (d.delta.dx + d.delta.dy) * 0.5;
-    if (e.width + delta > 80) {
+    double delta = d.delta.dx + d.delta.dy;
+    if (e.width + delta > 50) {
       double ratio = e.width / (e.height > 0 ? e.height : 1);
       e.width += delta;
-      if (!e.isText) e.height += delta / ratio;
+      if (!e.isText && !e.isTable) e.height += delta / ratio;
       if (e.isText) e.fontSize = max(10.0, e.fontSize + delta * 0.2);
+      if (e.isTable) e.height += delta / ratio;
+      
       e.x -= delta / 2;
-      e.y -= (e.isText ? 0 : delta / ratio) / 2;
+      e.y -= (!e.isText ? delta / ratio : 0) / 2;
     }
     _triggerCanvasUpdate();
   }
+
+  void _rotateElement(DragUpdateDetails d, DesignElement e) {
+    e.angle += (d.delta.dx + d.delta.dy) * 0.015;
+    _triggerCanvasUpdate();
+  }
+
+  // --- End Professional Handles Logic --- //
 
   void _showExportMenu() {
     showModalBottomSheet(
@@ -2365,24 +2376,24 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   Widget _buildPill(bool isHorizontal) {
     return Container(
-      width: isHorizontal ? 24 : 8,
-      height: isHorizontal ? 8 : 24,
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5))
+      width: isHorizontal ? 30 : 12,
+      height: isHorizontal ? 12 : 30,
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF8B5CF6), width: 2), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 3)])
     );
   }
 
   Widget _buildCircle() {
     return Container(
-      width: 12, height: 12,
-      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5))
+      width: 16, height: 16,
+      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 2), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 3)])
     );
   }
 
   Widget _buildIconCircle(IconData icon) {
     return Container(
-      width: 28, height: 28,
-      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)]),
-      child: Icon(icon, size: 16, color: const Color(0xFF8B5CF6)),
+      width: 32, height: 32,
+      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 2), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)]),
+      child: Icon(icon, size: 18, color: const Color(0xFF8B5CF6)),
     );
   }
 
@@ -2513,18 +2524,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
                                         double currentWidth = _getElWidth(e); 
                                         double currentHeight = _getElHeight(e);
+                                        double bp = 40.0; // Box Padding to fix handle hit testing!
                                         
                                         Widget contentWidget;
                                         if (e.isBorder) {
-                                          return Positioned.fill(
-                                            child: GestureDetector(
-                                              onTap: () { if(!e.isLocked) { setState(() => selectedId = e.id); _triggerCanvasUpdate(); } },
-                                              child: Transform(
-                                                transform: matrix, alignment: Alignment.center,
-                                                child: Container(margin: const EdgeInsets.all(8), decoration: BoxDecoration(border: Border.all(color: e.elementColor, width: e.strokeWidth), borderRadius: BorderRadius.circular(e.cornerRadius)))
-                                              )
-                                            )
-                                          );
+                                          contentWidget = Container(margin: const EdgeInsets.all(8), decoration: BoxDecoration(border: Border.all(color: e.elementColor, width: e.strokeWidth), borderRadius: BorderRadius.circular(e.cornerRadius)));
                                         } else if (e.isTable && e.tableData != null) {
                                           contentWidget = CustomTableWidget(tableData: e.tableData!, width: currentWidth, height: currentHeight, fontFamily: e.fontFamily, textColor: e.textColor, borderColor: e.elementColor, hasBorder: true);
                                         } else if (e.isShape) {
@@ -2575,16 +2579,17 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                         }
                                         
                                         return Positioned(
-                                          left: e.x, 
-                                          top: e.y,
+                                          left: e.x - bp, 
+                                          top: e.y - bp,
                                           child: Transform(
                                             transform: matrix, alignment: Alignment.center,
                                             child: SizedBox(
-                                              width: currentWidth, height: currentHeight,
+                                              width: currentWidth + (bp * 2), height: currentHeight + (bp * 2),
                                               child: Stack(
                                                 clipBehavior: Clip.none,
                                                 children: [
-                                                  Positioned.fill(
+                                                  Positioned(
+                                                    left: bp, top: bp, right: bp, bottom: bp,
                                                     child: GestureDetector(
                                                       behavior: HitTestBehavior.opaque,
                                                       onTap: () { 
@@ -2618,27 +2623,27 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                   ),
                                                   
                                                   if (isSel) ...[
-                                                    Positioned(top: -4, left: currentWidth/2 - 12, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'T', e), child: _buildPill(true))),
-                                                    Positioned(bottom: -4, left: currentWidth/2 - 12, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'B', e), child: _buildPill(true))),
-                                                    Positioned(left: -4, top: currentHeight/2 - 12, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'L', e), child: _buildPill(false))),
-                                                    Positioned(right: -4, top: currentHeight/2 - 12, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'R', e), child: _buildPill(false))),
+                                                    Positioned(top: bp - 8, left: bp + currentWidth/2 - 15, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'T', e), child: _buildPill(true))),
+                                                    Positioned(bottom: bp - 8, left: bp + currentWidth/2 - 15, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'B', e), child: _buildPill(true))),
+                                                    Positioned(left: bp - 8, top: bp + currentHeight/2 - 15, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'L', e), child: _buildPill(false))),
+                                                    Positioned(right: bp - 8, top: bp + currentHeight/2 - 15, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'R', e), child: _buildPill(false))),
                                                     
-                                                    Positioned(top: -6, left: -6, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e), child: _buildCircle())),
-                                                    Positioned(top: -6, right: -6, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e), child: _buildCircle())),
-                                                    Positioned(bottom: -6, left: -6, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e), child: _buildCircle())),
-                                                    Positioned(bottom: -6, right: -6, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e), child: _buildCircle())),
+                                                    Positioned(top: bp - 8, left: bp - 8, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e), child: _buildCircle())),
+                                                    Positioned(top: bp - 8, right: bp - 8, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e), child: _buildCircle())),
+                                                    Positioned(bottom: bp - 8, left: bp - 8, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e), child: _buildCircle())),
+                                                    Positioned(bottom: bp - 8, right: bp - 8, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e), child: _buildCircle())),
                                                     
                                                     Positioned(
-                                                      top: -35, right: -35, 
+                                                      top: bp - 35, right: bp - 35, 
                                                       child: GestureDetector(
                                                         behavior: HitTestBehavior.opaque,
                                                         onPanStart: (_) => saveState(),
-                                                        onPanUpdate: (d) => _scaleCorner(d, e), 
+                                                        onPanUpdate: (d) => _rotateElement(d, e), 
                                                         child: _buildIconCircle(Icons.rotate_right)
                                                       )
                                                     ),
                                                     Positioned(
-                                                      bottom: -35, left: -35, 
+                                                      bottom: bp - 35, left: bp - 35, 
                                                       child: GestureDetector(
                                                         behavior: HitTestBehavior.opaque,
                                                         onPanStart: (_) => saveState(),
