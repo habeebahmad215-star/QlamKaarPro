@@ -192,7 +192,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void saveState() {
     undoStack.add(elements.map((e) => e.clone()).toList());
     redoStack.clear();
-    if (undoStack.length > 20) undoStack.removeAt(0);
+    // RAM Fix: Reduced stack size from 20 to 10 to prevent OOM errors on mobile devices
+    if (undoStack.length > 10) undoStack.removeAt(0); 
   }
 
   void undoAction() {
@@ -348,7 +349,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     await Future.delayed(const Duration(milliseconds: 400));
     try {
       RenderRepaintBoundary boundary = _canvasKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      double pixelRatio = 3.0;
+      // RAM Fix: Dynamic Pixel Ratio based on canvas size to prevent crash
+      double pixelRatio = (currentCanvasW > 1200 || currentCanvasH > 1200) ? 2.0 : 3.0;
+      
       ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
       ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       
