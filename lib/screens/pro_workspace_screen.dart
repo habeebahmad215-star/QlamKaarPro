@@ -54,20 +54,18 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     {'name': 'AlMajeed', 'title': 'المجید قرآنی فونٹ', 'desc': 'Classic Arabic/Quranic Font'},
   ];
 
-  // 🔥 NAYA MEGA COLOR STOCK 🔥
   final List<Color> expandedColors = [
     Colors.black, Colors.white, Colors.transparent, Colors.red, Colors.pink, Colors.purple, Colors.deepPurple,
     Colors.indigo, Colors.blue, Colors.lightBlue, Colors.cyan, Colors.teal, Colors.green, Colors.lightGreen,
     Colors.lime, Colors.yellow, Colors.amber, Colors.orange, Colors.deepOrange, Colors.brown, Colors.grey, Colors.blueGrey,
     Colors.red.shade200, Colors.red.shade900, Colors.green.shade200, Colors.green.shade900, Colors.blue.shade200, Colors.blue.shade900,
-    const Color(0xFFD4AF37), const Color(0xFFC0C0C0), const Color(0xFFCD7F32), // Gold, Silver, Bronze
+    const Color(0xFFD4AF37), const Color(0xFFC0C0C0), const Color(0xFFCD7F32), 
     const Color(0xFF1ABC9C), const Color(0xFF2ECC71), const Color(0xFF3498DB), const Color(0xFF9B59B6), const Color(0xFF34495E),
     const Color(0xFF16A085), const Color(0xFF27AE60), const Color(0xFF2980B9), const Color(0xFF8E44AD), const Color(0xFF2C3E50),
     const Color(0xFFF1C40F), const Color(0xFFE67E22), const Color(0xFFE74C3C), const Color(0xFFECF0F1), const Color(0xFF95A5A6),
     const Color(0xFFF39C12), const Color(0xFFD35400), const Color(0xFFC0392B), const Color(0xFFBDC3C7), const Color(0xFF7F8C8D),
   ];
 
-  // 🔥 NAYA MEGA GRADIENT STOCK 🔥
   final List<List<Color>> expandedGradients = [
     [const Color(0xFFff9966), const Color(0xFFff5e62)], [const Color(0xFF56CCF2), const Color(0xFF2F80ED)],
     [const Color(0xFFF2994A), const Color(0xFFF2C94C)], [const Color(0xFFE44D26), const Color(0xFFF16529)],
@@ -122,21 +120,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     super.dispose();
   }
 
-  void _triggerCanvasUpdate() {
-    _canvasNotifier.value++;
-  }
+  void _triggerCanvasUpdate() { _canvasNotifier.value++; }
 
   void _addStickerToCanvas(String stickerStr) {
     saveState();
     setState(() {
-      var newEl = DesignElement(
-        id: Random().nextInt(10000).toString(),
-        x: 80, y: 150,
-        content: stickerStr,
-        isText: true,
-        width: 150, height: 150,
-        fontSize: 80, 
-      );
+      var newEl = DesignElement(id: Random().nextInt(10000).toString(), x: 80, y: 150, content: stickerStr, isText: true, width: 150, height: 150, fontSize: 80);
       elements.add(newEl);
       selectedId = newEl.id;
     });
@@ -153,26 +142,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     if (!e.isText && e.height > 20) return e.height;
     if (e.isShape) return 90;
     if (e.isText) {
-      if (e.textCurveRadius != 0) {
-        return e.textCurveRadius.abs() * 2.5 + 20;
-      }
+      if (e.textCurveRadius != 0) return e.textCurveRadius.abs() * 2.5 + 20;
       final TextPainter textPainter = TextPainter(
-        text: TextSpan(
-          text: e.content.isEmpty ? 'Text' : e.content, 
-          style: TextStyle(
-            fontFamily: e.fontFamily, 
-            fontSize: e.fontSize, 
-            letterSpacing: e.letterSpacing, 
-            wordSpacing: e.wordSpacing, 
-            height: e.lineHeight,
-            fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal,
-            fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal,
-          )
-        ),
-        textAlign: e.textAlign,
-        textDirection: TextDirection.ltr,
+        text: TextSpan(text: e.content.isEmpty ? 'Text' : e.content, style: TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, letterSpacing: e.letterSpacing, wordSpacing: e.wordSpacing, height: e.lineHeight, fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal, fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal)),
+        textAlign: e.textAlign, textDirection: TextDirection.ltr,
       )..layout(maxWidth: e.width > 80 ? e.width : 80);
-      
       return textPainter.size.height + (e.hasShadow ? e.shadowBlur * 2 : 0) + (e.hasStroke ? e.strokeWidth * 2 : 0) + 10;
     }
     return 150;
@@ -191,14 +165,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         String contents = await file.readAsString();
         jsonList = jsonDecode(contents);
       }
-      
       ProjectModel p = ProjectModel(id: projectId, name: projectName, pages: pages, lastModified: DateTime.now().millisecondsSinceEpoch);
-      
       jsonList.removeWhere((item) => item['id'] == projectId);
       jsonList.add(p.toJson());
-      
       await file.writeAsString(jsonEncode(jsonList));
-      
       HapticFeedback.lightImpact();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Project Saved Successfully!')));
     } catch (e) {
@@ -228,8 +198,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     if (undoStack.isNotEmpty) {
       redoStack.add(elements.map((e) => e.clone()).toList());
       setState(() { elements = undoStack.removeLast(); selectedId = null; });
-      HapticFeedback.lightImpact();
-      _triggerCanvasUpdate();
+      HapticFeedback.lightImpact(); _triggerCanvasUpdate();
     }
   }
 
@@ -237,115 +206,67 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     if (redoStack.isNotEmpty) {
       undoStack.add(elements.map((e) => e.clone()).toList());
       setState(() { elements = redoStack.removeLast(); selectedId = null; });
-      HapticFeedback.lightImpact();
-      _triggerCanvasUpdate();
+      HapticFeedback.lightImpact(); _triggerCanvasUpdate();
     }
   }
 
   void _resizeEdge(DragUpdateDetails d, String edge, DesignElement e) {
-    double ldx = d.delta.dx;
-    double ldy = d.delta.dy;
+    double ldx = d.delta.dx; double ldy = d.delta.dy;
     if (e.angle != 0) {
-      double cosA = cos(-e.angle);
-      double sinA = sin(-e.angle);
+      double cosA = cos(-e.angle); double sinA = sin(-e.angle);
       ldx = d.delta.dx * cosA - d.delta.dy * sinA;
       ldy = d.delta.dx * sinA + d.delta.dy * cosA;
     }
-    
-    if (edge == 'R') {
-      e.width = max(80.0, e.width + ldx);
-    } else if (edge == 'L') {
-      double oldW = e.width;
-      e.width = max(80.0, e.width - ldx);
-      e.x += (oldW - e.width) * cos(e.angle);
-      e.y += (oldW - e.width) * sin(e.angle);
-    } else if (edge == 'B') {
-      if (!e.isText) e.height = max(30.0, e.height + ldy);
-    } else if (edge == 'T') {
+    if (edge == 'R') { e.width = max(80.0, e.width + ldx); } 
+    else if (edge == 'L') {
+      double oldW = e.width; e.width = max(80.0, e.width - ldx);
+      e.x += (oldW - e.width) * cos(e.angle); e.y += (oldW - e.width) * sin(e.angle);
+    } 
+    else if (edge == 'B') { if (!e.isText) e.height = max(30.0, e.height + ldy); } 
+    else if (edge == 'T') {
       if (!e.isText) {
-        double oldH = e.height;
-        e.height = max(30.0, e.height - ldy);
-        e.x -= (oldH - e.height) * sin(e.angle);
-        e.y += (oldH - e.height) * cos(e.angle);
+        double oldH = e.height; e.height = max(30.0, e.height - ldy);
+        e.x -= (oldH - e.height) * sin(e.angle); e.y += (oldH - e.height) * cos(e.angle);
       }
     }
     _triggerCanvasUpdate();
   }
 
   void _scaleCorner(DragUpdateDetails d, DesignElement e, String corner) {
-    double ldx = d.delta.dx;
-    double ldy = d.delta.dy;
-    
+    double ldx = d.delta.dx; double ldy = d.delta.dy;
     if (e.angle != 0) {
-      double cosA = cos(-e.angle);
-      double sinA = sin(-e.angle);
-      ldx = d.delta.dx * cosA - d.delta.dy * sinA;
-      ldy = d.delta.dx * sinA + d.delta.dy * cosA;
+      double cosA = cos(-e.angle); double sinA = sin(-e.angle);
+      ldx = d.delta.dx * cosA - d.delta.dy * sinA; ldy = d.delta.dx * sinA + d.delta.dy * cosA;
     }
-
     double delta = 0;
-    if (corner == 'BR') delta = ldx;
-    else if (corner == 'BL') delta = -ldx;
-    else if (corner == 'TR') delta = ldx;
-    else if (corner == 'TL') delta = -ldx;
-
-    if (delta == 0 && ldy != 0) {
-      if (corner == 'BR' || corner == 'BL') delta = ldy;
-      else delta = -ldy;
-    }
-
+    if (corner == 'BR') delta = ldx; else if (corner == 'BL') delta = -ldx; else if (corner == 'TR') delta = ldx; else if (corner == 'TL') delta = -ldx;
+    if (delta == 0 && ldy != 0) { if (corner == 'BR' || corner == 'BL') delta = ldy; else delta = -ldy; }
+    delta *= 0.8;
     if (e.width + delta > 40) {
-      double oldWidth = e.width;
-      e.width += delta;
-      
-      if (e.isText) {
-        double scaleFactor = e.width / oldWidth;
-        e.fontSize = max(10.0, e.fontSize * scaleFactor);
-      } else {
-        double ratio = oldWidth / (e.height > 0 ? e.height : 1);
-        e.height += delta / ratio;
-      }
-      
+      double oldWidth = e.width; e.width += delta;
+      if (e.isText) { e.fontSize = max(10.0, e.fontSize * (e.width / oldWidth)); } 
+      else { e.height += delta / (oldWidth / (e.height > 0 ? e.height : 1)); }
       double wDiff = e.width - oldWidth;
-      
-      if (corner == 'TL' || corner == 'BL') {
-        e.x -= wDiff * cos(e.angle);
-        e.y -= wDiff * sin(e.angle);
-      }
+      if (corner == 'TL' || corner == 'BL') { e.x -= wDiff * cos(e.angle); e.y -= wDiff * sin(e.angle); }
     }
     _triggerCanvasUpdate();
   }
 
-  void _rotateElement(DragUpdateDetails d, DesignElement e) {
-    e.angle += (d.delta.dx + d.delta.dy) * 0.015;
-    _triggerCanvasUpdate();
-  }
+  void _rotateElement(DragUpdateDetails d, DesignElement e) { e.angle += (d.delta.dx + d.delta.dy) * 0.015; _triggerCanvasUpdate(); }
 
   void _showExportMenu() {
     showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return Container(
-          height: 350,
-          padding: const EdgeInsets.all(20),
+          height: 350, padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Export Design', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
-                ]
-              ),
-              const Divider(),
-              const SizedBox(height: 10),
-              _buildExportOption(Icons.image, 'Save as JPG', 'Solid Background', Colors.blue, () { Navigator.pop(context); _captureAndSave('JPG'); }),
-              const SizedBox(height: 10),
-              _buildExportOption(Icons.layers_clear, 'Save as PNG', 'Transparent Image', Colors.purple, () { Navigator.pop(context); _captureAndSave('PNG'); }),
-              const SizedBox(height: 10),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Export Design', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]),
+              const Divider(), const SizedBox(height: 10),
+              _buildExportOption(Icons.image, 'Save as JPG', 'Solid Background', Colors.blue, () { Navigator.pop(context); _captureAndSave('JPG'); }), const SizedBox(height: 10),
+              _buildExportOption(Icons.layers_clear, 'Save as PNG', 'Transparent Image', Colors.purple, () { Navigator.pop(context); _captureAndSave('PNG'); }), const SizedBox(height: 10),
               _buildExportOption(Icons.picture_as_pdf, 'Save as Print PDF', 'High Quality PDF', Colors.red, () { Navigator.pop(context); _captureAndSave('PDF'); })
             ]
           )
@@ -358,285 +279,64 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(12)),
-        child: Row(
-          children: [
-            Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color, shape: BoxShape.circle), child: Icon(icon, color: Colors.white)),
-            const SizedBox(width: 15),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.bold)), Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey))])),
-            Icon(Icons.arrow_forward_ios, color: color, size: 16)
-          ]
-        )
+        padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(12)),
+        child: Row(children: [Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color, shape: BoxShape.circle), child: Icon(icon, color: Colors.white)), const SizedBox(width: 15), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.bold)), Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey))])), Icon(Icons.arrow_forward_ios, color: color, size: 16)])
       )
     );
   }
 
   Future<void> _captureAndSave(String format) async {
-    setState(() { selectedId = null; _isExporting = true; });
-    await Future.delayed(const Duration(milliseconds: 400));
+    setState(() { selectedId = null; _isExporting = true; }); await Future.delayed(const Duration(milliseconds: 400));
     try {
       RenderRepaintBoundary boundary = _canvasKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      double pixelRatio = 3.0;
-      ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
+      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      
-      if (byteData == null) throw Exception("Failed to convert image to bytes");
-      
+      if (byteData == null) throw Exception("Failed");
       Uint8List pngBytes = byteData.buffer.asUint8List();
       if (format == 'JPG' || format == 'PNG') {
         final result = await ImageGallerySaver.saveImage(pngBytes, quality: 100, name: "QalamKaarPro_${DateTime.now().millisecondsSinceEpoch}");
-        if (mounted && result != null && result['isSuccess'] == true) {
-          _showSuccessDialog('Saved to Gallery!', 'Aapka $format design gallery mein save ho gaya hai.');
-        }
+        if (mounted && result != null && result['isSuccess'] == true) { _showSuccessDialog('Saved to Gallery!', 'Aapka $format design gallery mein save ho gaya hai.'); }
       } else if (format == 'PDF') {
-        final pdf = pw.Document();
-        final imagePdf = pw.MemoryImage(pngBytes);
+        final pdf = pw.Document(); final imagePdf = pw.MemoryImage(pngBytes);
         pdf.addPage(pw.Page(pageFormat: PdfPageFormat(image.width.toDouble(), image.height.toDouble()), margin: pw.EdgeInsets.zero, build: (pw.Context context) { return pw.Center(child: pw.Image(imagePdf)); }));
-        Uint8List pdfBytes = await pdf.save();
-        await Printing.sharePdf(bytes: pdfBytes, filename: "QalamKaarPro_Print_${DateTime.now().millisecondsSinceEpoch}.pdf");
+        await Printing.sharePdf(bytes: await pdf.save(), filename: "QalamKaarPro_Print_${DateTime.now().millisecondsSinceEpoch}.pdf");
       }
-    } catch (e) {
-      debugPrint('Export Error: $e');
-    } finally {
-      setState(() { _isExporting = false; });
-    }
+    } catch (e) { debugPrint('Export Error: $e'); } finally { setState(() { _isExporting = false; }); }
   }
 
   void _showSuccessDialog(String title, String message) {
     HapticFeedback.mediumImpact();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.check_circle, color: Colors.green, size: 60),
-            const SizedBox(height: 15),
-            Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
-            const SizedBox(height: 20),
-            ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)), onPressed: () => Navigator.pop(context), child: const Text('OK', style: TextStyle(color: Colors.white)))
-          ]
-        )
-      )
-    );
+    showDialog(context: context, builder: (context) => AlertDialog(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)), content: Column(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.check_circle, color: Colors.green, size: 60), const SizedBox(height: 15), Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(height: 10), Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)), const SizedBox(height: 20), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)), onPressed: () => Navigator.pop(context), child: const Text('OK', style: TextStyle(color: Colors.white)))])));
   }
 
   void _showPoetryLibrary(TextEditingController textController) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.7,
-          padding: const EdgeInsets.all(15),
-          child: DefaultTabController(
-            length: AppConstants.urduPoetryLibrary.keys.length,
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Urdu Library اقوال / شاعری', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
-                  ]
-                ),
-                TabBar(
-                  isScrollable: true,
-                  labelColor: const Color(0xFF8B5CF6),
-                  unselectedLabelColor: Colors.grey,
-                  indicatorColor: const Color(0xFF8B5CF6),
-                  tabs: AppConstants.urduPoetryLibrary.keys.map((k) => Tab(text: k)).toList()
-                ),
-                const SizedBox(height: 10),
-                Expanded(
-                  child: TabBarView(
-                    children: AppConstants.urduPoetryLibrary.keys.map((category) {
-                      return ListView.builder(
-                        itemCount: AppConstants.urduPoetryLibrary[category]!.length,
-                        itemBuilder: (context, index) {
-                          String text = AppConstants.urduPoetryLibrary[category]![index];
-                          return Card(
-                            color: Colors.grey.shade50,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey.shade200), borderRadius: BorderRadius.circular(10)),
-                            margin: const EdgeInsets.symmetric(vertical: 6),
-                            child: ListTile(
-                              title: Text(text, textDirection: TextDirection.rtl, textAlign: TextAlign.center, style: const TextStyle(fontFamily: 'JameelNoori', fontSize: 16)),
-                              onTap: () { textController.text = text; Navigator.pop(context); }
-                            )
-                          );
-                        }
-                      );
-                    }).toList()
-                  )
-                )
-              ]
-            )
-          )
-        );
-      }
-    );
+    showModalBottomSheet(context: context, backgroundColor: Colors.white, isScrollControlled: true, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return Container(height: MediaQuery.of(context).size.height * 0.7, padding: const EdgeInsets.all(15), child: DefaultTabController(length: AppConstants.urduPoetryLibrary.keys.length, child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Urdu Library اقوال / شاعری', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), TabBar(isScrollable: true, labelColor: const Color(0xFF8B5CF6), unselectedLabelColor: Colors.grey, indicatorColor: const Color(0xFF8B5CF6), tabs: AppConstants.urduPoetryLibrary.keys.map((k) => Tab(text: k)).toList()), const SizedBox(height: 10), Expanded(child: TabBarView(children: AppConstants.urduPoetryLibrary.keys.map((category) { return ListView.builder(itemCount: AppConstants.urduPoetryLibrary[category]!.length, itemBuilder: (context, index) { String text = AppConstants.urduPoetryLibrary[category]![index]; return Card(color: Colors.grey.shade50, elevation: 0, shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey.shade200), borderRadius: BorderRadius.circular(10)), margin: const EdgeInsets.symmetric(vertical: 6), child: ListTile(title: Text(text, textDirection: TextDirection.rtl, textAlign: TextAlign.center, style: const TextStyle(fontFamily: 'JameelNoori', fontSize: 16)), onTap: () { textController.text = text; Navigator.pop(context); })); }); }).toList()))]))); });
   }
 
   void _showTashkeelModal(TextEditingController controller) {
     final List<String> tashkeelList = ['َ', 'ِ', 'ُ', 'ً', 'ٍ', 'ٌ', 'ّ', 'ْ', 'ٓ', 'ٰ', 'ٖ', 'ٗ', 'ۖ', 'ۗ', 'ۘ', 'ۙ', 'ۚ'];
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) {
-        return Container(
-          height: 350,
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Tashkeel & Symbols اعراب', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
-                ]
-              ),
-              const Divider(),
-              Expanded(
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 5, crossAxisSpacing: 10, mainAxisSpacing: 10),
-                  itemCount: tashkeelList.length,
-                  itemBuilder: (context, index) {
-                    return InkWell(
-                      onTap: () { controller.text += tashkeelList[index]; Navigator.pop(context); },
-                      child: Container(
-                        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
-                        alignment: Alignment.center,
-                        child: Text(tashkeelList[index], style: const TextStyle(fontSize: 22, fontFamily: 'JameelNoori'))
-                      )
-                    );
-                  }
-                )
-              )
-            ]
-          )
-        );
-      }
-    );
+    showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return Container(height: 350, padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Tashkeel & Symbols اعراب', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const Divider(), Expanded(child: GridView.builder(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 5, crossAxisSpacing: 10, mainAxisSpacing: 10), itemCount: tashkeelList.length, itemBuilder: (context, index) { return InkWell(onTap: () { controller.text += tashkeelList[index]; Navigator.pop(context); }, child: Container(decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)), alignment: Alignment.center, child: Text(tashkeelList[index], style: const TextStyle(fontSize: 22, fontFamily: 'JameelNoori')))); }))])); });
   }
 
   void _showTextComposerDialog({DesignElement? existingElement}) {
     TextEditingController controller = TextEditingController(text: existingElement?.content ?? '');
     bool isRTL = existingElement?.textAlign == TextAlign.right ? true : (existingElement?.textAlign == TextAlign.center ? true : false);
-
     showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
       builder: (context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             return Padding(
               padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
               child: Container(
-                height: MediaQuery.of(context).size.height * 0.75,
-                decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-                padding: const EdgeInsets.all(20),
+                height: MediaQuery.of(context).size.height * 0.75, decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))), padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10))),
-                    const SizedBox(height: 20),
-                    Container(
-                      decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(30)),
-                      padding: const EdgeInsets.all(4),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          GestureDetector(
-                            onTap: () => setModalState(() => isRTL = false),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                              decoration: BoxDecoration(color: !isRTL ? Colors.white : Colors.transparent, borderRadius: BorderRadius.circular(25), boxShadow: !isRTL ? [const BoxShadow(color: Colors.black12, blurRadius: 4)] : []),
-                              child: Text('English (LTR)', style: TextStyle(fontWeight: !isRTL ? FontWeight.bold : FontWeight.normal, color: !isRTL ? Colors.black : Colors.grey))
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () => setModalState(() => isRTL = true),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                              decoration: BoxDecoration(color: isRTL ? Colors.white : Colors.transparent, borderRadius: BorderRadius.circular(25), boxShadow: isRTL ? [const BoxShadow(color: Colors.black12, blurRadius: 4)] : []),
-                              child: Text('اردو (RTL)', style: TextStyle(fontWeight: isRTL ? FontWeight.bold : FontWeight.normal, color: isRTL ? Colors.black : Colors.grey))
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(color: Colors.grey.shade50, border: Border.all(color: Colors.grey.shade200), borderRadius: BorderRadius.circular(15)),
-                        child: TextField(
-                          controller: controller,
-                          maxLines: null,
-                          textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
-                          textAlign: isRTL ? TextAlign.right : TextAlign.left,
-                          style: TextStyle(fontFamily: isRTL ? 'JameelNoori' : null, fontSize: isRTL ? 28 : 20),
-                          decoration: InputDecoration(border: InputBorder.none, hintText: isRTL ? 'یہاں لکھیں...' : 'Type here...'),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildComposerTool(Icons.paste, 'Paste', () async { 
-                          ClipboardData? data = await Clipboard.getData('text/plain'); 
-                          if(data != null && data.text != null) { controller.text += data.text!; } 
-                        }),
-                        _buildComposerTool(Icons.delete_outline, 'Clear', () => controller.clear()),
-                        _buildComposerTool(Icons.auto_stories, 'شاعری', () => _showPoetryLibrary(controller)),
-                        _buildComposerTool(Icons.format_quote, 'اعراب', () => _showTashkeelModal(controller)),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(flex: 1, child: OutlinedButton(style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), onPressed: () => Navigator.pop(context), child: const Text('Cancel'))),
-                        const SizedBox(width: 15),
-                        Expanded(
-                          flex: 2, 
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                            onPressed: () { 
-                              if (controller.text.isNotEmpty) { 
-                                saveState(); 
-                                double calcW = (controller.text.length * (isRTL ? 28.0 : 20.0) * 0.6) + 40;
-                                if(calcW > MediaQuery.of(context).size.width - 60) calcW = MediaQuery.of(context).size.width - 60;
-                                if(calcW < 80) calcW = 80;
-                                if (existingElement != null) { 
-                                  setState(() { 
-                                    existingElement.content = controller.text; 
-                                    existingElement.textAlign = isRTL ? TextAlign.right : TextAlign.left; 
-                                  }); 
-                                } else { 
-                                  var newEl = DesignElement(id: Random().nextInt(10000).toString(), x: 40, y: 100, content: controller.text, isText: true, width: calcW, height: 100, fontSize: 30);
-                                  newEl.textAlign = isRTL ? TextAlign.right : TextAlign.left; 
-                                  setState(() { elements.add(newEl); selectedId = newEl.id; }); 
-                                } 
-                                _triggerCanvasUpdate(); 
-                                Navigator.pop(context); 
-                              } 
-                            }, 
-                            icon: const Icon(Icons.check_circle_outline, color: Colors.white), 
-                            label: const Text('Add to Design', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold))
-                          )
-                        )
-                      ],
-                    )
+                    Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10))), const SizedBox(height: 20),
+                    Container(decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(30)), padding: const EdgeInsets.all(4), child: Row(mainAxisSize: MainAxisSize.min, children: [GestureDetector(onTap: () => setModalState(() => isRTL = false), child: Container(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), decoration: BoxDecoration(color: !isRTL ? Colors.white : Colors.transparent, borderRadius: BorderRadius.circular(25), boxShadow: !isRTL ? [const BoxShadow(color: Colors.black12, blurRadius: 4)] : []), child: Text('English (LTR)', style: TextStyle(fontWeight: !isRTL ? FontWeight.bold : FontWeight.normal, color: !isRTL ? Colors.black : Colors.grey)))), GestureDetector(onTap: () => setModalState(() => isRTL = true), child: Container(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), decoration: BoxDecoration(color: isRTL ? Colors.white : Colors.transparent, borderRadius: BorderRadius.circular(25), boxShadow: isRTL ? [const BoxShadow(color: Colors.black12, blurRadius: 4)] : []), child: Text('اردو (RTL)', style: TextStyle(fontWeight: isRTL ? FontWeight.bold : FontWeight.normal, color: isRTL ? Colors.black : Colors.grey))))])), const SizedBox(height: 20),
+                    Expanded(child: Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.grey.shade50, border: Border.all(color: Colors.grey.shade200), borderRadius: BorderRadius.circular(15)), child: TextField(controller: controller, maxLines: null, textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr, textAlign: isRTL ? TextAlign.right : TextAlign.left, style: TextStyle(fontFamily: isRTL ? 'JameelNoori' : null, fontSize: isRTL ? 28 : 20), decoration: InputDecoration(border: InputBorder.none, hintText: isRTL ? 'یہاں لکھیں...' : 'Type here...')))), const SizedBox(height: 15),
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [_buildComposerTool(Icons.paste, 'Paste', () async { ClipboardData? data = await Clipboard.getData('text/plain'); if(data != null && data.text != null) { controller.text += data.text!; } }), _buildComposerTool(Icons.delete_outline, 'Clear', () => controller.clear()), _buildComposerTool(Icons.auto_stories, 'شاعری', () => _showPoetryLibrary(controller)), _buildComposerTool(Icons.format_quote, 'اعراب', () => _showTashkeelModal(controller))]), const SizedBox(height: 20),
+                    Row(children: [Expanded(flex: 1, child: OutlinedButton(style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), onPressed: () => Navigator.pop(context), child: const Text('Cancel'))), const SizedBox(width: 15), Expanded(flex: 2, child: ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), onPressed: () { if (controller.text.isNotEmpty) { saveState(); double calcW = (controller.text.length * (isRTL ? 28.0 : 20.0) * 0.6) + 40; if(calcW > MediaQuery.of(context).size.width - 60) calcW = MediaQuery.of(context).size.width - 60; if(calcW < 80) calcW = 80; if (existingElement != null) { setState(() { existingElement.content = controller.text; existingElement.textAlign = isRTL ? TextAlign.right : TextAlign.left; }); } else { var newEl = DesignElement(id: Random().nextInt(10000).toString(), x: 40, y: 100, content: controller.text, isText: true, width: calcW, height: 100, fontSize: 30); newEl.textAlign = isRTL ? TextAlign.right : TextAlign.left; setState(() { elements.add(newEl); selectedId = newEl.id; }); } _triggerCanvasUpdate(); Navigator.pop(context); } }, icon: const Icon(Icons.check_circle_outline, color: Colors.white), label: const Text('Add to Design', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold))))])
                   ],
                 ),
               ),
@@ -647,113 +347,35 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  Widget _buildComposerTool(IconData icon, String label, [VoidCallback? onTap]) {
-    return InkWell(onTap: onTap, child: Column(children: [Icon(icon, color: const Color(0xFF8B5CF6)), const SizedBox(height: 5), Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))]));
-  }
+  Widget _buildComposerTool(IconData icon, String label, [VoidCallback? onTap]) { return InkWell(onTap: onTap, child: Column(children: [Icon(icon, color: const Color(0xFF8B5CF6)), const SizedBox(height: 5), Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))])); }
 
   void showAddNewModal() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.65,
-        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)))),
-            const SizedBox(height: 20),
-            Expanded(
-              child: GridView.count(
-                crossAxisCount: 3,
-                crossAxisSpacing: 15,
-                mainAxisSpacing: 15,
-                children: [
-                  _buildGridItem(Icons.image, 'Gallery Pic', Colors.blue.shade100, Colors.blue, () => addImageFromGallery(fromModal: true)),
-                  _buildGridItem(Icons.gradient, 'Backgrounds', Colors.indigo.shade100, Colors.indigo, () { Navigator.pop(context); showGenericStockModal('Backgrounds', 'bg', Icons.image); }),
-                  _buildGridItem(Icons.folder, 'My Folder', Colors.teal.shade100, Colors.teal, () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const MyFolderScreen())); }),
-                  _buildGridItem(Icons.text_fields, 'Add Text', Colors.orange.shade100, Colors.orange, () { Navigator.pop(context); _showTextComposerDialog(); }),
-                  _buildGridItem(Icons.border_outer, 'Borders', Colors.amber.shade100, Colors.amber.shade800, () { Navigator.pop(context); showGenericStockModal('Borders', 'border', Icons.border_outer); }),
-                  _buildGridItem(Icons.category, 'Shapes', Colors.pink.shade100, Colors.pink, () { Navigator.pop(context); showGenericStockModal('Shapes', 'shape', Icons.category); }),
-                  _buildGridItem(Icons.table_chart, 'Table', Colors.cyan.shade100, Colors.cyan.shade800, () { Navigator.pop(context); _addTable(); }),
-                ]
-              )
-            )
-          ]
-        )
-      )
-    );
+    showModalBottomSheet(context: context, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (context) => Container(height: MediaQuery.of(context).size.height * 0.65, decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(25))), padding: const EdgeInsets.all(20), child: Column(children: [Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)))), const SizedBox(height: 20), Expanded(child: GridView.count(crossAxisCount: 3, crossAxisSpacing: 15, mainAxisSpacing: 15, children: [_buildGridItem(Icons.image, 'Gallery Pic', Colors.blue.shade100, Colors.blue, () => addImageFromGallery(fromModal: true)), _buildGridItem(Icons.gradient, 'Backgrounds', Colors.indigo.shade100, Colors.indigo, () { Navigator.pop(context); showGenericStockModal('Backgrounds', 'bg', Icons.image); }), _buildGridItem(Icons.folder, 'My Folder', Colors.teal.shade100, Colors.teal, () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const MyFolderScreen())); }), _buildGridItem(Icons.text_fields, 'Add Text', Colors.orange.shade100, Colors.orange, () { Navigator.pop(context); _showTextComposerDialog(); }), _buildGridItem(Icons.border_outer, 'Borders', Colors.amber.shade100, Colors.amber.shade800, () { Navigator.pop(context); showGenericStockModal('Borders', 'border', Icons.border_outer); }), _buildGridItem(Icons.category, 'Shapes', Colors.pink.shade100, Colors.pink, () { Navigator.pop(context); showGenericStockModal('Shapes', 'shape', Icons.category); }), _buildGridItem(Icons.table_chart, 'Table', Colors.cyan.shade100, Colors.cyan.shade800, () { Navigator.pop(context); _addTable(); }),]))])));
   }
 
-  void _addTable() {
-    saveState();
-    setState(() {
-      elements.add(
-        DesignElement(
-          id: Random().nextInt(10000).toString(), 
-          x: 40, y: 100, 
-          content: 'Table', 
-          isText: false, 
-          isTable: true, 
-          width: 350, height: 200, 
-          tableData: [['سیریل', 'نام طالب علم', 'نمبر'], ['1', '', ''], ['2', '', '']],
-          elementColor: const Color(0xFFD4AF37),
-          textColor: Colors.black
-        )
-      );
-      selectedId = elements.last.id;
-    });
-    _triggerCanvasUpdate();
-  }
-
-  Widget _buildGridItem(IconData icon, String label, Color bgColor, Color iconColor, [VoidCallback? onTap]) {
-    return InkWell(onTap: onTap, child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Container(padding: const EdgeInsets.all(15), decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(15)), child: Icon(icon, color: iconColor, size: 30)), const SizedBox(height: 8), Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))]));
-  }
+  void _addTable() { saveState(); setState(() { elements.add(DesignElement(id: Random().nextInt(10000).toString(), x: 40, y: 100, content: 'Table', isText: false, isTable: true, width: 350, height: 200, tableData: [['سیریل', 'نام طالب علم', 'نمبر'], ['1', '', ''], ['2', '', '']], elementColor: const Color(0xFFD4AF37), textColor: Colors.black)); selectedId = elements.last.id; }); _triggerCanvasUpdate(); }
+  Widget _buildGridItem(IconData icon, String label, Color bgColor, Color iconColor, [VoidCallback? onTap]) { return InkWell(onTap: onTap, child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Container(padding: const EdgeInsets.all(15), decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(15)), child: Icon(icon, color: iconColor, size: 30)), const SizedBox(height: 8), Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))])); }
 
   Future<void> addImageFromGallery({bool fromModal = false}) async {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-      if (image != null) {
-        final bytes = await image.readAsBytes();
-        saveState();
-        setState(() { elements.add(DesignElement(id: Random().nextInt(10000).toString(), x: 80, y: 80, content: 'Image', isText: false, imageBytes: bytes, width: 200, height: 200)); });
-        _triggerCanvasUpdate();
-      }
-    } catch (e) {
-      debugPrint("Gallery Error: $e");
-    }
+      if (image != null) { final bytes = await image.readAsBytes(); saveState(); setState(() { elements.add(DesignElement(id: Random().nextInt(10000).toString(), x: 80, y: 80, content: 'Image', isText: false, imageBytes: bytes, width: 200, height: 200)); }); _triggerCanvasUpdate(); }
+    } catch (e) { debugPrint("Gallery Error: $e"); }
     if (fromModal && Navigator.canPop(context)) { Navigator.pop(context); }
   }
 
-  Widget _buildTableToolbarBtn(IconData icon, String label, VoidCallback onTap, Color color) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4.0),
-      child: ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(backgroundColor: color.withOpacity(0.1), foregroundColor: color, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
-        onPressed: onTap,
-        icon: Icon(icon, size: 16),
-        label: Text(label, style: const TextStyle(fontSize: 12)),
-      ),
-    );
-  }
+  Widget _buildTableToolbarBtn(IconData icon, String label, VoidCallback onTap, Color color) { return Padding(padding: const EdgeInsets.symmetric(horizontal: 4.0), child: ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: color.withOpacity(0.1), foregroundColor: color, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8)), onPressed: onTap, icon: Icon(icon, size: 16), label: Text(label, style: const TextStyle(fontSize: 12)))); }
 
   void _showTableEditorModal(DesignElement sel) {
     if (sel.tableData == null) return;
     List<List<String>> tempTable = [];
     for (var row in sel.tableData!) { tempTable.add(List.from(row)); }
-
-    int activeR = 0;
-    int activeC = 0;
-
+    int activeR = 0; int activeC = 0;
     showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
       builder: (context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
-
             void addRowBelow() { setModalState(() { tempTable.insert(activeR + 1, List.generate(tempTable[0].length, (index) => '')); activeR++; }); }
             void addColRight() { setModalState(() { for (var row in tempTable) { row.insert(activeC, ''); } }); }
             void addColLeft() { setModalState(() { for (var row in tempTable) { row.insert(activeC + 1, ''); } activeC++; }); }
@@ -763,31 +385,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
             return Padding(
               padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
               child: Container(
-                height: MediaQuery.of(context).size.height * 0.90,
-                decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-                padding: const EdgeInsets.all(15),
+                height: MediaQuery.of(context).size.height * 0.90, decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))), padding: const EdgeInsets.all(15),
                 child: Column(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Advance Table Editor', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
-                      ]
-                    ),
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Advance Table Editor', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]),
                     const Divider(),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _buildTableToolbarBtn(Icons.table_rows, '+ Row', addRowBelow, Colors.blue),
-                          _buildTableToolbarBtn(Icons.view_column, '+ Col Right', addColRight, Colors.blue),
-                          _buildTableToolbarBtn(Icons.view_column, '+ Col Left', addColLeft, Colors.blue),
-                          _buildTableToolbarBtn(Icons.delete_sweep, 'Del Row', deleteRow, Colors.red),
-                          _buildTableToolbarBtn(Icons.delete_forever, 'Del Col', deleteCol, Colors.red),
-                        ],
-                      ),
-                    ),
+                    SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [_buildTableToolbarBtn(Icons.table_rows, '+ Row', addRowBelow, Colors.blue), _buildTableToolbarBtn(Icons.view_column, '+ Col Right', addColRight, Colors.blue), _buildTableToolbarBtn(Icons.view_column, '+ Col Left', addColLeft, Colors.blue), _buildTableToolbarBtn(Icons.delete_sweep, 'Del Row', deleteRow, Colors.red), _buildTableToolbarBtn(Icons.delete_forever, 'Del Col', deleteCol, Colors.red)])),
                     const SizedBox(height: 10),
                     Expanded(
                       child: Container(
@@ -804,22 +407,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                   return Row(
                                     textDirection: TextDirection.rtl,
                                     children: rowEntry.value.asMap().entries.map((colEntry) {
-                                      int c = colEntry.key;
-                                      bool isActive = (r == activeR && c == activeC);
+                                      int c = colEntry.key; bool isActive = (r == activeR && c == activeC);
                                       return GestureDetector(
                                         onTap: () { setModalState(() { activeR = r; activeC = c; }); },
-                                        child: Container(
-                                          width: 130, 
-                                          margin: const EdgeInsets.all(2),
-                                          decoration: BoxDecoration(border: Border.all(color: isActive ? const Color(0xFF8B5CF6) : Colors.grey.shade400, width: isActive ? 2.5 : 1), color: isActive ? const Color(0xFF8B5CF6).withOpacity(0.05) : (r == 0 ? Colors.grey.shade200 : Colors.white)),
-                                          child: TextField(
-                                            controller: TextEditingController(text: tempTable[r][c])..selection = TextSelection.collapsed(offset: tempTable[r][c].length),
-                                            textDirection: TextDirection.rtl, textAlign: TextAlign.center, maxLines: null,
-                                            style: TextStyle(fontFamily: 'JameelNoori', fontSize: r == 0 ? 20 : 18, fontWeight: r == 0 ? FontWeight.bold : FontWeight.normal),
-                                            decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.all(8), isDense: true),
-                                            onChanged: (val) { tempTable[r][c] = val; },
-                                            onTap: () { setModalState(() { activeR = r; activeC = c; }); },
-                                          )
+                                        child: Container(width: 130, margin: const EdgeInsets.all(2), decoration: BoxDecoration(border: Border.all(color: isActive ? const Color(0xFF8B5CF6) : Colors.grey.shade400, width: isActive ? 2.5 : 1), color: isActive ? const Color(0xFF8B5CF6).withOpacity(0.05) : (r == 0 ? Colors.grey.shade200 : Colors.white)),
+                                          child: TextField(controller: TextEditingController(text: tempTable[r][c])..selection = TextSelection.collapsed(offset: tempTable[r][c].length), textDirection: TextDirection.rtl, textAlign: TextAlign.center, maxLines: null, style: TextStyle(fontFamily: 'JameelNoori', fontSize: r == 0 ? 20 : 18, fontWeight: r == 0 ? FontWeight.bold : FontWeight.normal), decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.all(8), isDense: true), onChanged: (val) { tempTable[r][c] = val; }, onTap: () { setModalState(() { activeR = r; activeC = c; }); })
                                         ),
                                       );
                                     }).toList(),
@@ -832,16 +424,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       )
                     ),
                     const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
-                      child: Column(
-                        children: [
-                          Row(children: [const Text('Width: ', style: TextStyle(fontWeight: FontWeight.bold)), Expanded(child: Slider(value: sel.width.clamp(100.0, 1500.0), min: 100.0, max: 1500.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setModalState((){ sel.width = val; }); }))]),
-                          Row(children: [const Text('Height: ', style: TextStyle(fontWeight: FontWeight.bold)), Expanded(child: Slider(value: sel.height.clamp(50.0, 1500.0), min: 50.0, max: 1500.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setModalState((){ sel.height = val; }); }))]),
-                        ],
-                      ),
-                    ),
+                    Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)), child: Column(children: [Row(children: [const Text('Width: ', style: TextStyle(fontWeight: FontWeight.bold)), Expanded(child: Slider(value: sel.width.clamp(100.0, 1500.0), min: 100.0, max: 1500.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setModalState((){ sel.width = val; }); }))]), Row(children: [const Text('Height: ', style: TextStyle(fontWeight: FontWeight.bold)), Expanded(child: Slider(value: sel.height.clamp(50.0, 1500.0), min: 50.0, max: 1500.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setModalState((){ sel.height = val; }); }))])])),
                     const SizedBox(height: 15),
                     SizedBox(width: double.infinity, child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), padding: const EdgeInsets.symmetric(vertical: 15)), onPressed: () { saveState(); setState(() { sel.tableData = tempTable; }); _triggerCanvasUpdate(); Navigator.pop(context); }, child: const Text('Save Table Data', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16))))
                   ],
@@ -855,83 +438,39 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   }
 
   Future<void> _setCanvasBackground() async {
-    try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-      if (image != null) {
-        final bytes = await image.readAsBytes();
-        setState(() { bgImageBytes = bytes; bgGradient = null; pageColor = Colors.white; });
-        _triggerCanvasUpdate();
-      }
-    } catch (e) {
-      debugPrint("BG Image Error: $e");
-    }
+    try { final XFile? image = await _picker.pickImage(source: ImageSource.gallery); if (image != null) { final bytes = await image.readAsBytes(); setState(() { bgImageBytes = bytes; bgGradient = null; pageColor = Colors.white; }); _triggerCanvasUpdate(); } } catch (e) { debugPrint("BG Image Error: $e"); }
   }
 
   Future<void> _addTextureToText(DesignElement sel) async {
-    try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-      if (image != null) {
-        final bytes = await image.readAsBytes();
-        saveState();
-        setState(() => sel.textTextureBytes = bytes);
-        _triggerCanvasUpdate();
-      }
-    } catch (e) {
-      debugPrint("Texture Error: $e");
-    }
+    try { final XFile? image = await _picker.pickImage(source: ImageSource.gallery); if (image != null) { final bytes = await image.readAsBytes(); saveState(); setState(() => sel.textTextureBytes = bytes); _triggerCanvasUpdate(); } } catch (e) { debugPrint("Texture Error: $e"); }
   }
 
   void showGenericStockModal(String categoryTitle, String styleName, IconData categoryIcon, {bool fromModal = false}) {
     if (fromModal && Navigator.canPop(context)) Navigator.pop(context);
     List<Map<String, dynamic>> stockList = [];
     List<Color> themeColors = [const Color(0xFFD4AF37), const Color(0xFF8B5CF6), const Color(0xFF047857), const Color(0xFFB91C1C)];
-    for (int i = 1; i <= 50; i++) {
-      stockList.add({'title': '$categoryTitle #$i', 'style': styleName, 'color': themeColors[(i - 1) % themeColors.length], 'icon': categoryIcon});
-    }
+    for (int i = 1; i <= 50; i++) { stockList.add({'title': '$categoryTitle #$i', 'style': styleName, 'color': themeColors[(i - 1) % themeColors.length], 'icon': categoryIcon}); }
     showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      context: context, backgroundColor: Colors.white, isScrollControlled: true, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.75,
-        padding: const EdgeInsets.all(20),
+        height: MediaQuery.of(context).size.height * 0.75, padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)))),
-            const SizedBox(height: 15),
-            Text('$categoryTitle Library', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const Divider(),
+            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)))), const SizedBox(height: 15), Text('$categoryTitle Library', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), const Divider(),
             Expanded(
               child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15, childAspectRatio: 1.2),
-                itemCount: stockList.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15, childAspectRatio: 1.2), itemCount: stockList.length,
                 itemBuilder: (context, index) {
                   var item = stockList[index];
                   return InkWell(
                     onTap: () {
                       saveState();
                       setState(() {
-                        if (styleName.contains('shape') || styleName == 'badge') {
-                          elements.add(DesignElement(id: Random().nextInt(10000).toString(), x: 90, y: 180, content: 'Shape', width: 100, height: 100, isText: false, isShape: true, elementColor: item['color'] as Color));
-                        } else {
-                          elements.insert(0, DesignElement(id: Random().nextInt(10000).toString(), x: 0, y: 0, content: 'BG', width: 400, height: 400, isText: false, isShape: true, elementColor: item['color'] as Color));
-                        }
-                      });
-                      _triggerCanvasUpdate();
-                      Navigator.pop(context);
+                        if (styleName.contains('shape') || styleName == 'badge') { elements.add(DesignElement(id: Random().nextInt(10000).toString(), x: 90, y: 180, content: 'Shape', width: 100, height: 100, isText: false, isShape: true, elementColor: item['color'] as Color)); } 
+                        else { elements.insert(0, DesignElement(id: Random().nextInt(10000).toString(), x: 0, y: 0, content: 'BG', width: 400, height: 400, isText: false, isShape: true, elementColor: item['color'] as Color)); }
+                      }); _triggerCanvasUpdate(); Navigator.pop(context);
                     },
-                    child: Container(
-                      decoration: BoxDecoration(color: (item['color'] as Color).withOpacity(0.08), borderRadius: BorderRadius.circular(15)),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(item['icon'], color: item['color'], size: 30),
-                          const SizedBox(height: 6),
-                          Text(item['title'], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: item['color'])),
-                        ]
-                      )
-                    )
+                    child: Container(decoration: BoxDecoration(color: (item['color'] as Color).withOpacity(0.08), borderRadius: BorderRadius.circular(15)), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(item['icon'], color: item['color'], size: 30), const SizedBox(height: 6), Text(item['title'], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: item['color']))]))
                   );
                 }
               )
@@ -942,86 +481,37 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  void deleteSelected() {
-    if (selectedId != null) {
-      saveState();
-      setState(() { elements.removeWhere((e) => e.id == selectedId); selectedId = null; });
-      _triggerCanvasUpdate();
-    }
+  void deleteSelected() { if (selectedId != null) { saveState(); setState(() { elements.removeWhere((e) => e.id == selectedId); selectedId = null; }); _triggerCanvasUpdate(); } }
+  void duplicateSelected() { if (selectedId != null) { saveState(); DesignElement sel = elements.firstWhere((e) => e.id == selectedId); setState(() { var newEl = sel.clone()..id = Random().nextInt(10000).toString()..x += 20..y += 20; elements.add(newEl); selectedId = newEl.id; }); _triggerCanvasUpdate(); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Copied!', style: TextStyle(fontSize: 12)), duration: Duration(seconds: 1))); } }
+  void bringForward() { if (selectedId == null) return; saveState(); int idx = elements.indexWhere((e) => e.id == selectedId); if (idx < elements.length - 1) { setState(() { var item = elements.removeAt(idx); elements.insert(idx + 1, item); }); _triggerCanvasUpdate(); } }
+  void sendBackward() { if (selectedId == null) return; saveState(); int idx = elements.indexWhere((e) => e.id == selectedId); if (idx > 0) { setState(() { var item = elements.removeAt(idx); elements.insert(idx - 1, item); }); _triggerCanvasUpdate(); } }
+
+  void _pickCustomGradColor(DesignElement sel, int colorNum, StateSetter parentSetState) {
+    showModalBottomSheet(context: context, builder: (ctx) => Container(height: 300, padding: const EdgeInsets.all(20), child: Column(children: [const Text('Pick a Color', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), const SizedBox(height: 10), Expanded(child: GridView.builder(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 10, mainAxisSpacing: 10), itemCount: AppConstants.proColorPalette.length, itemBuilder: (ctx, index) { return InkWell(onTap: () { if(colorNum == 1) sel.customGradColor1 = AppConstants.proColorPalette[index]; else sel.customGradColor2 = AppConstants.proColorPalette[index]; parentSetState((){}); _triggerCanvasUpdate(); Navigator.pop(ctx); }, child: Container(decoration: BoxDecoration(color: AppConstants.proColorPalette[index], shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300)))); }))])));
   }
 
-  void duplicateSelected() {
-    if (selectedId != null) {
-      saveState();
-      DesignElement sel = elements.firstWhere((e) => e.id == selectedId);
-      setState(() { var newEl = sel.clone()..id = Random().nextInt(10000).toString()..x += 20..y += 20; elements.add(newEl); selectedId = newEl.id; });
-      _triggerCanvasUpdate();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Copied!', style: TextStyle(fontSize: 12)), duration: Duration(seconds: 1)));
-    }
-  }
-
-  void bringForward() {
-    if (selectedId == null) return;
-    saveState();
-    int idx = elements.indexWhere((e) => e.id == selectedId);
-    if (idx < elements.length - 1) {
-      setState(() { var item = elements.removeAt(idx); elements.insert(idx + 1, item); });
-      _triggerCanvasUpdate();
-    }
-  }
-
-  void sendBackward() {
-    if (selectedId == null) return;
-    saveState();
-    int idx = elements.indexWhere((e) => e.id == selectedId);
-    if (idx > 0) {
-      setState(() { var item = elements.removeAt(idx); elements.insert(idx - 1, item); });
-      _triggerCanvasUpdate();
-    }
-  }
-
-  // 🔥 NAYA COLOR WHEEL & PICKER SYSTEM 🔥
+  // 🔥 COLOR PICKER WITH WHEEL AND MEGA COLORS 🔥
   void _showColorPickerModal(DesignElement sel) {
     TextEditingController hexCtrl = TextEditingController();
     showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      context: context, isScrollControlled: true, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             Color currentColor = sel.isText ? sel.textColor : sel.elementColor;
-            
             return Padding(
               padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
               child: Container(
-                height: MediaQuery.of(context).size.height * 0.8,
-                padding: const EdgeInsets.all(20),
+                height: MediaQuery.of(context).size.height * 0.8, padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Color Studio', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
-                      ]
-                    ),
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Color Studio', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]),
                     const Divider(),
-                    // Color Wheel Implementation (Using Custom Widget at bottom)
                     Center(
                       child: ColorWheelPicker(
                         initialColor: currentColor,
-                        onColorChanged: (c) {
-                          saveState();
-                          setState(() {
-                            if (sel.isText || sel.isTable) { sel.textColor = c; sel.textGradient = null; }
-                            else { sel.elementColor = c; }
-                          });
-                          setModalState((){});
-                          _triggerCanvasUpdate();
-                        },
+                        onColorChanged: (c) { saveState(); setState(() { if (sel.isText || sel.isTable) { sel.textColor = c; sel.textGradient = null; } else { sel.elementColor = c; } }); setModalState((){}); _triggerCanvasUpdate(); },
                       ),
                     ),
                     const SizedBox(height: 15),
@@ -1029,50 +519,18 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       children: [
                         Expanded(child: TextField(controller: hexCtrl, decoration: const InputDecoration(hintText: 'HEX (e.g. FFFFFF)', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 10)))),
                         const SizedBox(width: 10),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), padding: const EdgeInsets.symmetric(vertical: 14)),
-                          onPressed: () {
-                            try {
-                              String hex = hexCtrl.text.replaceAll('#', '');
-                              if(hex.length == 6) hex = 'FF$hex';
-                              if(hex.length == 8) {
-                                saveState();
-                                setState((){
-                                  if(sel.isText || sel.isTable){ sel.textColor = Color(int.parse('0x$hex')); sel.textGradient = null; } 
-                                  else { sel.elementColor = Color(int.parse('0x$hex')); }
-                                });
-                                setModalState((){}); _triggerCanvasUpdate(); Navigator.pop(context);
-                              }
-                            } catch(e) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid HEX'))); }
-                          },
-                          child: const Text('Apply', style: TextStyle(color: Colors.white))
-                        )
+                        ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), padding: const EdgeInsets.symmetric(vertical: 14)), onPressed: () { try { String hex = hexCtrl.text.replaceAll('#', ''); if(hex.length == 6) hex = 'FF$hex'; if(hex.length == 8) { saveState(); setState((){ if(sel.isText || sel.isTable){ sel.textColor = Color(int.parse('0x$hex')); sel.textGradient = null; } else { sel.elementColor = Color(int.parse('0x$hex')); } }); setModalState((){}); _triggerCanvasUpdate(); Navigator.pop(context); } } catch(e) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid HEX'))); } }, child: const Text('Apply', style: TextStyle(color: Colors.white)))
                       ]
                     ),
-                    const SizedBox(height: 15),
-                    const Text('Premium Palette', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 15), const Text('Premium Palette', style: TextStyle(fontWeight: FontWeight.bold)), const SizedBox(height: 10),
                     Expanded(
                       child: GridView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7, crossAxisSpacing: 8, mainAxisSpacing: 8),
-                        itemCount: expandedColors.length,
+                        physics: const BouncingScrollPhysics(), gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7, crossAxisSpacing: 8, mainAxisSpacing: 8), itemCount: expandedColors.length,
                         itemBuilder: (context, index) {
-                          Color c = expandedColors[index];
-                          bool isSelected = currentColor.value == c.value;
+                          Color c = expandedColors[index]; bool isSelected = currentColor.value == c.value;
                           return GestureDetector(
-                            onTap: () {
-                              saveState();
-                              setState(() {
-                                if (sel.isText || sel.isTable) { sel.textColor = c; sel.textGradient = null; }
-                                else { sel.elementColor = c; }
-                              });
-                              setModalState((){}); _triggerCanvasUpdate();
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300, width: 1)),
-                              child: isSelected ? Icon(Icons.check, size: 16, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white) : null
-                            )
+                            onTap: () { saveState(); setState(() { if (sel.isText || sel.isTable) { sel.textColor = c; sel.textGradient = null; } else { sel.elementColor = c; } }); setModalState((){}); _triggerCanvasUpdate(); },
+                            child: Container(decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300, width: 1)), child: isSelected ? Icon(Icons.check, size: 16, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white) : null)
                           );
                         }
                       )
@@ -1089,35 +547,22 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   void _showCanvasBgColorModal() {
     showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      context: context, isScrollControlled: true, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.7,
-              padding: const EdgeInsets.all(20),
+              height: MediaQuery.of(context).size.height * 0.7, padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Canvas Color', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
-                    ]
-                  ),
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Canvas Color', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]),
                   const Divider(),
                   Expanded(
                     child: GridView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 10, mainAxisSpacing: 10),
-                      itemCount: expandedColors.length,
+                      physics: const BouncingScrollPhysics(), gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 10, mainAxisSpacing: 10), itemCount: expandedColors.length,
                       itemBuilder: (context, index) {
-                        Color c = expandedColors[index];
-                        bool isSelected = pageColor.value == c.value;
+                        Color c = expandedColors[index]; bool isSelected = pageColor.value == c.value;
                         return GestureDetector(
                           onTap: () { saveState(); setState(() { pageColor = c; bgImageBytes = null; bgGradient = null; }); setModalState((){}); _triggerCanvasUpdate(); Navigator.pop(context); },
                           child: Container(decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300)), child: isSelected ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white) : null)
@@ -1136,29 +581,22 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   void _showTextBgPickerModal(DesignElement sel) {
     showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.6,
-              padding: const EdgeInsets.all(20),
+              height: MediaQuery.of(context).size.height * 0.6, padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Text Background', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]),
-                  const Divider(),
-                  ListTile(leading: const Icon(Icons.block), title: const Text('Remove Background'), onTap: () { saveState(); setState(() { sel.textBgColor = null; }); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  const Divider(), ListTile(leading: const Icon(Icons.block), title: const Text('Remove Background'), onTap: () { saveState(); setState(() { sel.textBgColor = null; }); _triggerCanvasUpdate(); Navigator.pop(context); }),
                   Expanded(
                     child: GridView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 10, mainAxisSpacing: 10),
-                      itemCount: expandedColors.length,
+                      physics: const BouncingScrollPhysics(), gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 10, mainAxisSpacing: 10), itemCount: expandedColors.length,
                       itemBuilder: (context, index) {
-                        Color c = expandedColors[index];
-                        bool isSelected = sel.textBgColor?.value == c.value;
+                        Color c = expandedColors[index]; bool isSelected = sel.textBgColor?.value == c.value;
                         return GestureDetector(
                           onTap: () { saveState(); setState(() { sel.textBgColor = c; }); setModalState((){}); _triggerCanvasUpdate(); },
                           child: Container(decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300)), child: isSelected ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white) : null)
@@ -1177,27 +615,21 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   void _showGradientPickerModal(DesignElement sel) {
     showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.7,
-              padding: const EdgeInsets.all(20),
+              height: MediaQuery.of(context).size.height * 0.7, padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Gradients', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]),
-                  const Divider(),
-                  ListTile(leading: const Icon(Icons.block), title: const Text('Clear Gradient'), onTap: () { saveState(); setState(() { sel.textGradient = null; }); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  const Divider(), ListTile(leading: const Icon(Icons.block), title: const Text('Clear Gradient'), onTap: () { saveState(); setState(() { sel.textGradient = null; }); _triggerCanvasUpdate(); Navigator.pop(context); }),
                   const SizedBox(height: 10),
                   Expanded(
                     child: GridView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 2.0),
-                      itemCount: expandedGradients.length,
+                      physics: const BouncingScrollPhysics(), gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 2.0), itemCount: expandedGradients.length,
                       itemBuilder: (context, index) {
                         List<Color> g = expandedGradients[index];
                         return GestureDetector(
@@ -1218,15 +650,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   void _showCanvasBgGradientModal() {
     showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.6,
-              padding: const EdgeInsets.all(20),
+              height: MediaQuery.of(context).size.height * 0.6, padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1234,9 +663,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   const Divider(),
                   Expanded(
                     child: GridView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 1.5),
-                      itemCount: expandedGradients.length,
+                      physics: const BouncingScrollPhysics(), gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 1.5), itemCount: expandedGradients.length,
                       itemBuilder: (context, index) {
                         List<Color> g = expandedGradients[index];
                         return GestureDetector(
@@ -1255,18 +682,14 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // 🔥 YAHAN SE NAYE "TEXT EFFECTS" WALA MODAL HAI 🔥
   void _showTextEffectsModal(DesignElement sel) {
     showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Container(
-              height: 350,
-              padding: const EdgeInsets.all(20),
+              height: 350, padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1274,24 +697,14 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   const Divider(),
                   Expanded(
                     child: GridView.count(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 10, mainAxisSpacing: 10,
-                      childAspectRatio: 2.5,
+                      crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 2.5,
                       children: [
                         _buildEffectToggleBtn('Bevel & Emboss', Icons.layers_outlined, sel.isBevel, () { saveState(); setState(() => sel.isBevel = !sel.isBevel); setModalState((){}); _triggerCanvasUpdate(); }),
                         _buildEffectToggleBtn('Inner Shadow', Icons.flip_to_back, sel.isInnerShadow, () { saveState(); setState(() => sel.isInnerShadow = !sel.isInnerShadow); setModalState((){}); _triggerCanvasUpdate(); }),
                         _buildEffectToggleBtn('Glass Effect', Icons.blur_on, sel.isGlass, () { saveState(); setState(() => sel.isGlass = !sel.isGlass); setModalState((){}); _triggerCanvasUpdate(); }),
-                        InkWell(
-                          onTap: () { Navigator.pop(context); _addTextureToText(sel); },
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)), child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.texture, size: 20, color: Color(0xFF8B5CF6)), SizedBox(width: 8), Text('Add Texture', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))]))
-                        ),
+                        InkWell(onTap: () { Navigator.pop(context); _addTextureToText(sel); }, borderRadius: BorderRadius.circular(12), child: Container(decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)), child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.texture, size: 20, color: Color(0xFF8B5CF6)), SizedBox(width: 8), Text('Add Texture', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))]))),
                         if (sel.textTextureBytes != null)
-                           InkWell(
-                            onTap: () { saveState(); setState(() => sel.textTextureBytes = null); setModalState((){}); _triggerCanvasUpdate(); },
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.red.shade200)), child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.delete, size: 20, color: Colors.red), SizedBox(width: 8), Text('Clear Texture', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.red))]))
-                          )
+                           InkWell(onTap: () { saveState(); setState(() => sel.textTextureBytes = null); setModalState((){}); _triggerCanvasUpdate(); }, borderRadius: BorderRadius.circular(12), child: Container(decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.red.shade200)), child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.delete, size: 20, color: Colors.red), SizedBox(width: 8), Text('Clear Texture', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.red))])) )
                       ],
                     )
                   )
@@ -1306,37 +719,22 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   Widget _buildEffectToggleBtn(String label, IconData icon, bool isActive, VoidCallback onTap) {
     return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      onTap: onTap, borderRadius: BorderRadius.circular(12),
       child: Container(
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF8B5CF6).withOpacity(0.1) : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isActive ? const Color(0xFF8B5CF6) : Colors.grey.shade300, width: isActive ? 2 : 1)
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 20, color: isActive ? const Color(0xFF8B5CF6) : Colors.black54),
-            const SizedBox(width: 8),
-            Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: isActive ? const Color(0xFF8B5CF6) : Colors.black87))
-          ]
-        )
+        decoration: BoxDecoration(color: isActive ? const Color(0xFF8B5CF6).withOpacity(0.1) : Colors.grey.shade100, borderRadius: BorderRadius.circular(12), border: Border.all(color: isActive ? const Color(0xFF8B5CF6) : Colors.grey.shade300, width: isActive ? 2 : 1)),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, size: 20, color: isActive ? const Color(0xFF8B5CF6) : Colors.black54), const SizedBox(width: 8), Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: isActive ? const Color(0xFF8B5CF6) : Colors.black87))])
       )
     );
   }
 
   void _showAdvancedStrokeModal(DesignElement sel) {
     showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Container(
-              height: 450,
-              padding: const EdgeInsets.all(20),
+              height: 450, padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1345,16 +743,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   const Divider(),
                   if (sel.hasStroke) ...[
                     Row(children: [const Text('Thickness:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), Expanded(child: Slider(value: sel.strokeWidth.clamp(1.0, 30.0), min: 1.0, max: 30.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(() => sel.strokeWidth = val); setModalState((){}); _triggerCanvasUpdate(); }))]),
-                    const Text('Stroke Color:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                    const SizedBox(height: 10),
+                    const Text('Stroke Color:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), const SizedBox(height: 10),
                     Expanded(
                       child: GridView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 10, mainAxisSpacing: 10),
-                        itemCount: expandedColors.length,
+                        physics: const BouncingScrollPhysics(), gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 10, mainAxisSpacing: 10), itemCount: expandedColors.length,
                         itemBuilder: (context, index) {
-                          Color c = expandedColors[index];
-                          bool isSel = sel.strokeColor.value == c.value;
+                          Color c = expandedColors[index]; bool isSel = sel.strokeColor.value == c.value;
                           return GestureDetector(
                             onTap: () { saveState(); setState(() => sel.strokeColor = c); setModalState((){}); _triggerCanvasUpdate(); },
                             child: Container(decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300)), child: isSel ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white) : null)
@@ -1374,15 +768,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   void _showAdvancedShadowModal(DesignElement sel) {
     showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Container(
-              height: 550,
-              padding: const EdgeInsets.all(20),
+              height: 550, padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1393,16 +784,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     Row(children: [const Text('Blur:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), Expanded(child: Slider(value: sel.shadowBlur.clamp(0.0, 50.0), min: 0.0, max: 50.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val){ setState(()=> sel.shadowBlur = val); setModalState((){}); _triggerCanvasUpdate();}))]),
                     Row(children: [const Text('X-Offset:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), Expanded(child: Slider(value: sel.shadowOffsetX.clamp(-30.0, 30.0), min: -30.0, max: 30.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val){ setState(()=> sel.shadowOffsetX = val); setModalState((){}); _triggerCanvasUpdate();}))]),
                     Row(children: [const Text('Y-Offset:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), Expanded(child: Slider(value: sel.shadowOffsetY.clamp(-30.0, 30.0), min: -30.0, max: 30.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val){ setState(()=> sel.shadowOffsetY = val); setModalState((){}); _triggerCanvasUpdate();}))]),
-                    const Text('Shadow Color:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                    const SizedBox(height: 10),
+                    const Text('Shadow Color:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), const SizedBox(height: 10),
                     Expanded(
                       child: GridView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 10, mainAxisSpacing: 10),
-                        itemCount: expandedColors.length,
+                        physics: const BouncingScrollPhysics(), gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 10, mainAxisSpacing: 10), itemCount: expandedColors.length,
                         itemBuilder: (context, index) {
-                          Color c = expandedColors[index];
-                          bool isSel = sel.shadowColor.value == c.value;
+                          Color c = expandedColors[index]; bool isSel = sel.shadowColor.value == c.value;
                           return GestureDetector(
                             onTap: () { saveState(); setState(() => sel.shadowColor = c); setModalState((){}); _triggerCanvasUpdate(); },
                             child: Container(decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300)), child: isSel ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white) : null)
@@ -1422,31 +809,24 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   void _show3DBlockModal(DesignElement sel) {
     showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Container(
-              height: 480,
-              padding: const EdgeInsets.all(20),
+              height: 480, padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('3D Block/Depth تھری ڈی موٹائی', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]),
                   const Divider(),
                   Row(children: [const Text('Depth:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), Expanded(child: Slider(value: sel.text3dDepth.clamp(0.0, 50.0), min: 0.0, max: 50.0, activeColor: const Color(0xFF8B5CF6), onChangeStart: (val) => saveState(), onChanged: (val) { setState(() => sel.text3dDepth = val); setModalState(() {}); _triggerCanvasUpdate(); }))]),
-                  const Text('3D Color:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                  const SizedBox(height: 10),
+                  const Text('3D Color:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), const SizedBox(height: 10),
                   Expanded(
                     child: GridView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 10, mainAxisSpacing: 10),
-                      itemCount: expandedColors.length,
+                      physics: const BouncingScrollPhysics(), gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 10, mainAxisSpacing: 10), itemCount: expandedColors.length,
                       itemBuilder: (context, index) {
-                        Color c = expandedColors[index];
-                        bool isSel = sel.text3dColor.value == c.value;
+                        Color c = expandedColors[index]; bool isSel = sel.text3dColor.value == c.value;
                         return GestureDetector(
                           onTap: () { saveState(); setState(() => sel.text3dColor = c); setModalState(() {}); _triggerCanvasUpdate(); },
                           child: Container(decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300, width: 1.5), boxShadow: isSel ? [BoxShadow(color: c.withOpacity(0.5), blurRadius: 6)] : null), child: isSel ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white) : null)
@@ -1544,10 +924,202 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   }
 
   void _showAlignmentModal(DesignElement sel) {
-    showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return Container(height: 250, padding: const EdgeInsets.all(20), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Position on Page سیدھ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const Divider(), Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [_buildAlignButton(Icons.align_horizontal_left, 'Left', () { saveState(); setState(() => sel.x = 10); _triggerCanvasUpdate(); Navigator.pop(context); }), _buildAlignButton(Icons.align_horizontal_center, 'Center', () { saveState(); setState(() => sel.x = (currentCanvasW / 2) - (_getElWidth(sel) / 2)); _triggerCanvasUpdate(); Navigator.pop(context); }), _buildAlignButton(Icons.align_horizontal_right, 'Right', () { saveState(); setState(() => sel.x = currentCanvasW - _getElWidth(sel) - 10); _triggerCanvasUpdate(); Navigator.pop(context); }), ]), const SizedBox(height: 20), Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [_buildAlignButton(Icons.align_vertical_top, 'Top', () { saveState(); setState(() => sel.y = 10); _triggerCanvasUpdate(); Navigator.pop(context); }), _buildAlignButton(Icons.align_vertical_center, 'Middle', () { saveState(); setState(() => sel.y = (currentCanvasH / 2) - (_getElHeight(sel) / 2)); _triggerCanvasUpdate(); Navigator.pop(context); }), _buildAlignButton(Icons.align_vertical_bottom, 'Bottom', () { saveState(); setState(() => sel.y = currentCanvasH - _getElHeight(sel) - 10); _triggerCanvasUpdate(); Navigator.pop(context); }), ])])); });
+    showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (context) { return Container(height: 250, padding: const EdgeInsets.all(20), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Position on Page سیدھ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]), const Divider(), Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [_buildAlignButton(Icons.align_horizontal_left_rounded, 'Left', () { saveState(); setState(() => sel.x = 10); _triggerCanvasUpdate(); Navigator.pop(context); }), _buildAlignButton(Icons.align_horizontal_center_rounded, 'Center', () { saveState(); setState(() => sel.x = (currentCanvasW / 2) - (_getElWidth(sel) / 2)); _triggerCanvasUpdate(); Navigator.pop(context); }), _buildAlignButton(Icons.align_horizontal_right_rounded, 'Right', () { saveState(); setState(() => sel.x = currentCanvasW - _getElWidth(sel) - 10); _triggerCanvasUpdate(); Navigator.pop(context); }), ]), const SizedBox(height: 20), Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [_buildAlignButton(Icons.align_vertical_top_rounded, 'Top', () { saveState(); setState(() => sel.y = 10); _triggerCanvasUpdate(); Navigator.pop(context); }), _buildAlignButton(Icons.align_vertical_center_rounded, 'Middle', () { saveState(); setState(() => sel.y = (currentCanvasH / 2) - (_getElHeight(sel) / 2)); _triggerCanvasUpdate(); Navigator.pop(context); }), _buildAlignButton(Icons.align_vertical_bottom_rounded, 'Bottom', () { saveState(); setState(() => sel.y = currentCanvasH - _getElHeight(sel) - 10); _triggerCanvasUpdate(); Navigator.pop(context); }), ])])); });
   }
 
-  // 🔥 YAHAN HAI "MORE OPTIONS" KA NAYA SMART MENU 🔥
+  Widget _buildAlignButton(IconData icon, String label, VoidCallback onTap) {
+    return InkWell(onTap: onTap, child: Container(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)), child: Column(children: [Icon(icon, color: const Color(0xFF8B5CF6)), const SizedBox(height: 5), Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold))])));
+  }
+
+  void _showResizeModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return Container(
+          height: 300,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Resize Canvas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
+                ]
+              ),
+              const Divider(),
+              Expanded(
+                child: ListView(
+                  children: [
+                    ListTile(leading: const Icon(Icons.crop_square), title: const Text('1:1 (Square/Logo/DP)'), onTap: () { saveState(); setState(() => canvasRatio = 1.0); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                    ListTile(leading: const Icon(Icons.crop_16_9), title: const Text('16:9 (YouTube/Post)'), onTap: () { saveState(); setState(() => canvasRatio = 16/9); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                    ListTile(leading: const Icon(Icons.crop_portrait), title: const Text('9:16 (Story/Reel)'), onTap: () { saveState(); setState(() => canvasRatio = 9/16); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                    ListTile(leading: const Icon(Icons.description), title: const Text('1:1.414 (A4 Print/Letter)'), onTap: () { saveState(); setState(() => canvasRatio = 1/1.414); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  ]
+                )
+              )
+            ]
+          )
+        );
+      }
+    );
+  }
+
+  void showLayersPanel() {
+    Set<String> selectedForGroup = {};
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              height: 450,
+              decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Layers & Groups', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      if (selectedForGroup.length > 1)
+                        ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)), onPressed: () { saveState(); String gId = Random().nextInt(10000).toString(); setState(() { for (var e in elements) { if (selectedForGroup.contains(e.id)) { e.groupId = gId; } } selectedForGroup.clear(); }); _triggerCanvasUpdate(); setModalState((){}); }, icon: const Icon(Icons.group, color: Colors.white, size: 16), label: const Text('Group', style: TextStyle(color: Colors.white))),
+                      if (selectedForGroup.isNotEmpty)
+                        ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent), onPressed: () { saveState(); setState(() { for (var e in elements) { if (selectedForGroup.contains(e.id)) { e.groupId = null; } } selectedForGroup.clear(); }); _triggerCanvasUpdate(); setModalState((){}); }, icon: const Icon(Icons.link_off, color: Colors.white, size: 16), label: const Text('Ungroup', style: TextStyle(color: Colors.white))),
+                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
+                    ]
+                  ),
+                  const Text('Tick boxes to group layers together', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                  const Divider(),
+                  Expanded(
+                    child: elements.isEmpty 
+                      ? const Center(child: Text('No elements yet.', style: TextStyle(color: Colors.grey)))
+                      : ListView.builder(
+                          itemCount: elements.length,
+                          itemBuilder: (context, index) {
+                            int actualIndex = elements.length - 1 - index;
+                            DesignElement e = elements[actualIndex];
+                            bool isSel = selectedId == e.id;
+                            bool isGroupChecked = selectedForGroup.contains(e.id);
+                            return Card(
+                              color: isSel ? const Color(0xFFF3E8FF) : (e.groupId != null ? Colors.blue.shade50 : Colors.white),
+                              elevation: 0,
+                              margin: const EdgeInsets.only(bottom: 8),
+                              shape: RoundedRectangleBorder(side: BorderSide(color: isSel ? const Color(0xFF8B5CF6) : Colors.grey.shade200), borderRadius: BorderRadius.circular(10)),
+                              child: ListTile(
+                                leading: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Checkbox(value: isGroupChecked, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setModalState((){ if(val == true) selectedForGroup.add(e.id); else selectedForGroup.remove(e.id); }); }),
+                                    CircleAvatar(radius: 14, backgroundColor: e.isText ? e.textColor : Colors.grey, child: Icon(e.isText ? Icons.text_fields : (e.isShape ? Icons.category : Icons.image), size: 14, color: Colors.white))
+                                  ]
+                                ),
+                                title: Row(
+                                  children: [
+                                    Expanded(child: Text(e.isText ? e.content.replaceAll('\n', '') : (e.isBorder ? 'Border' : 'Image/Shape'), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: isSel ? FontWeight.bold : FontWeight.normal))),
+                                    if (e.groupId != null) const Icon(Icons.link, size: 14, color: Colors.blue)
+                                  ]
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(e.isHidden ? Icons.visibility_off : Icons.visibility, size: 20, color: Colors.grey), onPressed: () { saveState(); setState(() => e.isHidden = !e.isHidden); _triggerCanvasUpdate(); setModalState((){}); }),
+                                    const SizedBox(width: 8),
+                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(e.isLocked ? Icons.lock : Icons.lock_open, size: 20, color: e.isLocked ? Colors.red : Colors.grey), onPressed: () { saveState(); setState(() { e.isLocked = !e.isLocked; if(e.isLocked && selectedId == e.id) selectedId = null; }); _triggerCanvasUpdate(); setModalState((){}); }),
+                                    const SizedBox(width: 8),
+                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.arrow_upward, size: 20, color: Colors.grey), onPressed: () { saveState(); if (actualIndex < elements.length - 1) { setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex + 1, item); }); _triggerCanvasUpdate(); setModalState((){}); } }),
+                                    const SizedBox(width: 8),
+                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.arrow_downward, size: 20, color: Colors.grey), onPressed: () { saveState(); if (actualIndex > 0) { setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex - 1, item); }); _triggerCanvasUpdate(); setModalState((){}); } })
+                                  ]
+                                ),
+                                onTap: () { if(!e.isLocked && !e.isHidden) { setState(() => selectedId = e.id); _triggerCanvasUpdate(); setModalState((){}); } }
+                              )
+                            );
+                          }
+                        )
+                  )
+                ]
+              )
+            );
+          }
+        );
+      }
+    );
+  }
+
+  void showPagesPanel() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              height: 400,
+              decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Pages صفحات', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
+                    ]
+                  ),
+                  const Divider(),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: pages.length,
+                      itemBuilder: (context, index) {
+                        bool isCurrent = currentPageIndex == index;
+                        return Card(
+                          color: isCurrent ? const Color(0xFFF3E8FF) : Colors.white,
+                          elevation: 0,
+                          margin: const EdgeInsets.only(bottom: 8),
+                          shape: RoundedRectangleBorder(side: BorderSide(color: isCurrent ? const Color(0xFF8B5CF6) : Colors.grey.shade200), borderRadius: BorderRadius.circular(10)),
+                          child: ListTile(
+                            leading: Icon(Icons.description, color: isCurrent ? const Color(0xFF8B5CF6) : Colors.grey),
+                            title: Text(pages[index].title, style: TextStyle(fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal)),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(icon: const Icon(Icons.copy, color: Colors.blue, size: 20), onPressed: () { setState(() { pages.add(DesignPage(title: '${pages[index].title} Copy', elements: pages[index].elements.map((e) => e.clone()).toList(), pageColor: pages[index].pageColor, bgGradient: pages[index].bgGradient, bgImageBytes: pages[index].bgImageBytes, canvasRatio: pages[index].canvasRatio)); }); setModalState((){}); }),
+                                if(pages.length > 1)
+                                  IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20), onPressed: () { setState(() { pages.removeAt(index); if (currentPageIndex >= pages.length) currentPageIndex = pages.length - 1; }); _triggerCanvasUpdate(); setModalState((){}); })
+                              ]
+                            ),
+                            onTap: () { setState(() { currentPageIndex = index; selectedId = null; }); _triggerCanvasUpdate(); Navigator.pop(context); }
+                          )
+                        );
+                      }
+                    )
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)),
+                      onPressed: () { setState(() { pages.add(DesignPage(title: 'Page ${pages.length + 1}', elements: [], pageColor: Colors.white)); }); setModalState((){}); },
+                      child: const Text('Add New Page', style: TextStyle(color: Colors.white))
+                    )
+                  )
+                ]
+              )
+            );
+          }
+        );
+      }
+    );
+  }
+
   void _showMoreOptionsModal(DesignElement sel) {
     showModalBottomSheet(
       context: context,
@@ -1598,6 +1170,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
+  // 🔥 YEH FUNCTION PICHLI BAAR MISS HO GAYA THA 🔥
   Widget _buildGridToolBtn(IconData icon, String label, VoidCallback onTap, [Color? color]) {
     Color c = color ?? Colors.black87;
     return InkWell(
@@ -1631,27 +1204,26 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     return Container(width: 26, height: 26, decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF8B5CF6), width: 1.2), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 3)]), child: Icon(icon, size: 14, color: const Color(0xFF8B5CF6)));
   }
 
-  // 🔥 NAYA SHARP, CLEAN AUR CHHOTA BUTTON 🔥
   Widget _buildToolBtn(IconData icon, String label, [VoidCallback? onTap, Color? color]) { 
     Color c = color ?? Colors.black87;
     return InkWell(
       onTap: onTap, 
-      borderRadius: BorderRadius.circular(6), // 👈 Sharper look
+      borderRadius: BorderRadius.circular(6), 
       child: Container(
-        width: 52, // 👈 Smaller, cleaner
+        width: 52, 
         margin: const EdgeInsets.symmetric(horizontal: 3), 
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2), 
         decoration: BoxDecoration(
           color: c.withOpacity(0.06), 
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: c.withOpacity(0.12), width: 0.5) // 👈 Fine premium border
+          border: Border.all(color: c.withOpacity(0.12), width: 0.5) 
         ), 
         child: Column(
           mainAxisSize: MainAxisSize.min, 
           children: [
-            Icon(icon, size: 20, color: c), // 👈 Adjusted icon size
+            Icon(icon, size: 20, color: c), 
             const SizedBox(height: 4), 
-            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 9, color: c, fontWeight: FontWeight.w800)) // 👈 Sharp bold text
+            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 9, color: c, fontWeight: FontWeight.w800)) 
           ]
         )
       )
@@ -1798,7 +1370,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           else if (e.clipShape == 4) clippedImg = ClipPath(clipper: HexagonClipper(), child: img);
                                           contentWidget = SizedBox(width: currentWidth, height: e.clipShape == 0 ? currentHeight : currentWidth, child: clippedImg);
                                         } else {
-                                          // 🔥 NEW PREMIUM TEXT EFFECTS LOGIC 🔥
                                           List<Shadow> textShadows = [];
                                           if (e.hasShadow) {
                                             textShadows.add(Shadow(color: e.shadowColor, blurRadius: e.shadowBlur, offset: Offset(e.shadowOffsetX, e.shadowOffsetY)));
@@ -1824,7 +1395,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           if (e.textGradient != null) mainTxt = ShaderMask(shaderCallback: (bounds) => LinearGradient(colors: e.textGradient!).createShader(bounds), child: mainTxt);
                                           if (e.textTextureBytes != null) mainTxt = TextureTextWrapper(child: mainTxt, textureBytes: e.textTextureBytes!);
                                           
-                                          // Glass Effect
                                           if (e.isGlass) {
                                             mainTxt = ShaderMask(
                                               blendMode: BlendMode.screen,
@@ -1836,7 +1406,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                             );
                                           }
 
-                                          // Inner Shadow
                                           if (e.isInnerShadow) {
                                             mainTxt = ShaderMask(
                                               blendMode: BlendMode.srcATop,
@@ -1989,7 +1558,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // 🔥 YAHAN SE SHURU HOTA HAI ZABARDAST "TWO-ROW" LAYOUT 🔥
   Widget _buildSelectedToolBar(DesignElement sel) {
     List<Widget> topRow = [];
     List<Widget> bottomRow = [];
@@ -2003,7 +1571,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     topRow.add(_buildToolBtn(Icons.opacity_rounded, 'Opacity', () { 
       showModalBottomSheet(context: context, builder: (ctx) => Container(height: 150, padding: const EdgeInsets.all(20), child: Slider(value: sel.opacity.clamp(0.0, 1.0), min: 0.0, max: 1.0, activeColor: const Color(0xFF8B5CF6), onChanged: (v){ setState(()=>sel.opacity=v); _triggerCanvasUpdate(); }))); 
     }));
-    topRow.add(_buildToolBtn(Icons.content_copy_rounded, 'Copy', duplicateSelected, Colors.blueGrey)); // Copy/Duplicate
+    topRow.add(_buildToolBtn(Icons.content_copy_rounded, 'Copy', duplicateSelected, Colors.blueGrey)); 
     topRow.add(_buildToolBtn(Icons.flip_rounded, 'Flip H', () { saveState(); setState(() => sel.flipX = !sel.flipX); _triggerCanvasUpdate(); }));
     topRow.add(_buildToolBtn(Icons.flip_camera_android_rounded, 'Flip V', () { saveState(); setState(() => sel.flipY = !sel.flipY); _triggerCanvasUpdate(); }));
     topRow.add(_buildToolBtn(Icons.open_with_rounded, 'Nudge', () => showNudgeModal(sel)));
@@ -2019,13 +1587,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     if (sel.isText) bottomRow.add(_buildToolBtn(Icons.format_bold_rounded, 'Bold', () { saveState(); setState(() => sel.isBold = !sel.isBold); _triggerCanvasUpdate(); }));
     if (sel.isText) bottomRow.add(_buildToolBtn(Icons.height_rounded, 'Spacing', () => showSpacingModal(sel)));
     if (sel.isText) bottomRow.add(_buildToolBtn(Icons.format_color_fill_rounded, 'Text BG', () => _showTextBgPickerModal(sel)));
-    
-    // 🔥 NEW TEXT EFFECT BUTTON 🔥
     if (sel.isText) bottomRow.add(_buildToolBtn(Icons.auto_fix_high_rounded, 'Effect', () => _showTextEffectsModal(sel), Colors.orange));
-    
     if (sel.isText) bottomRow.add(_buildToolBtn(Icons.format_align_center_rounded, 'Align', () => _toggleAlignment(sel)));
     
-    // "More" Button Hamesha Aakhir Me Hoga
     bottomRow.add(_buildToolBtn(Icons.more_horiz_rounded, 'More', () => _showMoreOptionsModal(sel), Colors.grey.shade800));
 
     return Container(
@@ -2053,7 +1617,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   Widget _buildTopBtn(IconData icon, String label, [VoidCallback? onTap]) { return InkWell(onTap: onTap, child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), child: Row(children: [Icon(icon, size: 16, color: Colors.black87), const SizedBox(width: 4), Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87))]))); }
 }
 
-// 🔥 NAYA CUSTOM COLOR WHEEL WIDGET (BEAUTIFUL & PROFESSIONAL) 🔥
 class ColorWheelPicker extends StatefulWidget {
   final Color initialColor;
   final ValueChanged<Color> onColorChanged;
