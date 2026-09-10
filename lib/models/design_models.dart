@@ -60,6 +60,11 @@ class DesignElement {
   String? groupId; 
   bool isTable; 
   List<List<String>>? tableData;
+  
+  // 🔥 NAYE PRO TEXT EFFECTS 🔥
+  bool isBevel;
+  bool isInnerShadow;
+  bool isGlass;
 
   DesignElement({
     required this.id, required this.x, required this.y, required this.content, this.imageBytes,
@@ -80,7 +85,10 @@ class DesignElement {
     this.shadowOffsetX = 3.0, this.shadowOffsetY = 3.0,
     this.groupId,
     this.isTable = false, 
-    this.tableData,      
+    this.tableData,
+    this.isBevel = false,
+    this.isInnerShadow = false,
+    this.isGlass = false,
   });
 
   Map<String, dynamic> toJson() => {
@@ -103,6 +111,9 @@ class DesignElement {
     'groupId': groupId,
     'isTable': isTable, 
     'tableData': tableData, 
+    'isBevel': isBevel,
+    'isInnerShadow': isInnerShadow,
+    'isGlass': isGlass,
   };
 
   factory DesignElement.fromJson(Map<String, dynamic> json) {
@@ -145,10 +156,12 @@ class DesignElement {
       groupId: json['groupId']?.toString(),
       isTable: json['isTable'] as bool? ?? false, 
       tableData: json['tableData'] != null ? List<List<String>>.from((json['tableData'] as List).map((row) => List<String>.from(row as List))) : null, 
+      isBevel: json['isBevel'] as bool? ?? false,
+      isInnerShadow: json['isInnerShadow'] as bool? ?? false,
+      isGlass: json['isGlass'] as bool? ?? false,
     );
   }
 
-  // 🔥 YAHAN HAI JADOO! FAST MEMORY CLONE 🔥
   DesignElement clone() { 
     return DesignElement(
       id: id, x: x, y: y, content: content,
@@ -169,6 +182,9 @@ class DesignElement {
       groupId: groupId,
       isTable: isTable,
       tableData: tableData?.map((row) => List<String>.from(row)).toList(),
+      isBevel: isBevel,
+      isInnerShadow: isInnerShadow,
+      isGlass: isGlass,
     );
   }
 }
