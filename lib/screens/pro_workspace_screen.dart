@@ -192,7 +192,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void saveState() {
     undoStack.add(elements.map((e) => e.clone()).toList());
     redoStack.clear();
-    // RAM Fix: Reduced stack size from 20 to 10 to prevent OOM errors on mobile devices
     if (undoStack.length > 10) undoStack.removeAt(0); 
   }
 
@@ -349,9 +348,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     await Future.delayed(const Duration(milliseconds: 400));
     try {
       RenderRepaintBoundary boundary = _canvasKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      // RAM Fix: Dynamic Pixel Ratio based on canvas size to prevent crash
       double pixelRatio = (currentCanvasW > 1200 || currentCanvasH > 1200) ? 2.0 : 3.0;
-      
       ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
       ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       
@@ -1554,6 +1551,127 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
+  void _showOpacityModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context, 
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              height: 180, 
+              padding: const EdgeInsets.all(20), 
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Opacity شفافیت', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
+                    ]
+                  ),
+                  Slider(
+                    value: sel.opacity.clamp(0.0, 1.0), 
+                    min: 0.0, 
+                    max: 1.0, 
+                    activeColor: const Color(0xFF8B5CF6),
+                    onChangeStart: (val) => saveState(),
+                    onChanged: (v){ 
+                      setState(()=>sel.opacity=v); 
+                      setModalState((){}); 
+                      _triggerCanvasUpdate(); 
+                    }
+                  )
+                ]
+              )
+            );
+          }
+        );
+      }
+    );
+  }
+
+  // 🔥 NAYA TEXT EFFECTS MODAL 🔥
+  void _showTextEffectsModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              height: 400,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Premium Text Effects ✨', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF8B5CF6))),
+                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
+                    ]
+                  ),
+                  const Divider(),
+                  Expanded(
+                    child: ListView(
+                      physics: const BouncingScrollPhysics(),
+                      children: [
+                        SwitchListTile(
+                          title: const Text('Bevel & Emboss (اُبھرا ہوا)', style: TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: const Text('3D pop out effect', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                          secondary: const Icon(Icons.layers, color: Colors.blue),
+                          activeColor: const Color(0xFF8B5CF6),
+                          value: sel.isBevel,
+                          onChanged: (val) { saveState(); setState(() => sel.isBevel = val); setModalState((){}); _triggerCanvasUpdate(); }
+                        ),
+                        SwitchListTile(
+                          title: const Text('Inner Shadow (اندرونی سایہ)', style: TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: const Text('Deep cut / stamped effect', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                          secondary: const Icon(Icons.flip_to_back, color: Colors.purple),
+                          activeColor: const Color(0xFF8B5CF6),
+                          value: sel.isInnerShadow,
+                          onChanged: (val) { saveState(); setState(() => sel.isInnerShadow = val); setModalState((){}); _triggerCanvasUpdate(); }
+                        ),
+                        SwitchListTile(
+                          title: const Text('Glass Effect (شیشے کا انداز)', style: TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: const Text('Frosted transparent look', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                          secondary: const Icon(Icons.blur_on, color: Colors.cyan),
+                          activeColor: const Color(0xFF8B5CF6),
+                          value: sel.isGlass,
+                          onChanged: (val) { saveState(); setState(() => sel.isGlass = val); setModalState((){}); _triggerCanvasUpdate(); }
+                        ),
+                        ListTile(
+                          title: const Text('Add Texture (ٹیکسچر)', style: TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: const Text('Image clipping on text', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                          leading: const Icon(Icons.texture, color: Colors.orange),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (sel.textTextureBytes != null)
+                                IconButton(icon: const Icon(Icons.delete, color: Colors.red, size: 20), onPressed: () { saveState(); setState(() => sel.textTextureBytes = null); setModalState((){}); _triggerCanvasUpdate(); }),
+                              const Icon(Icons.arrow_forward_ios, size: 16)
+                            ]
+                          ),
+                          onTap: () async {
+                            await _addTextureToText(sel);
+                            setModalState((){});
+                          }
+                        ),
+                      ]
+                    )
+                  )
+                ]
+              )
+            );
+          }
+        );
+      }
+    );
+  }
+
   void _show3DBlockModal(DesignElement sel) {
     showModalBottomSheet(
       context: context,
@@ -2560,29 +2678,27 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       builder: (context) {
         List<Widget> moreTools = [];
 
-        if (sel.isText) moreTools.add(_buildGridToolBtn(Icons.height_rounded, 'Spacing', () { Navigator.pop(context); showSpacingModal(sel); }));
-        if (sel.isText) moreTools.add(_buildGridToolBtn(Icons.data_usage_rounded, 'Curve', () { Navigator.pop(context); _showCurveModal(sel); }));
-        if (sel.isText) moreTools.add(_buildGridToolBtn(Icons.gradient_rounded, 'Gradient', () { Navigator.pop(context); _showGradientPickerModal(sel); }));
-        if (sel.isText) moreTools.add(_buildGridToolBtn(Icons.texture_rounded, 'Texture', () { Navigator.pop(context); _addTextureToText(sel); }));
-        if (sel.isText && sel.textTextureBytes != null) moreTools.add(_buildGridToolBtn(Icons.layers_clear_rounded, 'Clear Txtr', () { saveState(); setState(() => sel.textTextureBytes = null); _triggerCanvasUpdate(); Navigator.pop(context); }, Colors.red));
-        if (sel.isText) moreTools.add(_buildGridToolBtn(Icons.view_in_ar_outlined, '3D Block', () { Navigator.pop(context); _show3DBlockModal(sel); }));
-        
-        if (sel.imageBytes != null || sel.isShape) moreTools.add(_buildGridToolBtn(Icons.format_paint_rounded, 'Tint', () { Navigator.pop(context); _showColorPickerModal(sel); }));
-        if (sel.imageBytes != null) moreTools.add(_buildGridToolBtn(Icons.auto_awesome_motion_rounded, 'Blend', () { Navigator.pop(context); _showBlendModeModal(sel); }));
-
-        moreTools.add(_buildGridToolBtn(Icons.center_focus_strong_rounded, 'Position', () { Navigator.pop(context); _showAlignmentModal(sel); }));
-        moreTools.add(_buildGridToolBtn(Icons.open_with_rounded, 'Nudge', () { Navigator.pop(context); showNudgeModal(sel); }));
-        moreTools.add(_buildGridToolBtn(Icons.rotate_right_rounded, 'Rotate', () { Navigator.pop(context); showRotationModal(sel); }));
-        moreTools.add(_buildGridToolBtn(Icons.view_in_ar_rounded, 'Perspective', () { Navigator.pop(context); show3DModal(sel); }));
-        moreTools.add(_buildGridToolBtn(Icons.flip_rounded, 'Flip H', () { saveState(); setState(() => sel.flipX = !sel.flipX); _triggerCanvasUpdate(); Navigator.pop(context); }));
-        moreTools.add(_buildGridToolBtn(Icons.flip_camera_android_rounded, 'Flip V', () { saveState(); setState(() => sel.flipY = !sel.flipY); _triggerCanvasUpdate(); Navigator.pop(context); }));
-        moreTools.add(_buildGridToolBtn(Icons.opacity_rounded, 'Opacity', () { 
-          Navigator.pop(context);
-          showModalBottomSheet(context: context, builder: (ctx) => Container(height: 150, padding: const EdgeInsets.all(20), child: Slider(value: sel.opacity.clamp(0.0, 1.0), min: 0.0, max: 1.0, onChanged: (v){ setState(()=>sel.opacity=v); _triggerCanvasUpdate(); }))); 
-        }));
-        if (!sel.isText && !sel.isBorder && !sel.isTable) moreTools.add(_buildGridToolBtn(Icons.rounded_corner_rounded, 'Radius', () { Navigator.pop(context); _showRadiusModal(sel); }));
-        moreTools.add(_buildGridToolBtn(Icons.arrow_upward_rounded, 'Bring Fwd', () { bringForward(); Navigator.pop(context); }));
-        moreTools.add(_buildGridToolBtn(Icons.arrow_downward_rounded, 'Send Bwd', () { sendBackward(); Navigator.pop(context); }));
+        if (sel.isText) {
+           moreTools.add(_buildGridToolBtn(Icons.rotate_right_rounded, 'Rotate', () { Navigator.pop(context); showRotationModal(sel); }));
+           moreTools.add(_buildGridToolBtn(Icons.view_in_ar_outlined, '3D Block', () { Navigator.pop(context); _show3DBlockModal(sel); }));
+           moreTools.add(_buildGridToolBtn(Icons.data_usage_rounded, 'Curve', () { Navigator.pop(context); _showCurveModal(sel); }));
+           moreTools.add(_buildGridToolBtn(Icons.view_in_ar_rounded, 'Perspective', () { Navigator.pop(context); show3DModal(sel); }));
+           moreTools.add(_buildGridToolBtn(Icons.arrow_upward_rounded, 'Bring Fwd', () { bringForward(); Navigator.pop(context); }));
+           moreTools.add(_buildGridToolBtn(Icons.arrow_downward_rounded, 'Send Bwd', () { sendBackward(); Navigator.pop(context); }));
+        } else {
+           if (sel.imageBytes != null || sel.isShape) moreTools.add(_buildGridToolBtn(Icons.format_paint_rounded, 'Tint', () { Navigator.pop(context); _showColorPickerModal(sel); }));
+           if (sel.imageBytes != null) moreTools.add(_buildGridToolBtn(Icons.auto_awesome_motion_rounded, 'Blend', () { Navigator.pop(context); _showBlendModeModal(sel); }));
+           moreTools.add(_buildGridToolBtn(Icons.center_focus_strong_rounded, 'Position', () { Navigator.pop(context); _showAlignmentModal(sel); }));
+           moreTools.add(_buildGridToolBtn(Icons.open_with_rounded, 'Nudge', () { Navigator.pop(context); showNudgeModal(sel); }));
+           moreTools.add(_buildGridToolBtn(Icons.rotate_right_rounded, 'Rotate', () { Navigator.pop(context); showRotationModal(sel); }));
+           moreTools.add(_buildGridToolBtn(Icons.view_in_ar_rounded, 'Perspective', () { Navigator.pop(context); show3DModal(sel); }));
+           moreTools.add(_buildGridToolBtn(Icons.flip_rounded, 'Flip H', () { saveState(); setState(() => sel.flipX = !sel.flipX); _triggerCanvasUpdate(); Navigator.pop(context); }));
+           moreTools.add(_buildGridToolBtn(Icons.flip_camera_android_rounded, 'Flip V', () { saveState(); setState(() => sel.flipY = !sel.flipY); _triggerCanvasUpdate(); Navigator.pop(context); }));
+           moreTools.add(_buildGridToolBtn(Icons.opacity_rounded, 'Opacity', () { Navigator.pop(context); _showOpacityModal(sel); }));
+           if (!sel.isBorder && !sel.isTable) moreTools.add(_buildGridToolBtn(Icons.rounded_corner_rounded, 'Radius', () { Navigator.pop(context); _showRadiusModal(sel); }));
+           moreTools.add(_buildGridToolBtn(Icons.arrow_upward_rounded, 'Bring Fwd', () { bringForward(); Navigator.pop(context); }));
+           moreTools.add(_buildGridToolBtn(Icons.arrow_downward_rounded, 'Send Bwd', () { sendBackward(); Navigator.pop(context); }));
+        }
 
         return Container(
           padding: const EdgeInsets.all(20),
@@ -2660,26 +2776,27 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
+  // 🔥 NAYA SHARP, CLEAN & PREMIUM TOOL BUTTON 🔥
   Widget _buildToolBtn(IconData icon, String label, [VoidCallback? onTap, Color? color]) { 
     Color c = color ?? Colors.black87;
     return InkWell(
       onTap: onTap, 
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(10),
       child: Container(
-        width: 60, 
-        margin: const EdgeInsets.symmetric(horizontal: 4), 
+        width: 54, 
+        margin: const EdgeInsets.symmetric(horizontal: 3), 
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2), 
         decoration: BoxDecoration(
-          color: c.withOpacity(0.08), 
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: c.withOpacity(0.1), width: 1)
+          color: c.withOpacity(0.06), 
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: c.withOpacity(0.12), width: 0.8)
         ), 
         child: Column(
           mainAxisSize: MainAxisSize.min, 
           children: [
-            Icon(icon, size: 22, color: c), 
+            Icon(icon, size: 20, color: c), 
             const SizedBox(height: 4), 
-            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 10, color: c, fontWeight: FontWeight.w700))
+            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 9, color: c, fontWeight: FontWeight.w800))
           ]
         )
       )
@@ -2838,27 +2955,62 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           else if (e.clipShape == 4) clippedImg = ClipPath(clipper: HexagonClipper(), child: img);
                                           contentWidget = SizedBox(width: currentWidth, height: e.clipShape == 0 ? currentHeight : currentWidth, child: clippedImg);
                                         } else {
-                                          List<Shadow> textShadows = [];
-                                          if (e.hasShadow) textShadows.add(Shadow(color: e.shadowColor, blurRadius: e.shadowBlur, offset: Offset(e.shadowOffsetX, e.shadowOffsetY)));
+                                          // 🔥 NEW PRO TEXT RENDER ENGINE 🔥
                                           Widget buildTextWidget(Color c, [List<Shadow>? shadow]) {
-                                            TextStyle st = TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, color: c, letterSpacing: e.letterSpacing, wordSpacing: e.wordSpacing, height: e.lineHeight, shadows: shadow ?? textShadows, fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal, fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal);
+                                            List<Shadow> currentShadows = shadow != null ? List.from(shadow) : [];
+                                            if (shadow == null && e.hasShadow) currentShadows.add(Shadow(color: e.shadowColor, blurRadius: e.shadowBlur, offset: Offset(e.shadowOffsetX, e.shadowOffsetY)));
+
+                                            Color finalTextColor = c;
+                                            
+                                            if (e.isGlass && e.textGradient == null && e.textTextureBytes == null) {
+                                               finalTextColor = c.withOpacity(0.35);
+                                               currentShadows.add(const Shadow(color: Colors.white, offset: Offset(0, 0), blurRadius: 15));
+                                               currentShadows.add(const Shadow(color: Colors.black26, offset: Offset(2, 2), blurRadius: 5));
+                                            }
+
+                                            if (e.isBevel) {
+                                               currentShadows.add(const Shadow(color: Colors.white70, offset: Offset(-2, -2), blurRadius: 2));
+                                               currentShadows.add(const Shadow(color: Colors.black54, offset: Offset(2, 2), blurRadius: 2));
+                                            }
+
+                                            if (e.isInnerShadow) {
+                                               currentShadows.add(const Shadow(color: Colors.black87, offset: Offset(1.5, 1.5), blurRadius: 2));
+                                            }
+
+                                            TextStyle st = TextStyle(
+                                              fontFamily: e.fontFamily, 
+                                              fontSize: e.fontSize, 
+                                              color: finalTextColor, 
+                                              letterSpacing: e.letterSpacing, 
+                                              wordSpacing: e.wordSpacing, 
+                                              height: e.lineHeight, 
+                                              shadows: currentShadows.isNotEmpty ? currentShadows : null, 
+                                              fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal, 
+                                              fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal
+                                            );
+                                            
                                             if (e.textCurveRadius != 0) return CurvedTextWidget(text: e.content, style: st, radius: e.textCurveRadius);
                                             return SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: st));
                                           }
+                                          
                                           List<Widget> blockLayers = [];
                                           if (e.text3dDepth > 0) {
                                             for (double i = e.text3dDepth; i > 0; i -= 1.0) blockLayers.add(Transform.translate(offset: Offset(i, i), child: buildTextWidget(e.text3dColor, [])));
                                           }
+                                          
                                           Widget mainTxt = buildTextWidget(e.textGradient != null ? Colors.white : e.textColor);
                                           if (e.textGradient != null) mainTxt = ShaderMask(shaderCallback: (bounds) => LinearGradient(colors: e.textGradient!).createShader(bounds), child: mainTxt);
                                           if (e.textTextureBytes != null) mainTxt = TextureTextWrapper(child: mainTxt, textureBytes: e.textTextureBytes!);
                                           blockLayers.add(mainTxt);
+                                          
                                           Widget txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: blockLayers);
+                                          
                                           if (e.hasStroke) {
                                             TextStyle stStroke = TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, letterSpacing: e.letterSpacing, wordSpacing: e.wordSpacing, height: e.lineHeight, foreground: Paint()..style = PaintingStyle.stroke..strokeWidth = e.strokeWidth..color = e.strokeColor, fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal, fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal);
                                             Widget strokeTxt = e.textCurveRadius != 0 ? CurvedTextWidget(text: e.content, style: stStroke, radius: e.textCurveRadius) : SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: stStroke));
                                             txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [strokeTxt, txt]);
                                           }
+                                          
                                           if (e.textBgColor != null) txt = Container(padding: const EdgeInsets.all(5), decoration: BoxDecoration(color: e.textBgColor, borderRadius: BorderRadius.circular(e.cornerRadius)), child: txt);
                                           contentWidget = txt; 
                                         }
@@ -2996,28 +3148,53 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
+  // 🔥 NAYA SMART & CLEAR BOTTOM TOOLBAR 🔥
   Widget _buildSelectedToolBar(DesignElement sel) {
     List<Widget> topRow = [];
     List<Widget> bottomRow = [];
 
-    topRow.add(_buildToolBtn(Icons.close_rounded, 'Deselect', () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, Colors.redAccent));
-    if (sel.isText) topRow.add(_buildToolBtn(Icons.edit_rounded, 'Edit', () => _showTextComposerDialog(existingElement: sel)));
-    if (sel.isTable) topRow.add(_buildToolBtn(Icons.table_rows_rounded, 'Edit Table', () => _showTableEditorModal(sel), const Color(0xFF10B981)));
-    if (sel.isText || sel.isTable) topRow.add(_buildToolBtn(Icons.font_download_rounded, 'Font', () => showFontPickerModal(sel)));
-    if (sel.isText || sel.isTable) topRow.add(_buildToolBtn(Icons.text_fields_rounded, 'Size', () => showSizeSliderModal(sel)));
-    if (sel.isText || sel.isBorder || sel.isShape || sel.isTinted || sel.isTable) topRow.add(_buildToolBtn(Icons.palette_rounded, 'Color', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
-    topRow.add(_buildToolBtn(Icons.copy_rounded, 'Copy', duplicateSelected, Colors.blue));
-    topRow.add(_buildToolBtn(Icons.delete_outline_rounded, 'Delete', () { deleteSelected(); }, Colors.red));
+    if (sel.isText) {
+      // Line 1: Delete, Size, Stroke, Shadow, Duplicate, Opacity, Copy, Flip H, Flip V, Nudge, Lock.
+      topRow.add(_buildToolBtn(Icons.delete_outline_rounded, 'Delete', deleteSelected, Colors.red));
+      topRow.add(_buildToolBtn(Icons.text_fields_rounded, 'Size', () => showSizeSliderModal(sel)));
+      topRow.add(_buildToolBtn(Icons.border_color_rounded, 'Stroke', () => _showAdvancedStrokeModal(sel)));
+      topRow.add(_buildToolBtn(Icons.brightness_6_rounded, 'Shadow', () => _showAdvancedShadowModal(sel)));
+      topRow.add(_buildToolBtn(Icons.copy_rounded, 'Duplicate', duplicateSelected, Colors.blue));
+      topRow.add(_buildToolBtn(Icons.opacity_rounded, 'Opacity', () => _showOpacityModal(sel)));
+      topRow.add(_buildToolBtn(Icons.content_copy_rounded, 'Copy', () { Clipboard.setData(ClipboardData(text: sel.content)); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Text Copied!'))); }));
+      topRow.add(_buildToolBtn(Icons.flip_rounded, 'Flip H', () { saveState(); setState(() => sel.flipX = !sel.flipX); _triggerCanvasUpdate(); }));
+      topRow.add(_buildToolBtn(Icons.flip_camera_android_rounded, 'Flip V', () { saveState(); setState(() => sel.flipY = !sel.flipY); _triggerCanvasUpdate(); }));
+      topRow.add(_buildToolBtn(Icons.open_with_rounded, 'Nudge', () => showNudgeModal(sel)));
+      topRow.add(_buildToolBtn(Icons.lock_outline_rounded, 'Lock', () { saveState(); setState(() { sel.isLocked = true; selectedId = null; }); _triggerCanvasUpdate(); }, Colors.orange));
 
-    if (sel.isText) bottomRow.add(_buildToolBtn(Icons.format_bold_rounded, 'Bold', () { saveState(); setState(() => sel.isBold = !sel.isBold); _triggerCanvasUpdate(); }));
-    if (sel.isText) bottomRow.add(_buildToolBtn(Icons.format_align_center_rounded, 'Align', () => _toggleAlignment(sel)));
-    if (!sel.isBorder) bottomRow.add(_buildToolBtn(Icons.border_color_rounded, 'Stroke', () => _showAdvancedStrokeModal(sel)));
-    if (!sel.isBorder && !sel.isTable) bottomRow.add(_buildToolBtn(Icons.brightness_6_rounded, 'Shadow', () => _showAdvancedShadowModal(sel)));
-    if (sel.isText) bottomRow.add(_buildToolBtn(Icons.format_color_fill_rounded, 'Text BG', () => _showTextBgPickerModal(sel)));
-    if (sel.imageBytes != null && !sel.isTinted) bottomRow.add(_buildToolBtn(Icons.photo_filter_rounded, 'Filters', () => _showImageFiltersModal(sel)));
-    if (sel.imageBytes != null) bottomRow.add(_buildToolBtn(Icons.crop_rounded, 'Crop', () => _showShapeClipModal(sel)));
+      // Line 2: Deselect, Edit, Font, Colour, Gradient, Bold, Spacing, Text BG, Text Effect, Align, More.
+      bottomRow.add(_buildToolBtn(Icons.close_rounded, 'Deselect', () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, Colors.redAccent));
+      bottomRow.add(_buildToolBtn(Icons.edit_rounded, 'Edit', () => _showTextComposerDialog(existingElement: sel)));
+      bottomRow.add(_buildToolBtn(Icons.font_download_rounded, 'Font', () => showFontPickerModal(sel)));
+      bottomRow.add(_buildToolBtn(Icons.palette_rounded, 'Colour', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
+      bottomRow.add(_buildToolBtn(Icons.gradient_rounded, 'Gradient', () => _showGradientPickerModal(sel)));
+      bottomRow.add(_buildToolBtn(Icons.format_bold_rounded, 'Bold', () { saveState(); setState(() => sel.isBold = !sel.isBold); _triggerCanvasUpdate(); }));
+      bottomRow.add(_buildToolBtn(Icons.height_rounded, 'Spacing', () => showSpacingModal(sel)));
+      bottomRow.add(_buildToolBtn(Icons.format_color_fill_rounded, 'Text BG', () => _showTextBgPickerModal(sel)));
+      bottomRow.add(_buildToolBtn(Icons.auto_awesome_rounded, 'Effect', () => _showTextEffectsModal(sel), const Color(0xFF10B981)));
+      bottomRow.add(_buildToolBtn(Icons.format_align_center_rounded, 'Align', () => _toggleAlignment(sel)));
+      bottomRow.add(_buildToolBtn(Icons.more_horiz_rounded, 'More', () => _showMoreOptionsModal(sel), Colors.grey.shade800));
+    } else {
+      // Shape / Image / Border Toolbar Logic
+      topRow.add(_buildToolBtn(Icons.close_rounded, 'Deselect', () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, Colors.redAccent));
+      if (sel.isTable) topRow.add(_buildToolBtn(Icons.table_rows_rounded, 'Edit Table', () => _showTableEditorModal(sel), const Color(0xFF10B981)));
+      if (sel.isTable) topRow.add(_buildToolBtn(Icons.font_download_rounded, 'Font', () => showFontPickerModal(sel)));
+      if (sel.isTable) topRow.add(_buildToolBtn(Icons.text_fields_rounded, 'Size', () => showSizeSliderModal(sel)));
+      topRow.add(_buildToolBtn(Icons.palette_rounded, 'Colour', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
+      topRow.add(_buildToolBtn(Icons.copy_rounded, 'Duplicate', duplicateSelected, Colors.blue));
+      topRow.add(_buildToolBtn(Icons.delete_outline_rounded, 'Delete', deleteSelected, Colors.red));
 
-    bottomRow.add(_buildToolBtn(Icons.more_horiz_rounded, 'More', () => _showMoreOptionsModal(sel), Colors.grey.shade800));
+      if (!sel.isBorder) bottomRow.add(_buildToolBtn(Icons.border_color_rounded, 'Stroke', () => _showAdvancedStrokeModal(sel)));
+      if (!sel.isBorder && !sel.isTable) bottomRow.add(_buildToolBtn(Icons.brightness_6_rounded, 'Shadow', () => _showAdvancedShadowModal(sel)));
+      if (sel.imageBytes != null && !sel.isTinted) bottomRow.add(_buildToolBtn(Icons.photo_filter_rounded, 'Filters', () => _showImageFiltersModal(sel)));
+      if (sel.imageBytes != null) bottomRow.add(_buildToolBtn(Icons.crop_rounded, 'Crop', () => _showShapeClipModal(sel)));
+      bottomRow.add(_buildToolBtn(Icons.more_horiz_rounded, 'More', () => _showMoreOptionsModal(sel), Colors.grey.shade800));
+    }
 
     return Container(
       color: Colors.white,
@@ -3025,17 +3202,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Row(children: topRow),
-          ),
+          SingleChildScrollView(scrollDirection: Axis.horizontal, physics: const BouncingScrollPhysics(), child: Row(children: topRow)),
           const SizedBox(height: 6),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Row(children: bottomRow),
-          ),
+          SingleChildScrollView(scrollDirection: Axis.horizontal, physics: const BouncingScrollPhysics(), child: Row(children: bottomRow)),
         ],
       ),
     );
