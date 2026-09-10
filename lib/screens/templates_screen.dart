@@ -46,7 +46,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
         'title': 'News Thumbnail',
         'category': 'Social Media',
         'gradient': const [Color(0xFFDC2626), Color(0xFF991B1B)], // Red to Dark Red
-        'icon': Icons.video_youtube_rounded,
+        'icon': Icons.smart_display_rounded, // 🔥 ERROR FIXED HERE 🔥
         'tag': 'PRO',
         'onLoad': () => _generateNewsThumbnailTemplate(),
       },
