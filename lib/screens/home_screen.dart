@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart'; 
+import 'package:flutter/services.dart'; // Added for Input Formatters
 
 import '../models/design_models.dart';
 import 'pro_workspace_screen.dart';
@@ -53,67 +54,6 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       setState(() => isLoading = false);
     }
-  }
-
-  void _showNewDesignModal(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        contentPadding: const EdgeInsets.all(24),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('New Design', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
-                IconButton(icon: const Icon(Icons.close, color: Colors.grey), onPressed: () => Navigator.pop(context)),
-              ],
-            ),
-            const SizedBox(height: 15),
-            Row(
-              children: [
-                Expanded(child: _buildInputBox('WIDTH', '1080')),
-                const Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Icon(Icons.lock_outline, color: Color(0xFF8B5CF6))),
-                Expanded(child: _buildInputBox('HEIGHT', '1080')),
-                const SizedBox(width: 10),
-                Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15), decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12)), child: const Text('px', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)))
-              ],
-            ),
-            const SizedBox(height: 25),
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]),
-                boxShadow: [BoxShadow(color: const Color(0xFF8B5CF6).withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 5))]
-              ),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const ProWorkspaceScreen())).then((_) => _loadRecentProjects());
-                },
-                child: const Text('Start Designing', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-              ),
-            )
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInputBox(String label, String val) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-        const SizedBox(height: 6),
-        TextField(textAlign: TextAlign.center, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16), decoration: InputDecoration(hintText: val, hintStyle: const TextStyle(color: Colors.black38), filled: true, fillColor: Colors.grey.shade100, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF8B5CF6))))),
-      ],
-    );
   }
 
   void _showComingSoon() {
@@ -315,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               elevation: 5,
                               shadowColor: Colors.black26,
                             ),
-                            onPressed: () => _showNewDesignModal(context),
+                            onPressed: () => NewDesignBottomSheet.show(context, _loadRecentProjects),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: const [
@@ -342,7 +282,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisSpacing: 20, 
                 childAspectRatio: 1.05, 
                 children: [
-                  _buildPremiumGridTool('New Design', Icons.add_circle_rounded, const Color(0xFF3B82F6), const Color(0xFFEFF6FF), () => _showNewDesignModal(context)),
+                  _buildPremiumGridTool('New Design', Icons.add_circle_rounded, const Color(0xFF3B82F6), const Color(0xFFEFF6FF), () => NewDesignBottomSheet.show(context, _loadRecentProjects)),
                   _buildPremiumGridTool('Templates', Icons.image_rounded, const Color(0xFF8B5CF6), const Color(0xFFF5F3FF), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const TemplatesScreen()));
                   }),
@@ -369,7 +309,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'backgrounds'))).then((_) => _loadRecentProjects());
                   }),
                   
-                  // 🔥 YAHAN STICKER KO CANVAS SE CONNECT KIYA GAYA HAI 🔥
                   _buildPremiumGridTool('Stickers', Icons.emoji_emotions_rounded, const Color(0xFFD946EF), const Color(0xFFFDF4FF), () {
                     showModalBottomSheet(
                       context: context,
@@ -377,8 +316,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       backgroundColor: Colors.transparent,
                       builder: (context) => StickersLibraryModal(
                         onStickerSelected: (stickerText) {
-                          Navigator.pop(context); // Bottom sheet ko band karo
-                          // Seedha Workspace me bhejo sticker ke sath
+                          Navigator.pop(context); 
                           Navigator.push(context, MaterialPageRoute(
                             builder: (context) => ProWorkspaceScreen(
                               initialAction: 'add_sticker',
@@ -483,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
         height: 70, width: 70,
         margin: const EdgeInsets.only(top: 30),
         child: FloatingActionButton(
-          onPressed: () => _showNewDesignModal(context),
+          onPressed: () => NewDesignBottomSheet.show(context, _loadRecentProjects),
           backgroundColor: Colors.transparent,
           elevation: 0,
           child: Container(
@@ -579,6 +517,316 @@ class _HomeScreenState extends State<HomeScreen> {
           Icon(icon, color: isSelected ? const Color(0xFF6366F1) : const Color(0xFF94A3B8), size: 26),
           const SizedBox(height: 4),
           Text(label, style: TextStyle(fontSize: 10, fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600, color: isSelected ? const Color(0xFF6366F1) : const Color(0xFF94A3B8))),
+        ],
+      ),
+    );
+  }
+}
+
+// ----------------------------------------------------------------------
+// 🔥 NAYA SMART & PREMIUM "NEW DESIGN" BOTTOM SHEET (CANVA STYLE) 🔥
+// ----------------------------------------------------------------------
+
+class NewDesignBottomSheet extends StatefulWidget {
+  final VoidCallback onProjectCreated;
+  
+  const NewDesignBottomSheet({Key? key, required this.onProjectCreated}) : super(key: key);
+
+  static void show(BuildContext context, VoidCallback onProjectCreated) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: NewDesignBottomSheet(onProjectCreated: onProjectCreated),
+      ),
+    );
+  }
+
+  @override
+  State<NewDesignBottomSheet> createState() => _NewDesignBottomSheetState();
+}
+
+class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
+  final TextEditingController _widthCtrl = TextEditingController(text: '1080');
+  final TextEditingController _heightCtrl = TextEditingController(text: '1080');
+  
+  bool _isLocked = false;
+  String _activeRatio = '1:1';
+
+  final Map<String, List<int>> _presets = {
+    '1:1': [1080, 1080],
+    '16:9': [1920, 1080],
+    '9:16': [1080, 1920],
+    'A4': [2480, 3508],
+    '4:3': [1600, 1200],
+  };
+
+  void _onPresetTapped(String key) {
+    setState(() {
+      _activeRatio = key;
+      _widthCtrl.text = _presets[key]![0].toString();
+      _heightCtrl.text = _presets[key]![1].toString();
+    });
+  }
+
+  void _swapDimensions() {
+    setState(() {
+      String temp = _widthCtrl.text;
+      _widthCtrl.text = _heightCtrl.text;
+      _heightCtrl.text = temp;
+      _activeRatio = 'Custom';
+    });
+  }
+
+  void _createDesign() {
+    FocusScope.of(context).unfocus();
+    
+    double w = double.tryParse(_widthCtrl.text) ?? 1080;
+    double h = double.tryParse(_heightCtrl.text) ?? 1080;
+    
+    if (w < 50) w = 50;
+    if (h < 50) h = 50;
+
+    double canvasRatio = w / h;
+    String pId = DateTime.now().millisecondsSinceEpoch.toString();
+
+    ProjectModel newProject = ProjectModel(
+      id: pId,
+      name: 'New Design',
+      lastModified: DateTime.now().millisecondsSinceEpoch,
+      pages: [
+        DesignPage(
+          title: 'Page 1',
+          pageColor: Colors.white,
+          canvasRatio: canvasRatio,
+          elements: [],
+        )
+      ]
+    );
+
+    Navigator.pop(context); // Close Modal Bottom Sheet
+    
+    // Open Workspace
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProWorkspaceScreen(project: newProject),
+      ),
+    ).then((_) => widget.onProjectCreated()); // Reload Recents when back
+  }
+
+  @override
+  void dispose() {
+    _widthCtrl.dispose();
+    _heightCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40, height: 5,
+              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+          const SizedBox(height: 20),
+          
+          const Text('New Design', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
+          const SizedBox(height: 25),
+
+          Row(
+            children: [
+              Expanded(flex: 3, child: _buildInputColumn('WIDTH', _widthCtrl)),
+              const SizedBox(width: 12),
+              
+              Padding(
+                padding: const EdgeInsets.only(top: 20),
+                child: InkWell(
+                  onTap: () => setState(() => _isLocked = !_isLocked),
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    height: 55, width: 50,
+                    decoration: BoxDecoration(
+                      color: _isLocked ? const Color(0xFF8B5CF6).withOpacity(0.1) : Colors.transparent,
+                      border: Border.all(color: _isLocked ? const Color(0xFF8B5CF6) : Colors.grey.shade300, width: 1.5),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(_isLocked ? Icons.lock_rounded : Icons.lock_open_rounded, color: _isLocked ? const Color(0xFF8B5CF6) : Colors.grey.shade500, size: 22),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              
+              Expanded(flex: 3, child: _buildInputColumn('HEIGHT', _heightCtrl)),
+              const SizedBox(width: 12),
+              
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('UNIT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8), letterSpacing: 0.5)),
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 55, alignment: Alignment.center,
+                      decoration: BoxDecoration(color: const Color(0xFFF8FAFC), border: Border.all(color: Colors.grey.shade200), borderRadius: BorderRadius.circular(14)),
+                      child: const Text('px', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF64748B), fontSize: 16)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: [
+                ..._presets.keys.map((key) => _buildRatioChip(key)),
+                InkWell(
+                  onTap: _swapDimensions,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    margin: const EdgeInsets.only(left: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(12)),
+                    child: const Icon(Icons.swap_horiz_rounded, color: Color(0xFF64748B), size: 20),
+                  ),
+                )
+              ],
+            ),
+          ),
+          const SizedBox(height: 25),
+
+          SizedBox(
+            width: double.infinity, height: 55,
+            child: ElevatedButton(
+              onPressed: _createDesign,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF8B5CF6), elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shadowColor: const Color(0xFF8B5CF6).withOpacity(0.5),
+              ),
+              child: const Text('Create Design', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5)),
+            ),
+          ),
+          const SizedBox(height: 15),
+
+          SizedBox(
+            width: double.infinity, height: 55,
+            child: OutlinedButton(
+              onPressed: () {}, // Future Implementation
+              style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFFF5F3FF), 
+                side: const BorderSide(color: Colors.transparent),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(children: [Icon(Icons.grid_view_rounded, color: Color(0xFF8B5CF6), size: 20), SizedBox(width: 10), Text('More Sizes', style: TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold, fontSize: 15))]),
+                  Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF8B5CF6), size: 16),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 25),
+
+          const Text('RECENT SIZES', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Color(0xFF94A3B8), letterSpacing: 1.0)),
+          const SizedBox(height: 12),
+          
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: [
+                _buildRecentCard('Square', '1080×1080 px'),
+                _buildRecentCard('YouTube Thumb', '1920×1080 px'),
+                _buildRecentCard('Instagram Story', '1080×1920 px'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputColumn(String label, TextEditingController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8), letterSpacing: 0.5)),
+        const SizedBox(height: 8),
+        Container(
+          height: 55,
+          decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade200)),
+          child: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF1E293B)),
+            decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.zero),
+            onChanged: (val) => setState(() => _activeRatio = 'Custom'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRatioChip(String label) {
+    bool isSelected = _activeRatio == label;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: InkWell(
+        onTap: () => _onPresetTapped(label),
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFFF5F3FF) : const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: isSelected ? const Color(0xFF8B5CF6) : Colors.transparent, width: 1.5),
+          ),
+          child: Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isSelected ? const Color(0xFF8B5CF6) : const Color(0xFF64748B))),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentCard(String title, String dims) {
+    return Container(
+      margin: const EdgeInsets.only(right: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
+      child: Row(
+        children: [
+          Container(width: 24, height: 24, decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(4))),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontSize: 13)),
+              const SizedBox(height: 2),
+              Text(dims, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+            ],
+          )
         ],
       ),
     );
