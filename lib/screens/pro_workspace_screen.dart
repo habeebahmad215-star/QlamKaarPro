@@ -116,13 +116,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   double _getElWidth(DesignElement e) {
     if (e.isTable) return e.width > 80 ? e.width : 300;
-    if (e.isBorder) return e.width > 50 ? e.width : 200; // Border Width Rule
+    if (e.isBorder) return e.width > 50 ? e.width : 200; 
     return e.width > 80 ? e.width : 80;
   }
 
   double _getElHeight(DesignElement e) {
     if (e.isTable) return e.height > 30 ? e.height : 150;
-    if (e.isBorder) return e.height > 50 ? e.height : 200; // Border Height Rule
+    if (e.isBorder) return e.height > 50 ? e.height : 200; 
     if (!e.isText && e.height > 20) return e.height;
     if (e.isShape) return 90;
     if (e.isText) {
@@ -226,10 +226,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     }
     
     if (edge == 'R') {
-      e.width = max(80.0, e.width + ldx);
+      e.width = max(50.0, e.width + ldx);
     } else if (edge == 'L') {
       double oldW = e.width;
-      e.width = max(80.0, e.width - ldx);
+      e.width = max(50.0, e.width - ldx);
       e.x += (oldW - e.width) * cos(e.angle);
       e.y += (oldW - e.width) * sin(e.angle);
     } else if (edge == 'B') {
@@ -911,12 +911,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     }
   }
 
-  // 🔥 NAYA ADVANCED BORDER & BACKGROUND MODAL 🔥
+  // 🔥 ADVANCED BORDER & BACKGROUND MODAL 🔥
   void showGenericStockModal(String categoryTitle, String styleName, IconData categoryIcon, {bool fromModal = false}) {
     if (fromModal && Navigator.canPop(context)) Navigator.pop(context);
     List<Map<String, dynamic>> stockList = [];
     
-    // Sirf Border ke liye hum 50 Vector Styles generate karenge
+    // Border logic for 50 Vector Styles
     if (styleName == 'border') {
       for (int i = 0; i < 50; i++) {
         stockList.add({'title': 'Border Style ${i + 1}', 'style_id': i, 'color': Colors.black});
@@ -953,18 +953,21 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       saveState();
                       setState(() {
                         if (styleName == 'border') {
-                          // 🔥 BORDER ADD LOGIC (100% Transparent inside, Black outside)
+                          // 🔥 Perfect Auto-Fit Setup for borders
+                          double safeW = currentCanvasW > 50 ? currentCanvasW - 30 : 200;
+                          double safeH = currentCanvasH > 50 ? currentCanvasH - 30 : 200;
+                          
                           elements.add(DesignElement(
                             id: Random().nextInt(10000).toString(), 
-                            x: 20, y: 20, 
+                            x: 15, y: 15, // Standard margin
                             content: 'Border', 
-                            width: currentCanvasW > 100 ? currentCanvasW - 40 : 300, 
-                            height: currentCanvasH > 100 ? currentCanvasH - 40 : 300, 
+                            width: safeW, 
+                            height: safeH, 
                             isText: false, 
                             isBorder: true, 
-                            borderStyle: item['style_id'].toString(), // 0 to 49
+                            borderStyle: item['style_id'].toString(),
                             elementColor: Colors.black, // DEFAULT BLACK
-                            strokeWidth: 4.0, // Default motai
+                            strokeWidth: 4.0, // Default thickness
                             cornerRadius: 0.0,
                           ));
                         } 
@@ -985,7 +988,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                         border: Border.all(color: Colors.grey.shade200)
                       ),
                       child: styleName == 'border' 
-                        // 🔥 LIVE THUMBNAIL PREVIEW FOR BORDER 🔥
                         ? Padding(
                             padding: const EdgeInsets.all(12.0),
                             child: CustomPaint(
@@ -998,7 +1000,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                               child: Center(child: Text(item['title'], style: const TextStyle(fontSize: 10, color: Colors.grey))),
                             ),
                           )
-                        // SHAPE/BG PREVIEW
                         : Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -1053,6 +1054,20 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       setState(() { var item = elements.removeAt(idx); elements.insert(idx - 1, item); });
       _triggerCanvasUpdate();
     }
+  }
+
+  // 🔥 MAGIC FIT PAGE BUTTON (For Borders) 🔥
+  void _fitBorderToPage(DesignElement sel) {
+    saveState();
+    setState(() {
+      sel.x = 15;
+      sel.y = 15;
+      sel.width = (currentCanvasW > 50 ? currentCanvasW : 300) - 30;
+      sel.height = (currentCanvasH > 50 ? currentCanvasH : 300) - 30;
+      sel.angle = 0; // Reset rotation
+    });
+    _triggerCanvasUpdate();
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Border perfectly fitted to page!', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF10B981)));
   }
 
   void _pickCustomGradColor(DesignElement sel, int colorNum, StateSetter parentSetState) {
@@ -1802,7 +1817,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // 🔥 NAYA BORDER SETTINGS MODAL (For Radius & Thickness) 🔥
   void _showBorderSettingsModal(DesignElement sel) {
     showModalBottomSheet(
       context: context,
@@ -3039,7 +3053,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                         
                                         Widget contentWidget;
                                         if (e.isBorder) {
-                                          // 🔥 NEW CUSTOM BORDER VECTOR RENDERER 🔥
+                                          // 🔥 NEW SMART VECTOR BORDER ENGINE 🔥
                                           contentWidget = SizedBox(
                                             width: currentWidth,
                                             height: currentHeight,
@@ -3264,7 +3278,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // 🔥 NAYA SMART & CLEAR BOTTOM TOOLBAR 🔥
   Widget _buildSelectedToolBar(DesignElement sel) {
     List<Widget> topRow = [];
     List<Widget> bottomRow = [];
@@ -3294,11 +3307,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       bottomRow.add(_buildToolBtn(Icons.format_align_center_rounded, 'Align', () => _toggleAlignment(sel)));
       bottomRow.add(_buildToolBtn(Icons.more_horiz_rounded, 'More', () => _showMoreOptionsModal(sel), Colors.grey.shade800));
     } 
-    // 🔥 NEW ADVANCED BORDER TOOLBAR LOGIC 🔥
     else if (sel.isBorder) {
       topRow.add(_buildToolBtn(Icons.close_rounded, 'Deselect', () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, Colors.redAccent));
+      topRow.add(_buildToolBtn(Icons.fullscreen_rounded, 'Fit Page', () => _fitBorderToPage(sel), const Color(0xFF10B981))); // 🔥 MAGIC FIT BUTTON 🔥
       topRow.add(_buildToolBtn(Icons.palette_rounded, 'Colour', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
-      topRow.add(_buildToolBtn(Icons.line_weight_rounded, 'Setup', () => _showBorderSettingsModal(sel), const Color(0xFF10B981)));
+      topRow.add(_buildToolBtn(Icons.line_weight_rounded, 'Setup', () => _showBorderSettingsModal(sel)));
       topRow.add(_buildToolBtn(Icons.opacity_rounded, 'Opacity', () => _showOpacityModal(sel)));
       topRow.add(_buildToolBtn(Icons.copy_rounded, 'Duplicate', duplicateSelected, Colors.blue));
       topRow.add(_buildToolBtn(Icons.delete_outline_rounded, 'Delete', deleteSelected, Colors.red));
@@ -3342,7 +3355,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 }
 
 // ============================================================================
-// 🔥 NAYA ADVANCED VECTOR BORDER ENGINE (50 STYLES WITHOUT IMAGES) 🔥
+// 🔥 100% BUG-FREE ADVANCED VECTOR BORDER ENGINE 🔥
 // ============================================================================
 class AdvancedBorderPainter extends CustomPainter {
   final Color color;
@@ -3366,86 +3379,90 @@ class AdvancedBorderPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
-    final Rect rect = Offset.zero & size;
-    
-    // Engine Logic: 50 borders mapped dynamically using mathematical combinations
+    // 🔥 MAGIC FIX: Ye line border ko bounding box ke bahar leak hone se rokti hai
+    // Deselect karne par ab border bilkul wahi rahega, kategi nahi!
+    final Rect baseRect = (Offset.zero & size).deflate(strokeWidth / 2);
+
     int type = styleIndex % 5; 
-    double variation = (styleIndex ~/ 5).toDouble() * 3.0;
+    double varVal = (styleIndex ~/ 5).toDouble() * 3.0;
 
     switch (type) {
       case 0: // Solid & Offset Frames
-        final double offset = variation;
-        final Rect innerRect = rect.deflate(offset);
+        final double offset = varVal;
+        final Rect innerRect = baseRect.deflate(offset);
         canvas.drawRRect(RRect.fromRectAndRadius(innerRect, Radius.circular(radius)), paint);
         break;
 
       case 1: // Double/Triple Frames
-        canvas.drawRRect(RRect.fromRectAndRadius(rect.deflate(2), Radius.circular(radius)), paint);
-        paint.strokeWidth = strokeWidth * 0.5;
-        canvas.drawRRect(RRect.fromRectAndRadius(rect.deflate(8 + variation), Radius.circular(radius - 2 > 0 ? radius - 2 : 0)), paint);
-        if (variation > 10) {
-           canvas.drawRRect(RRect.fromRectAndRadius(rect.deflate(14 + variation), Radius.circular(radius - 4 > 0 ? radius - 4 : 0)), paint);
+        canvas.drawRRect(RRect.fromRectAndRadius(baseRect, Radius.circular(radius)), paint);
+        if (varVal >= 0) {
+          paint.strokeWidth = strokeWidth * 0.5;
+          canvas.drawRRect(RRect.fromRectAndRadius(baseRect.deflate(6 + varVal), Radius.circular(max(0, radius - 2))), paint);
+        }
+        if (varVal > 10) {
+          canvas.drawRRect(RRect.fromRectAndRadius(baseRect.deflate(12 + varVal), Radius.circular(max(0, radius - 4))), paint);
         }
         break;
 
       case 2: // Minimal Corner Brackets
-        double lineLen = 20.0 + variation;
+        double lineLen = 20.0 + varVal;
         if (lineLen > size.width / 2) lineLen = size.width / 2;
         
         // Top Left
-        canvas.drawLine(rect.topLeft, rect.topLeft + Offset(lineLen, 0), paint);
-        canvas.drawLine(rect.topLeft, rect.topLeft + Offset(0, lineLen), paint);
+        canvas.drawLine(baseRect.topLeft, baseRect.topLeft + Offset(lineLen, 0), paint);
+        canvas.drawLine(baseRect.topLeft, baseRect.topLeft + Offset(0, lineLen), paint);
         // Top Right
-        canvas.drawLine(rect.topRight, rect.topRight + Offset(-lineLen, 0), paint);
-        canvas.drawLine(rect.topRight, rect.topRight + Offset(0, lineLen), paint);
+        canvas.drawLine(baseRect.topRight, baseRect.topRight + Offset(-lineLen, 0), paint);
+        canvas.drawLine(baseRect.topRight, baseRect.topRight + Offset(0, lineLen), paint);
         // Bottom Left
-        canvas.drawLine(rect.bottomLeft, rect.bottomLeft + Offset(lineLen, 0), paint);
-        canvas.drawLine(rect.bottomLeft, rect.bottomLeft + Offset(0, -lineLen), paint);
+        canvas.drawLine(baseRect.bottomLeft, baseRect.bottomLeft + Offset(lineLen, 0), paint);
+        canvas.drawLine(baseRect.bottomLeft, baseRect.bottomLeft + Offset(0, -lineLen), paint);
         // Bottom Right
-        canvas.drawLine(rect.bottomRight, rect.bottomRight + Offset(-lineLen, 0), paint);
-        canvas.drawLine(rect.bottomRight, rect.bottomRight + Offset(0, -lineLen), paint);
+        canvas.drawLine(baseRect.bottomRight, baseRect.bottomRight + Offset(-lineLen, 0), paint);
+        canvas.drawLine(baseRect.bottomRight, baseRect.bottomRight + Offset(0, -lineLen), paint);
         break;
 
-      case 3: // Broken Edge Frames (Islamic/Vintage feel)
-        double gap = 15.0 + variation;
+      case 3: // Islamic / Vintage Edge Frames
+        double gap = 15.0 + varVal;
+        if (gap > size.width / 3) gap = size.width / 3;
         Path path = Path();
-        // Top
-        path.moveTo(rect.left + gap, rect.top);
-        path.lineTo(rect.right - gap, rect.top);
-        // Bottom
-        path.moveTo(rect.left + gap, rect.bottom);
-        path.lineTo(rect.right - gap, rect.bottom);
-        // Left
-        path.moveTo(rect.left, rect.top + gap);
-        path.lineTo(rect.left, rect.bottom - gap);
-        // Right
-        path.moveTo(rect.right, rect.top + gap);
-        path.lineTo(rect.right, rect.bottom - gap);
+        
+        path.moveTo(baseRect.left + gap, baseRect.top);
+        path.lineTo(baseRect.right - gap, baseRect.top);
+        
+        path.moveTo(baseRect.left + gap, baseRect.bottom);
+        path.lineTo(baseRect.right - gap, baseRect.bottom);
+        
+        path.moveTo(baseRect.left, baseRect.top + gap);
+        path.lineTo(baseRect.left, baseRect.bottom - gap);
+        
+        path.moveTo(baseRect.right, baseRect.top + gap);
+        path.lineTo(baseRect.right, baseRect.bottom - gap);
+        
         canvas.drawPath(path, paint);
 
-        // Add small decorative dots at corners if variation is high
-        if (variation > 10) {
+        if (varVal > 5) {
           paint.style = PaintingStyle.fill;
-          canvas.drawCircle(rect.topLeft + Offset(5, 5), strokeWidth, paint);
-          canvas.drawCircle(rect.topRight + Offset(-5, 5), strokeWidth, paint);
-          canvas.drawCircle(rect.bottomLeft + Offset(5, -5), strokeWidth, paint);
-          canvas.drawCircle(rect.bottomRight + Offset(-5, -5), strokeWidth, paint);
+          canvas.drawCircle(baseRect.topLeft + const Offset(5, 5), strokeWidth, paint);
+          canvas.drawCircle(baseRect.topRight + const Offset(-5, 5), strokeWidth, paint);
+          canvas.drawCircle(baseRect.bottomLeft + const Offset(5, -5), strokeWidth, paint);
+          canvas.drawCircle(baseRect.bottomRight + const Offset(-5, -5), strokeWidth, paint);
         }
         break;
 
-      case 4: // Dashed/Dotted Line Logic 
-        double dashWidth = variation < 10 ? 5.0 : 1.0; // Lines vs Dots
-        double dashSpace = dashWidth + strokeWidth + 2.0;
+      case 4: // Dashed / Dotted
+        double dashW = varVal < 10 ? 6.0 : 2.0;
+        double spaceW = dashW + strokeWidth + 2.0;
         
-        // Manual Top Dash
-        for (double i = 0; i < rect.width; i += dashWidth + dashSpace) {
-          canvas.drawLine(Offset(rect.left + i, rect.top), Offset(rect.left + i + dashWidth, rect.top), paint);
-          canvas.drawLine(Offset(rect.left + i, rect.bottom), Offset(rect.left + i + dashWidth, rect.bottom), paint);
+        for (double i = 0; i < baseRect.width; i += dashW + spaceW) {
+          double endX = (i + dashW > baseRect.width) ? baseRect.width : i + dashW;
+          canvas.drawLine(Offset(baseRect.left + i, baseRect.top), Offset(baseRect.left + endX, baseRect.top), paint);
+          canvas.drawLine(Offset(baseRect.left + i, baseRect.bottom), Offset(baseRect.left + endX, baseRect.bottom), paint);
         }
-        // Manual Left Dash
-        for (double i = 0; i < rect.height; i += dashWidth + dashSpace) {
-          canvas.drawLine(Offset(rect.left, rect.top + i), Offset(rect.left, rect.top + i + dashWidth), paint);
-          canvas.drawLine(Offset(rect.right, rect.top + i), Offset(rect.right, rect.top + i + dashWidth), paint);
+        for (double i = 0; i < baseRect.height; i += dashW + spaceW) {
+          double endY = (i + dashW > baseRect.height) ? baseRect.height : i + dashW;
+          canvas.drawLine(Offset(baseRect.left, baseRect.top + i), Offset(baseRect.left, baseRect.top + endY), paint);
+          canvas.drawLine(Offset(baseRect.right, baseRect.top + i), Offset(baseRect.right, baseRect.top + endY), paint);
         }
         break;
     }
