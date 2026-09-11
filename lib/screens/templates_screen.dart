@@ -62,7 +62,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
   }
 
   // ---------------------------------------------------------
-  // 🔥 SMART TEMPLATE GENERATOR (Fixed Coordinates for Mobile) 🔥
+  // 🔥 SMART TEMPLATE GENERATOR (Fixed Width & Coordinates) 🔥
   // ---------------------------------------------------------
 
   ProjectModel _generateJumaMubarakTemplate() {
@@ -79,10 +79,11 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
           canvasRatio: 1.0, 
           elements: [
             DesignElement(
-              id: 'el_1_$pId', x: 30, y: 60, 
+              id: 'el_1_$pId', x: 20, y: 60, 
+              width: 300, height: 100, // 🔥 FIXED WIDTH 🔥
               content: 'جمعہ مبارک', 
               fontFamily: 'JameelNoori', 
-              fontSize: 65, // Adjusted for mobile canvas
+              fontSize: 65, 
               textColor: const Color(0xFFFDE047), 
               hasShadow: true, shadowColor: Colors.black54, shadowBlur: 10, shadowOffsetY: 5,
               isBevel: true, 
@@ -90,9 +91,10 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
             ),
             DesignElement(
               id: 'el_2_$pId', x: 20, y: 160, 
+              width: 300, height: 100, // 🔥 FIXED WIDTH 🔥
               content: 'اللہ تعالیٰ آپ کو اور آپ کے اہل خانہ کو\nاپنی بے شمار رحمتوں سے نوازے', 
               fontFamily: 'JameelNoori', 
-              fontSize: 26, // Perfect fit
+              fontSize: 26, 
               textColor: Colors.white, 
               lineHeight: 1.8,
               textAlign: TextAlign.center,
@@ -118,16 +120,18 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
           elements: [
             DesignElement(
               id: 'el_1_$pId', x: 10, y: 70, 
+              width: 320, height: 150, // 🔥 FIXED WIDTH 🔥
               content: 'ہزاروں سال نرگس اپنی بے نوری پہ روتی ہے\nبڑی مشکل سے ہوتا ہے چمن میں دیدہ ور پیدا', 
               fontFamily: 'JameelNoori', 
-              fontSize: 28, // Fit inside canvas
+              fontSize: 28, 
               textColor: Colors.white, 
               lineHeight: 2.2,
               textAlign: TextAlign.center,
               hasShadow: true, shadowColor: Colors.black, shadowBlur: 10,
             ),
             DesignElement(
-              id: 'el_2_$pId', x: 100, y: 220, 
+              id: 'el_2_$pId', x: 95, y: 220, 
+              width: 150, height: 60, // 🔥 FIXED WIDTH 🔥
               content: 'علامہ اقبالؒ', 
               fontFamily: 'JameelNoori', 
               fontSize: 24, 
@@ -152,25 +156,28 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
         DesignPage(
           title: 'Page 1',
           pageColor: const Color(0xFF171717),
-          canvasRatio: 16 / 9, // Wide ratio
+          canvasRatio: 16 / 9, 
           bgGradient: const [Color(0xFF991B1B), Color(0xFF450A0A)],
           elements: [
             DesignElement(
-              id: 'el_1_$pId', x: 20, y: 20, 
+              id: 'el_1_$pId', x: 20, y: 15, 
+              width: 300, height: 60, // 🔥 FIXED WIDTH 🔥
               content: ' BREAKING NEWS ', 
               fontFamily: 'BombayBlack', 
-              fontSize: 35, // Proper scaling for 16:9 height
+              fontSize: 30, 
               textColor: Colors.white, 
               textBgColor: const Color(0xFF000000), 
               isBold: true,
+              textAlign: TextAlign.left,
             ),
             DesignElement(
-              id: 'el_2_$pId', x: 20, y: 80, 
+              id: 'el_2_$pId', x: 20, y: 65, 
+              width: 300, height: 100, // 🔥 FIXED WIDTH 🔥
               content: 'آج کی سب سے بڑی\nاور اہم خبر!', 
               fontFamily: 'BombayBlack', 
-              fontSize: 45, 
+              fontSize: 35, 
               textColor: const Color(0xFFFDE047), 
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.left,
               lineHeight: 1.2,
               hasStroke: true, strokeColor: Colors.black, strokeWidth: 5.0,
               hasShadow: true, shadowColor: Colors.black, shadowBlur: 10, shadowOffsetY: 5,
@@ -195,13 +202,16 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
           elements: [
             DesignElement(
               id: 'el_1_$pId', x: 220, y: 20, 
+              width: 100, height: 100, // 🔥 FIXED WIDTH 🔥
               content: '❝', 
               fontFamily: 'JameelNoori', 
               fontSize: 80, 
               textColor: const Color(0xFFD4AF37).withOpacity(0.4), 
+              textAlign: TextAlign.center,
             ),
             DesignElement(
               id: 'el_2_$pId', x: 20, y: 100, 
+              width: 300, height: 150, // 🔥 FIXED WIDTH 🔥
               content: 'خاموشی سب سے بہترین جواب ہے\nبے وقوف انسان کے لیے۔', 
               fontFamily: 'JameelNoori', 
               fontSize: 32, 
@@ -225,7 +235,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
     return DefaultTabController(
       length: categories.length,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF1F5F9), // Softer, premium background
+        backgroundColor: const Color(0xFFF1F5F9), 
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
@@ -265,7 +275,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 20,
-                childAspectRatio: 0.82, // Optimized ratio for zero text cutoff
+                childAspectRatio: 0.82, 
               ),
               itemCount: filteredList.length,
               itemBuilder: (context, index) {
@@ -289,7 +299,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
         );
       },
       child: Container(
-        clipBehavior: Clip.antiAlias, // 🔥 Ensures NO bleed over rounded corners
+        clipBehavior: Clip.antiAlias, 
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -301,7 +311,6 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Thumbnail Area (Abstract Design Logic)
             Expanded(
               flex: 5,
               child: Container(
@@ -316,7 +325,6 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
                 child: Stack(
                   clipBehavior: Clip.antiAlias,
                   children: [
-                    // Decorative Background Shapes
                     Positioned(
                       top: -20, right: -20,
                       child: CircleAvatar(radius: 50, backgroundColor: template['accent'].withOpacity(0.3)),
@@ -325,11 +333,9 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
                       bottom: -30, left: -10,
                       child: CircleAvatar(radius: 40, backgroundColor: template['accent'].withOpacity(0.2)),
                     ),
-                    // Main Icon
                     Center(
                       child: Icon(template['icon'], size: 55, color: Colors.white.withOpacity(0.85)),
                     ),
-                    // Pro/Free Tag
                     Positioned(
                       top: 12, left: 12,
                       child: Container(
@@ -357,7 +363,6 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
               ),
             ),
             
-            // Details Area (Clean Typography)
             Expanded(
               flex: 2,
               child: Container(
