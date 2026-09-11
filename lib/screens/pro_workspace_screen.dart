@@ -111,7 +111,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         margin: const EdgeInsets.only(left: 15, right: 15, bottom: 20),
         height: height,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.85), // Translucent Background
+          color: Colors.white.withOpacity(0.85),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: Colors.white, width: 1.5),
           boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 15, spreadRadius: -5)]
@@ -119,7 +119,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15), // Glass Blur Effect
+            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
             child: Padding(
               padding: padding ?? const EdgeInsets.all(16),
               child: child,
@@ -788,6 +788,19 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
+  Widget _buildComposerTool(IconData icon, String label, [VoidCallback? onTap]) {
+    return InkWell(
+      onTap: onTap, 
+      child: Column(
+        children: [
+          Icon(icon, color: const Color(0xFF8B5CF6)), 
+          const SizedBox(height: 5), 
+          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))
+        ]
+      )
+    );
+  }
+
   void showAddNewModal() {
     showModalBottomSheet(
       context: context,
@@ -1076,7 +1089,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                         _triggerCanvasUpdate(); 
                         Navigator.pop(context); 
                       },
-                      child: const Text('Save Table Data (محفوظ کریں)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14))
+                      child: const Text('Save Table Data', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14))
                     )
                   )
                 ],
