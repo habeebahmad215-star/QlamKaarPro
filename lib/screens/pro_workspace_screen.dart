@@ -911,12 +911,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     }
   }
 
-  // 🔥 ADVANCED BORDER & BACKGROUND MODAL 🔥
   void showGenericStockModal(String categoryTitle, String styleName, IconData categoryIcon, {bool fromModal = false}) {
     if (fromModal && Navigator.canPop(context)) Navigator.pop(context);
     List<Map<String, dynamic>> stockList = [];
     
-    // Border logic for 50 Vector Styles
     if (styleName == 'border') {
       for (int i = 0; i < 50; i++) {
         stockList.add({'title': 'Border Style ${i + 1}', 'style_id': i, 'color': Colors.black});
@@ -953,21 +951,20 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       saveState();
                       setState(() {
                         if (styleName == 'border') {
-                          // 🔥 Perfect Auto-Fit Setup for borders
                           double safeW = currentCanvasW > 50 ? currentCanvasW - 30 : 200;
                           double safeH = currentCanvasH > 50 ? currentCanvasH - 30 : 200;
                           
                           elements.add(DesignElement(
                             id: Random().nextInt(10000).toString(), 
-                            x: 15, y: 15, // Standard margin
+                            x: 15, y: 15, 
                             content: 'Border', 
                             width: safeW, 
                             height: safeH, 
                             isText: false, 
                             isBorder: true, 
                             borderStyle: item['style_id'].toString(),
-                            elementColor: Colors.black, // DEFAULT BLACK
-                            strokeWidth: 4.0, // Default thickness
+                            elementColor: Colors.black, 
+                            strokeWidth: 4.0, 
                             cornerRadius: 0.0,
                           ));
                         } 
@@ -1056,7 +1053,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     }
   }
 
-  // 🔥 MAGIC FIT PAGE BUTTON (For Borders) 🔥
   void _fitBorderToPage(DesignElement sel) {
     saveState();
     setState(() {
@@ -1064,7 +1060,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       sel.y = 15;
       sel.width = (currentCanvasW > 50 ? currentCanvasW : 300) - 30;
       sel.height = (currentCanvasH > 50 ? currentCanvasH : 300) - 30;
-      sel.angle = 0; // Reset rotation
+      sel.angle = 0; 
     });
     _triggerCanvasUpdate();
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Border perfectly fitted to page!', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF10B981)));
@@ -2208,14 +2204,17 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  void showNudgeModal(DesignElement sel) {
+  // 🔥 NAYA SMART & FAST MOVE TOOL (1px / 5px) 🔥
+  void showMoveModal(DesignElement sel) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
+            double stepSize = 5.0; // Default fast speed
+
             void move(double dx, double dy) {
               saveState();
               setState(() {
@@ -2233,34 +2232,89 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
               setModalState((){});
               _triggerCanvasUpdate();
             }
+
+            Widget buildDpadBtn(IconData icon, VoidCallback onTap) {
+              return InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  width: 60, height: 60,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+                  ),
+                  child: Icon(icon, size: 30, color: const Color(0xFF8B5CF6)),
+                ),
+              );
+            }
+
             return Container(
-              height: 260,
-              padding: const EdgeInsets.all(20),
+              height: 330,
+              padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Nudge Tool حرکت خردبینی', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
+                      const Text('Move Tool (حرکت دیں)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                      IconButton(icon: const Icon(Icons.close, color: Colors.grey), onPressed: () => Navigator.pop(context))
                     ]
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 5),
+                  // Smart Speed Toggle
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12)),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          onTap: () => setModalState(() => stepSize = 1.0),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: stepSize == 1.0 ? Colors.white : Colors.transparent, 
+                              borderRadius: BorderRadius.circular(10), 
+                              boxShadow: stepSize == 1.0 ? [const BoxShadow(color: Colors.black12, blurRadius: 4)] : []
+                            ),
+                            child: Text('1 px (Slow)', style: TextStyle(fontWeight: stepSize == 1.0 ? FontWeight.bold : FontWeight.normal, color: stepSize == 1.0 ? const Color(0xFF8B5CF6) : Colors.grey)),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => setModalState(() => stepSize = 5.0),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: stepSize == 5.0 ? Colors.white : Colors.transparent, 
+                              borderRadius: BorderRadius.circular(10), 
+                              boxShadow: stepSize == 5.0 ? [const BoxShadow(color: Colors.black12, blurRadius: 4)] : []
+                            ),
+                            child: Text('5 px (Fast)', style: TextStyle(fontWeight: stepSize == 5.0 ? FontWeight.bold : FontWeight.normal, color: stepSize == 5.0 ? const Color(0xFF8B5CF6) : Colors.grey)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // D-Pad
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [IconButton(icon: const Icon(Icons.arrow_upward, size: 35, color: const Color(0xFF8B5CF6)), onPressed: () => move(0, -5))]
+                    children: [buildDpadBtn(Icons.arrow_upward_rounded, () => move(0, -stepSize))]
                   ),
+                  const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      IconButton(icon: const Icon(Icons.arrow_back, size: 35, color: const Color(0xFF8B5CF6)), onPressed: () => move(-5, 0)),
-                      const SizedBox(width: 40),
-                      IconButton(icon: const Icon(Icons.arrow_forward, size: 35, color: const Color(0xFF8B5CF6)), onPressed: () => move(5, 0))
+                      buildDpadBtn(Icons.arrow_back_rounded, () => move(-stepSize, 0)),
+                      const SizedBox(width: 68), // center gap
+                      buildDpadBtn(Icons.arrow_forward_rounded, () => move(stepSize, 0))
                     ]
                   ),
+                  const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [IconButton(icon: const Icon(Icons.arrow_downward, size: 35, color: const Color(0xFF8B5CF6)), onPressed: () => move(0, 5))]
+                    children: [buildDpadBtn(Icons.arrow_downward_rounded, () => move(0, stepSize))]
                   ),
                 ]
               )
@@ -2809,7 +2863,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
            if (sel.imageBytes != null || sel.isShape) moreTools.add(_buildGridToolBtn(Icons.format_paint_rounded, 'Tint', () { Navigator.pop(context); _showColorPickerModal(sel); }));
            if (sel.imageBytes != null) moreTools.add(_buildGridToolBtn(Icons.auto_awesome_motion_rounded, 'Blend', () { Navigator.pop(context); _showBlendModeModal(sel); }));
            moreTools.add(_buildGridToolBtn(Icons.center_focus_strong_rounded, 'Position', () { Navigator.pop(context); _showAlignmentModal(sel); }));
-           moreTools.add(_buildGridToolBtn(Icons.open_with_rounded, 'Nudge', () { Navigator.pop(context); showNudgeModal(sel); }));
+           // Nudge has been renamed to Move
+           moreTools.add(_buildGridToolBtn(Icons.open_with_rounded, 'Move', () { Navigator.pop(context); showMoveModal(sel); }));
            moreTools.add(_buildGridToolBtn(Icons.rotate_right_rounded, 'Rotate', () { Navigator.pop(context); showRotationModal(sel); }));
            moreTools.add(_buildGridToolBtn(Icons.view_in_ar_rounded, 'Perspective', () { Navigator.pop(context); show3DModal(sel); }));
            moreTools.add(_buildGridToolBtn(Icons.flip_rounded, 'Flip H', () { saveState(); setState(() => sel.flipX = !sel.flipX); _triggerCanvasUpdate(); Navigator.pop(context); }));
@@ -2922,6 +2977,26 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     ); 
   }
 
+  // 🔥 NAYA ULTRA-PREMIUM TOP BAR BUTTON 🔥
+  Widget _buildTopToolBtn(IconData icon, String label, VoidCallback? onTap, {Color color = const Color(0xFF1E293B)}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 22, color: color),
+            const SizedBox(height: 2),
+            Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color)),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     bool hasSelection = false;
@@ -2937,33 +3012,65 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     
     return Scaffold(
       backgroundColor: const Color(0xFFE5E7EB),
+      
+      // 🔥 NAYA ULTRA-PREMIUM TOP BAR 🔥
       appBar: AppBar(
-        backgroundColor: Colors.white, elevation: 0, titleSpacing: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.black), onPressed: () => Navigator.pop(context)),
-        title: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _buildTopBtn(Icons.layers, 'Layers', showLayersPanel), const SizedBox(width: 8),
-              _buildTopBtn(Icons.auto_stories, 'Pages', showPagesPanel), const SizedBox(width: 8),
-              _buildTopBtn(Icons.undo, 'Undo', undoAction), const SizedBox(width: 8),
-              _buildTopBtn(Icons.redo, 'Redo', redoAction), const SizedBox(width: 5),
-            ]
-          ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        shape: Border(bottom: BorderSide(color: Colors.grey.shade200, width: 1)),
+        titleSpacing: 0,
+        leadingWidth: 40,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E293B), size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildTopToolBtn(Icons.undo_rounded, 'Undo', undoAction, color: const Color(0xFF64748B)),
+            _buildTopToolBtn(Icons.redo_rounded, 'Redo', redoAction, color: const Color(0xFF64748B)),
+            _buildTopToolBtn(Icons.layers_rounded, 'Layers', showLayersPanel, color: const Color(0xFF1E293B)),
+            _buildTopToolBtn(Icons.auto_stories_rounded, 'Pages', showPagesPanel, color: const Color(0xFF1E293B)),
+          ],
         ),
         actions: [
-          InkWell(
-            onTap: _saveProjectLocally,
-            child: Container(margin: const EdgeInsets.symmetric(vertical: 12), padding: const EdgeInsets.symmetric(horizontal: 10), decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)), child: const Center(child: Text('Save', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold))))
+          Center(
+            child: InkWell(
+              onTap: _saveProjectLocally,
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)),
+                child: const Text('Save', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12)),
+              ),
+            ),
           ),
           const SizedBox(width: 8),
-          InkWell(
-            onTap: _showExportMenu,
-            child: Container(margin: const EdgeInsets.symmetric(vertical: 12), padding: const EdgeInsets.symmetric(horizontal: 10), decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(8)), child: const Center(child: Text('Export', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))))
+          Center(
+            child: InkWell(
+              onTap: _showExportMenu,
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)]),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [BoxShadow(color: const Color(0xFF8B5CF6).withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))]
+                ),
+                child: Row(
+                  children: const [
+                    Icon(Icons.ios_share_rounded, color: Colors.white, size: 14),
+                    SizedBox(width: 4),
+                    Text('Export', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                  ],
+                ),
+              ),
+            ),
           ),
           const SizedBox(width: 10),
         ],
       ),
+
       body: Column(
         children: [
           if (!_isExporting)
@@ -3053,7 +3160,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                         
                                         Widget contentWidget;
                                         if (e.isBorder) {
-                                          // 🔥 NEW SMART VECTOR BORDER ENGINE 🔥
                                           contentWidget = SizedBox(
                                             width: currentWidth,
                                             height: currentHeight,
@@ -3278,6 +3384,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
+  // 🔥 UPDATED BOTTOM BAR W/ "MOVE" TOOL AT FRONT 🔥
   Widget _buildSelectedToolBar(DesignElement sel) {
     List<Widget> topRow = [];
     List<Widget> bottomRow = [];
@@ -3292,7 +3399,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       topRow.add(_buildToolBtn(Icons.content_copy_rounded, 'Copy', () { Clipboard.setData(ClipboardData(text: sel.content)); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Text Copied!'))); }));
       topRow.add(_buildToolBtn(Icons.flip_rounded, 'Flip H', () { saveState(); setState(() => sel.flipX = !sel.flipX); _triggerCanvasUpdate(); }));
       topRow.add(_buildToolBtn(Icons.flip_camera_android_rounded, 'Flip V', () { saveState(); setState(() => sel.flipY = !sel.flipY); _triggerCanvasUpdate(); }));
-      topRow.add(_buildToolBtn(Icons.open_with_rounded, 'Nudge', () => showNudgeModal(sel)));
+      topRow.add(_buildToolBtn(Icons.open_with_rounded, 'Move', () => showMoveModal(sel))); // REPLACED NUDGE
       topRow.add(_buildToolBtn(Icons.lock_outline_rounded, 'Lock', () { saveState(); setState(() { sel.isLocked = true; selectedId = null; }); _triggerCanvasUpdate(); }, Colors.orange));
 
       bottomRow.add(_buildToolBtn(Icons.close_rounded, 'Deselect', () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, Colors.redAccent));
@@ -3309,7 +3416,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     } 
     else if (sel.isBorder) {
       topRow.add(_buildToolBtn(Icons.close_rounded, 'Deselect', () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, Colors.redAccent));
-      topRow.add(_buildToolBtn(Icons.fullscreen_rounded, 'Fit Page', () => _fitBorderToPage(sel), const Color(0xFF10B981))); // 🔥 MAGIC FIT BUTTON 🔥
+      topRow.add(_buildToolBtn(Icons.fullscreen_rounded, 'Fit Page', () => _fitBorderToPage(sel), const Color(0xFF10B981)));
       topRow.add(_buildToolBtn(Icons.palette_rounded, 'Colour', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
       topRow.add(_buildToolBtn(Icons.line_weight_rounded, 'Setup', () => _showBorderSettingsModal(sel)));
       topRow.add(_buildToolBtn(Icons.opacity_rounded, 'Opacity', () => _showOpacityModal(sel)));
@@ -3317,7 +3424,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       topRow.add(_buildToolBtn(Icons.delete_outline_rounded, 'Delete', deleteSelected, Colors.red));
 
       bottomRow.add(_buildToolBtn(Icons.center_focus_strong_rounded, 'Position', () => _showAlignmentModal(sel)));
-      bottomRow.add(_buildToolBtn(Icons.open_with_rounded, 'Nudge', () => showNudgeModal(sel)));
+      bottomRow.add(_buildToolBtn(Icons.open_with_rounded, 'Move', () => showMoveModal(sel))); // REPLACED NUDGE
       bottomRow.add(_buildToolBtn(Icons.arrow_upward_rounded, 'Bring Fwd', () => bringForward()));
       bottomRow.add(_buildToolBtn(Icons.arrow_downward_rounded, 'Send Bwd', () => sendBackward()));
     } 
@@ -3350,8 +3457,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       ),
     );
   }
-
-  Widget _buildTopBtn(IconData icon, String label, [VoidCallback? onTap]) { return InkWell(onTap: onTap, child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), child: Row(children: [Icon(icon, size: 16, color: Colors.black87), const SizedBox(width: 4), Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87))]))); }
 }
 
 // ============================================================================
@@ -3379,21 +3484,18 @@ class AdvancedBorderPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
-    // 🔥 MAGIC FIX: Ye line border ko bounding box ke bahar leak hone se rokti hai
-    // Deselect karne par ab border bilkul wahi rahega, kategi nahi!
     final Rect baseRect = (Offset.zero & size).deflate(strokeWidth / 2);
 
     int type = styleIndex % 5; 
     double varVal = (styleIndex ~/ 5).toDouble() * 3.0;
 
     switch (type) {
-      case 0: // Solid & Offset Frames
+      case 0:
         final double offset = varVal;
         final Rect innerRect = baseRect.deflate(offset);
         canvas.drawRRect(RRect.fromRectAndRadius(innerRect, Radius.circular(radius)), paint);
         break;
-
-      case 1: // Double/Triple Frames
+      case 1:
         canvas.drawRRect(RRect.fromRectAndRadius(baseRect, Radius.circular(radius)), paint);
         if (varVal >= 0) {
           paint.strokeWidth = strokeWidth * 0.5;
@@ -3403,44 +3505,31 @@ class AdvancedBorderPainter extends CustomPainter {
           canvas.drawRRect(RRect.fromRectAndRadius(baseRect.deflate(12 + varVal), Radius.circular(max(0, radius - 4))), paint);
         }
         break;
-
-      case 2: // Minimal Corner Brackets
+      case 2:
         double lineLen = 20.0 + varVal;
         if (lineLen > size.width / 2) lineLen = size.width / 2;
-        
-        // Top Left
         canvas.drawLine(baseRect.topLeft, baseRect.topLeft + Offset(lineLen, 0), paint);
         canvas.drawLine(baseRect.topLeft, baseRect.topLeft + Offset(0, lineLen), paint);
-        // Top Right
         canvas.drawLine(baseRect.topRight, baseRect.topRight + Offset(-lineLen, 0), paint);
         canvas.drawLine(baseRect.topRight, baseRect.topRight + Offset(0, lineLen), paint);
-        // Bottom Left
         canvas.drawLine(baseRect.bottomLeft, baseRect.bottomLeft + Offset(lineLen, 0), paint);
         canvas.drawLine(baseRect.bottomLeft, baseRect.bottomLeft + Offset(0, -lineLen), paint);
-        // Bottom Right
         canvas.drawLine(baseRect.bottomRight, baseRect.bottomRight + Offset(-lineLen, 0), paint);
         canvas.drawLine(baseRect.bottomRight, baseRect.bottomRight + Offset(0, -lineLen), paint);
         break;
-
-      case 3: // Islamic / Vintage Edge Frames
+      case 3:
         double gap = 15.0 + varVal;
         if (gap > size.width / 3) gap = size.width / 3;
         Path path = Path();
-        
         path.moveTo(baseRect.left + gap, baseRect.top);
         path.lineTo(baseRect.right - gap, baseRect.top);
-        
         path.moveTo(baseRect.left + gap, baseRect.bottom);
         path.lineTo(baseRect.right - gap, baseRect.bottom);
-        
         path.moveTo(baseRect.left, baseRect.top + gap);
         path.lineTo(baseRect.left, baseRect.bottom - gap);
-        
         path.moveTo(baseRect.right, baseRect.top + gap);
         path.lineTo(baseRect.right, baseRect.bottom - gap);
-        
         canvas.drawPath(path, paint);
-
         if (varVal > 5) {
           paint.style = PaintingStyle.fill;
           canvas.drawCircle(baseRect.topLeft + const Offset(5, 5), strokeWidth, paint);
@@ -3449,11 +3538,9 @@ class AdvancedBorderPainter extends CustomPainter {
           canvas.drawCircle(baseRect.bottomRight + const Offset(-5, -5), strokeWidth, paint);
         }
         break;
-
-      case 4: // Dashed / Dotted
+      case 4:
         double dashW = varVal < 10 ? 6.0 : 2.0;
         double spaceW = dashW + strokeWidth + 2.0;
-        
         for (double i = 0; i < baseRect.width; i += dashW + spaceW) {
           double endX = (i + dashW > baseRect.width) ? baseRect.width : i + dashW;
           canvas.drawLine(Offset(baseRect.left + i, baseRect.top), Offset(baseRect.left + endX, baseRect.top), paint);
