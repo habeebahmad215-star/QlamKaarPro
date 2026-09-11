@@ -116,11 +116,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   double _getElWidth(DesignElement e) {
     if (e.isTable) return e.width > 80 ? e.width : 300;
+    if (e.isBorder) return e.width > 50 ? e.width : 200; // Border Width Rule
     return e.width > 80 ? e.width : 80;
   }
 
   double _getElHeight(DesignElement e) {
     if (e.isTable) return e.height > 30 ? e.height : 150;
+    if (e.isBorder) return e.height > 50 ? e.height : 200; // Border Height Rule
     if (!e.isText && e.height > 20) return e.height;
     if (e.isShape) return 90;
     if (e.isText) {
@@ -909,13 +911,23 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     }
   }
 
+  // 🔥 NAYA ADVANCED BORDER & BACKGROUND MODAL 🔥
   void showGenericStockModal(String categoryTitle, String styleName, IconData categoryIcon, {bool fromModal = false}) {
     if (fromModal && Navigator.canPop(context)) Navigator.pop(context);
     List<Map<String, dynamic>> stockList = [];
-    List<Color> themeColors = [const Color(0xFFD4AF37), const Color(0xFF8B5CF6), const Color(0xFF047857), const Color(0xFFB91C1C)];
-    for (int i = 1; i <= 50; i++) {
-      stockList.add({'title': '$categoryTitle #$i', 'style': styleName, 'color': themeColors[(i - 1) % themeColors.length], 'icon': categoryIcon});
+    
+    // Sirf Border ke liye hum 50 Vector Styles generate karenge
+    if (styleName == 'border') {
+      for (int i = 0; i < 50; i++) {
+        stockList.add({'title': 'Border Style ${i + 1}', 'style_id': i, 'color': Colors.black});
+      }
+    } else {
+      List<Color> themeColors = [const Color(0xFFD4AF37), const Color(0xFF8B5CF6), const Color(0xFF047857), const Color(0xFFB91C1C)];
+      for (int i = 1; i <= 50; i++) {
+        stockList.add({'title': '$categoryTitle #$i', 'style': styleName, 'color': themeColors[(i - 1) % themeColors.length], 'icon': categoryIcon});
+      }
     }
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -940,9 +952,26 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     onTap: () {
                       saveState();
                       setState(() {
-                        if (styleName.contains('shape') || styleName == 'badge') {
+                        if (styleName == 'border') {
+                          // 🔥 BORDER ADD LOGIC (100% Transparent inside, Black outside)
+                          elements.add(DesignElement(
+                            id: Random().nextInt(10000).toString(), 
+                            x: 20, y: 20, 
+                            content: 'Border', 
+                            width: currentCanvasW > 100 ? currentCanvasW - 40 : 300, 
+                            height: currentCanvasH > 100 ? currentCanvasH - 40 : 300, 
+                            isText: false, 
+                            isBorder: true, 
+                            borderStyle: item['style_id'].toString(), // 0 to 49
+                            elementColor: Colors.black, // DEFAULT BLACK
+                            strokeWidth: 4.0, // Default motai
+                            cornerRadius: 0.0,
+                          ));
+                        } 
+                        else if (styleName.contains('shape') || styleName == 'badge') {
                           elements.add(DesignElement(id: Random().nextInt(10000).toString(), x: 90, y: 180, content: 'Shape', width: 100, height: 100, isText: false, isShape: true, elementColor: item['color'] as Color));
-                        } else {
+                        } 
+                        else {
                           elements.insert(0, DesignElement(id: Random().nextInt(10000).toString(), x: 0, y: 0, content: 'BG', width: 400, height: 400, isText: false, isShape: true, elementColor: item['color'] as Color));
                         }
                       });
@@ -950,15 +979,34 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       Navigator.pop(context);
                     },
                     child: Container(
-                      decoration: BoxDecoration(color: (item['color'] as Color).withOpacity(0.08), borderRadius: BorderRadius.circular(15)),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(item['icon'], color: item['color'], size: 30),
-                          const SizedBox(height: 6),
-                          Text(item['title'], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: item['color'])),
-                        ]
-                      )
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50, 
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(color: Colors.grey.shade200)
+                      ),
+                      child: styleName == 'border' 
+                        // 🔥 LIVE THUMBNAIL PREVIEW FOR BORDER 🔥
+                        ? Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: CustomPaint(
+                              painter: AdvancedBorderPainter(
+                                color: Colors.black,
+                                strokeWidth: 2.0,
+                                radius: 0.0,
+                                styleIndex: item['style_id'],
+                              ),
+                              child: Center(child: Text(item['title'], style: const TextStyle(fontSize: 10, color: Colors.grey))),
+                            ),
+                          )
+                        // SHAPE/BG PREVIEW
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(item['icon'], color: item['color'], size: 30),
+                              const SizedBox(height: 6),
+                              Text(item['title'], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: item['color'])),
+                            ]
+                          )
                     )
                   );
                 }
@@ -1592,7 +1640,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // 🔥 NAYA TEXT EFFECTS MODAL 🔥
   void _showTextEffectsModal(DesignElement sel) {
     showModalBottomSheet(
       context: context,
@@ -1745,6 +1792,65 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                         );
                       }
                     )
+                  )
+                ]
+              )
+            );
+          }
+        );
+      }
+    );
+  }
+
+  // 🔥 NAYA BORDER SETTINGS MODAL (For Radius & Thickness) 🔥
+  void _showBorderSettingsModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              height: 280,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Border Setup (بارڈر کنٹرول)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
+                    ]
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const SizedBox(width: 80, child: Text('Thickness:', style: TextStyle(fontWeight: FontWeight.bold))),
+                      Expanded(
+                        child: Slider(
+                          value: sel.strokeWidth.clamp(1.0, 50.0),
+                          min: 1.0, max: 50.0,
+                          activeColor: const Color(0xFF8B5CF6),
+                          onChangeStart: (val) => saveState(),
+                          onChanged: (val) { setState(() => sel.strokeWidth = val); setModalState((){}); _triggerCanvasUpdate(); }
+                        )
+                      )
+                    ]
+                  ),
+                  Row(
+                    children: [
+                      const SizedBox(width: 80, child: Text('Radius:', style: TextStyle(fontWeight: FontWeight.bold))),
+                      Expanded(
+                        child: Slider(
+                          value: sel.cornerRadius.clamp(0.0, 150.0),
+                          min: 0.0, max: 150.0,
+                          activeColor: const Color(0xFF10B981),
+                          onChangeStart: (val) => saveState(),
+                          onChanged: (val) { setState(() => sel.cornerRadius = val); setModalState((){}); _triggerCanvasUpdate(); }
+                        )
+                      )
+                    ]
                   )
                 ]
               )
@@ -2776,7 +2882,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // 🔥 NAYA SHARP, CLEAN & PREMIUM TOOL BUTTON 🔥
   Widget _buildToolBtn(IconData icon, String label, [VoidCallback? onTap, Color? color]) { 
     Color c = color ?? Colors.black87;
     return InkWell(
@@ -2934,7 +3039,19 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                         
                                         Widget contentWidget;
                                         if (e.isBorder) {
-                                          contentWidget = Container(margin: const EdgeInsets.all(8), decoration: BoxDecoration(border: Border.all(color: e.elementColor, width: e.strokeWidth), borderRadius: BorderRadius.circular(e.cornerRadius)));
+                                          // 🔥 NEW CUSTOM BORDER VECTOR RENDERER 🔥
+                                          contentWidget = SizedBox(
+                                            width: currentWidth,
+                                            height: currentHeight,
+                                            child: CustomPaint(
+                                              painter: AdvancedBorderPainter(
+                                                color: e.elementColor,
+                                                strokeWidth: e.strokeWidth,
+                                                radius: e.cornerRadius,
+                                                styleIndex: int.tryParse(e.borderStyle) ?? 0,
+                                              ),
+                                            ),
+                                          );
                                         } else if (e.isTable && e.tableData != null) {
                                           contentWidget = CustomTableWidget(tableData: e.tableData!, width: currentWidth, height: currentHeight, fontFamily: e.fontFamily, textColor: e.textColor, borderColor: e.elementColor, hasBorder: true);
                                         } else if (e.isShape) {
@@ -2955,7 +3072,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           else if (e.clipShape == 4) clippedImg = ClipPath(clipper: HexagonClipper(), child: img);
                                           contentWidget = SizedBox(width: currentWidth, height: e.clipShape == 0 ? currentHeight : currentWidth, child: clippedImg);
                                         } else {
-                                          // 🔥 NEW PRO TEXT RENDER ENGINE 🔥
                                           Widget buildTextWidget(Color c, [List<Shadow>? shadow]) {
                                             List<Shadow> currentShadows = shadow != null ? List.from(shadow) : [];
                                             if (shadow == null && e.hasShadow) currentShadows.add(Shadow(color: e.shadowColor, blurRadius: e.shadowBlur, offset: Offset(e.shadowOffsetX, e.shadowOffsetY)));
@@ -3154,7 +3270,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     List<Widget> bottomRow = [];
 
     if (sel.isText) {
-      // Line 1: Delete, Size, Stroke, Shadow, Duplicate, Opacity, Copy, Flip H, Flip V, Nudge, Lock.
       topRow.add(_buildToolBtn(Icons.delete_outline_rounded, 'Delete', deleteSelected, Colors.red));
       topRow.add(_buildToolBtn(Icons.text_fields_rounded, 'Size', () => showSizeSliderModal(sel)));
       topRow.add(_buildToolBtn(Icons.border_color_rounded, 'Stroke', () => _showAdvancedStrokeModal(sel)));
@@ -3167,7 +3282,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       topRow.add(_buildToolBtn(Icons.open_with_rounded, 'Nudge', () => showNudgeModal(sel)));
       topRow.add(_buildToolBtn(Icons.lock_outline_rounded, 'Lock', () { saveState(); setState(() { sel.isLocked = true; selectedId = null; }); _triggerCanvasUpdate(); }, Colors.orange));
 
-      // Line 2: Deselect, Edit, Font, Colour, Gradient, Bold, Spacing, Text BG, Text Effect, Align, More.
       bottomRow.add(_buildToolBtn(Icons.close_rounded, 'Deselect', () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, Colors.redAccent));
       bottomRow.add(_buildToolBtn(Icons.edit_rounded, 'Edit', () => _showTextComposerDialog(existingElement: sel)));
       bottomRow.add(_buildToolBtn(Icons.font_download_rounded, 'Font', () => showFontPickerModal(sel)));
@@ -3179,8 +3293,22 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       bottomRow.add(_buildToolBtn(Icons.auto_awesome_rounded, 'Effect', () => _showTextEffectsModal(sel), const Color(0xFF10B981)));
       bottomRow.add(_buildToolBtn(Icons.format_align_center_rounded, 'Align', () => _toggleAlignment(sel)));
       bottomRow.add(_buildToolBtn(Icons.more_horiz_rounded, 'More', () => _showMoreOptionsModal(sel), Colors.grey.shade800));
-    } else {
-      // Shape / Image / Border Toolbar Logic
+    } 
+    // 🔥 NEW ADVANCED BORDER TOOLBAR LOGIC 🔥
+    else if (sel.isBorder) {
+      topRow.add(_buildToolBtn(Icons.close_rounded, 'Deselect', () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, Colors.redAccent));
+      topRow.add(_buildToolBtn(Icons.palette_rounded, 'Colour', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
+      topRow.add(_buildToolBtn(Icons.line_weight_rounded, 'Setup', () => _showBorderSettingsModal(sel), const Color(0xFF10B981)));
+      topRow.add(_buildToolBtn(Icons.opacity_rounded, 'Opacity', () => _showOpacityModal(sel)));
+      topRow.add(_buildToolBtn(Icons.copy_rounded, 'Duplicate', duplicateSelected, Colors.blue));
+      topRow.add(_buildToolBtn(Icons.delete_outline_rounded, 'Delete', deleteSelected, Colors.red));
+
+      bottomRow.add(_buildToolBtn(Icons.center_focus_strong_rounded, 'Position', () => _showAlignmentModal(sel)));
+      bottomRow.add(_buildToolBtn(Icons.open_with_rounded, 'Nudge', () => showNudgeModal(sel)));
+      bottomRow.add(_buildToolBtn(Icons.arrow_upward_rounded, 'Bring Fwd', () => bringForward()));
+      bottomRow.add(_buildToolBtn(Icons.arrow_downward_rounded, 'Send Bwd', () => sendBackward()));
+    } 
+    else {
       topRow.add(_buildToolBtn(Icons.close_rounded, 'Deselect', () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, Colors.redAccent));
       if (sel.isTable) topRow.add(_buildToolBtn(Icons.table_rows_rounded, 'Edit Table', () => _showTableEditorModal(sel), const Color(0xFF10B981)));
       if (sel.isTable) topRow.add(_buildToolBtn(Icons.font_download_rounded, 'Font', () => showFontPickerModal(sel)));
@@ -3189,8 +3317,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       topRow.add(_buildToolBtn(Icons.copy_rounded, 'Duplicate', duplicateSelected, Colors.blue));
       topRow.add(_buildToolBtn(Icons.delete_outline_rounded, 'Delete', deleteSelected, Colors.red));
 
-      if (!sel.isBorder) bottomRow.add(_buildToolBtn(Icons.border_color_rounded, 'Stroke', () => _showAdvancedStrokeModal(sel)));
-      if (!sel.isBorder && !sel.isTable) bottomRow.add(_buildToolBtn(Icons.brightness_6_rounded, 'Shadow', () => _showAdvancedShadowModal(sel)));
+      if (!sel.isTable) bottomRow.add(_buildToolBtn(Icons.border_color_rounded, 'Stroke', () => _showAdvancedStrokeModal(sel)));
+      if (!sel.isTable) bottomRow.add(_buildToolBtn(Icons.brightness_6_rounded, 'Shadow', () => _showAdvancedShadowModal(sel)));
       if (sel.imageBytes != null && !sel.isTinted) bottomRow.add(_buildToolBtn(Icons.photo_filter_rounded, 'Filters', () => _showImageFiltersModal(sel)));
       if (sel.imageBytes != null) bottomRow.add(_buildToolBtn(Icons.crop_rounded, 'Crop', () => _showShapeClipModal(sel)));
       bottomRow.add(_buildToolBtn(Icons.more_horiz_rounded, 'More', () => _showMoreOptionsModal(sel), Colors.grey.shade800));
@@ -3211,4 +3339,123 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   }
 
   Widget _buildTopBtn(IconData icon, String label, [VoidCallback? onTap]) { return InkWell(onTap: onTap, child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), child: Row(children: [Icon(icon, size: 16, color: Colors.black87), const SizedBox(width: 4), Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87))]))); }
+}
+
+// ============================================================================
+// 🔥 NAYA ADVANCED VECTOR BORDER ENGINE (50 STYLES WITHOUT IMAGES) 🔥
+// ============================================================================
+class AdvancedBorderPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  final double radius;
+  final int styleIndex;
+
+  AdvancedBorderPainter({
+    required this.color,
+    required this.strokeWidth,
+    required this.radius,
+    required this.styleIndex,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final Rect rect = Offset.zero & size;
+    
+    // Engine Logic: 50 borders mapped dynamically using mathematical combinations
+    int type = styleIndex % 5; 
+    double variation = (styleIndex ~/ 5).toDouble() * 3.0;
+
+    switch (type) {
+      case 0: // Solid & Offset Frames
+        final double offset = variation;
+        final Rect innerRect = rect.deflate(offset);
+        canvas.drawRRect(RRect.fromRectAndRadius(innerRect, Radius.circular(radius)), paint);
+        break;
+
+      case 1: // Double/Triple Frames
+        canvas.drawRRect(RRect.fromRectAndRadius(rect.deflate(2), Radius.circular(radius)), paint);
+        paint.strokeWidth = strokeWidth * 0.5;
+        canvas.drawRRect(RRect.fromRectAndRadius(rect.deflate(8 + variation), Radius.circular(radius - 2 > 0 ? radius - 2 : 0)), paint);
+        if (variation > 10) {
+           canvas.drawRRect(RRect.fromRectAndRadius(rect.deflate(14 + variation), Radius.circular(radius - 4 > 0 ? radius - 4 : 0)), paint);
+        }
+        break;
+
+      case 2: // Minimal Corner Brackets
+        double lineLen = 20.0 + variation;
+        if (lineLen > size.width / 2) lineLen = size.width / 2;
+        
+        // Top Left
+        canvas.drawLine(rect.topLeft, rect.topLeft + Offset(lineLen, 0), paint);
+        canvas.drawLine(rect.topLeft, rect.topLeft + Offset(0, lineLen), paint);
+        // Top Right
+        canvas.drawLine(rect.topRight, rect.topRight + Offset(-lineLen, 0), paint);
+        canvas.drawLine(rect.topRight, rect.topRight + Offset(0, lineLen), paint);
+        // Bottom Left
+        canvas.drawLine(rect.bottomLeft, rect.bottomLeft + Offset(lineLen, 0), paint);
+        canvas.drawLine(rect.bottomLeft, rect.bottomLeft + Offset(0, -lineLen), paint);
+        // Bottom Right
+        canvas.drawLine(rect.bottomRight, rect.bottomRight + Offset(-lineLen, 0), paint);
+        canvas.drawLine(rect.bottomRight, rect.bottomRight + Offset(0, -lineLen), paint);
+        break;
+
+      case 3: // Broken Edge Frames (Islamic/Vintage feel)
+        double gap = 15.0 + variation;
+        Path path = Path();
+        // Top
+        path.moveTo(rect.left + gap, rect.top);
+        path.lineTo(rect.right - gap, rect.top);
+        // Bottom
+        path.moveTo(rect.left + gap, rect.bottom);
+        path.lineTo(rect.right - gap, rect.bottom);
+        // Left
+        path.moveTo(rect.left, rect.top + gap);
+        path.lineTo(rect.left, rect.bottom - gap);
+        // Right
+        path.moveTo(rect.right, rect.top + gap);
+        path.lineTo(rect.right, rect.bottom - gap);
+        canvas.drawPath(path, paint);
+
+        // Add small decorative dots at corners if variation is high
+        if (variation > 10) {
+          paint.style = PaintingStyle.fill;
+          canvas.drawCircle(rect.topLeft + Offset(5, 5), strokeWidth, paint);
+          canvas.drawCircle(rect.topRight + Offset(-5, 5), strokeWidth, paint);
+          canvas.drawCircle(rect.bottomLeft + Offset(5, -5), strokeWidth, paint);
+          canvas.drawCircle(rect.bottomRight + Offset(-5, -5), strokeWidth, paint);
+        }
+        break;
+
+      case 4: // Dashed/Dotted Line Logic 
+        double dashWidth = variation < 10 ? 5.0 : 1.0; // Lines vs Dots
+        double dashSpace = dashWidth + strokeWidth + 2.0;
+        
+        // Manual Top Dash
+        for (double i = 0; i < rect.width; i += dashWidth + dashSpace) {
+          canvas.drawLine(Offset(rect.left + i, rect.top), Offset(rect.left + i + dashWidth, rect.top), paint);
+          canvas.drawLine(Offset(rect.left + i, rect.bottom), Offset(rect.left + i + dashWidth, rect.bottom), paint);
+        }
+        // Manual Left Dash
+        for (double i = 0; i < rect.height; i += dashWidth + dashSpace) {
+          canvas.drawLine(Offset(rect.left, rect.top + i), Offset(rect.left, rect.top + i + dashWidth), paint);
+          canvas.drawLine(Offset(rect.right, rect.top + i), Offset(rect.right, rect.top + i + dashWidth), paint);
+        }
+        break;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant AdvancedBorderPainter oldDelegate) {
+    return color != oldDelegate.color ||
+           strokeWidth != oldDelegate.strokeWidth ||
+           radius != oldDelegate.radius ||
+           styleIndex != oldDelegate.styleIndex;
+  }
 }
