@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart'; 
-import 'package:flutter/services.dart'; // Added for Input Formatters
+import 'package:flutter/services.dart'; 
 
 import '../models/design_models.dart';
 import 'pro_workspace_screen.dart';
@@ -524,7 +524,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ----------------------------------------------------------------------
-// 🔥 NAYA SMART & PREMIUM "NEW DESIGN" BOTTOM SHEET (CANVA STYLE) 🔥
+// 🔥 NAYA SMART & FULLY FUNCTIONAL "NEW DESIGN" BOTTOM SHEET 🔥
 // ----------------------------------------------------------------------
 
 class NewDesignBottomSheet extends StatefulWidget {
@@ -580,12 +580,8 @@ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
     });
   }
 
-  void _createDesign() {
-    FocusScope.of(context).unfocus();
-    
-    double w = double.tryParse(_widthCtrl.text) ?? 1080;
-    double h = double.tryParse(_heightCtrl.text) ?? 1080;
-    
+  // Yahan se Seedha Canvas par bhejne ka Main Function
+  void _launchDesign(double w, double h) {
     if (w < 50) w = 50;
     if (h < 50) h = 50;
 
@@ -606,15 +602,92 @@ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
       ]
     );
 
-    Navigator.pop(context); // Close Modal Bottom Sheet
+    // Pehle sheet close karo
+    Navigator.pop(context); 
     
-    // Open Workspace
+    // Fir Canvas open karo
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ProWorkspaceScreen(project: newProject),
       ),
-    ).then((_) => widget.onProjectCreated()); // Reload Recents when back
+    ).then((_) => widget.onProjectCreated()); 
+  }
+
+  void _createDesign() {
+    FocusScope.of(context).unfocus();
+    double w = double.tryParse(_widthCtrl.text) ?? 1080;
+    double h = double.tryParse(_heightCtrl.text) ?? 1080;
+    _launchDesign(w, h);
+  }
+
+  // 🔥 MORE SIZES MENU FUNCTION (100% Clickable & Working) 🔥
+  void _showMoreSizesModal() {
+    final List<Map<String, dynamic>> extendedSizes = [
+      {'title': 'Square Post', 'w': 1080.0, 'h': 1080.0, 'icon': Icons.crop_square_rounded},
+      {'title': 'YouTube Thumbnail', 'w': 1920.0, 'h': 1080.0, 'icon': Icons.video_label_rounded},
+      {'title': 'Instagram Story', 'w': 1080.0, 'h': 1920.0, 'icon': Icons.stay_current_portrait_rounded},
+      {'title': 'A4 Document', 'w': 2480.0, 'h': 3508.0, 'icon': Icons.description_rounded},
+      {'title': 'Letter Page', 'w': 2550.0, 'h': 3300.0, 'icon': Icons.contact_page_rounded},
+      {'title': 'Legal Page', 'w': 2550.0, 'h': 4200.0, 'icon': Icons.article_rounded},
+      {'title': 'Facebook Post', 'w': 1200.0, 'h': 630.0, 'icon': Icons.facebook_rounded},
+      {'title': 'Twitter Header', 'w': 1500.0, 'h': 500.0, 'icon': Icons.image_aspect_ratio_rounded},
+      {'title': 'Business Card', 'w': 1050.0, 'h': 600.0, 'icon': Icons.badge_rounded},
+      {'title': 'A5 Flyer', 'w': 1748.0, 'h': 2480.0, 'icon': Icons.note_rounded},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        height: MediaQuery.of(ctx).size.height * 0.75,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(child: Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)))),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('More Sizes', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
+                IconButton(icon: const Icon(Icons.close, color: Colors.grey), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: ListView.builder(
+                physics: const BouncingScrollPhysics(),
+                itemCount: extendedSizes.length,
+                itemBuilder: (ctx, i) {
+                  var item = extendedSizes[i];
+                  return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                    leading: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
+                      child: Icon(item['icon'], color: const Color(0xFF8B5CF6)),
+                    ),
+                    title: Text(item['title'], style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                    subtitle: Text('${item['w'].toInt()} × ${item['h'].toInt()} px', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                    trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
+                    onTap: () {
+                      Navigator.pop(ctx); 
+                      _launchDesign(item['w'], item['h']); 
+                    },
+                  );
+                }
+              )
+            )
+          ]
+        )
+      )
+    );
   }
 
   @override
@@ -730,7 +803,7 @@ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
           SizedBox(
             width: double.infinity, height: 55,
             child: OutlinedButton(
-              onPressed: () {}, // Future Implementation
+              onPressed: _showMoreSizesModal, // 🔥 NOW FULLY FUNCTIONAL 🔥
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF5F3FF), 
                 side: const BorderSide(color: Colors.transparent),
@@ -755,9 +828,10 @@ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
             physics: const BouncingScrollPhysics(),
             child: Row(
               children: [
-                _buildRecentCard('Square', '1080×1080 px'),
-                _buildRecentCard('YouTube Thumb', '1920×1080 px'),
-                _buildRecentCard('Instagram Story', '1080×1920 px'),
+                // 🔥 NOW CLICKABLE & FUNCTIONAL 🔥
+                _buildRecentCard('Square', 1080, 1080),
+                _buildRecentCard('YouTube Thumb', 1920, 1080),
+                _buildRecentCard('Instagram Story', 1080, 1920),
               ],
             ),
           ),
@@ -810,24 +884,29 @@ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
     );
   }
 
-  Widget _buildRecentCard(String title, String dims) {
-    return Container(
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
-      child: Row(
-        children: [
-          Container(width: 24, height: 24, decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(4))),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontSize: 13)),
-              const SizedBox(height: 2),
-              Text(dims, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
-            ],
-          )
-        ],
+  // 🔥 CLICKABLE RECENT SIZES CARDS 🔥
+  Widget _buildRecentCard(String title, double w, double h) {
+    return InkWell(
+      onTap: () => _launchDesign(w, h),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
+        child: Row(
+          children: [
+            Container(width: 24, height: 24, decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(4))),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontSize: 13)),
+                const SizedBox(height: 2),
+                Text('${w.toInt()}×${h.toInt()} px', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+              ],
+            )
+          ],
+        ),
       ),
     );
   }
