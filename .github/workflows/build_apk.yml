@@ -3,6 +3,7 @@ name: Build Flutter APK and AAB
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -13,52 +14,57 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: '17'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.x'
+          flutter-version: '3.22.x'
           channel: 'stable'
+          cache: true
 
-      - name: Save code and prepare Jameel font
+      - name: Prepare Assets and Fonts
         run: |
-          mkdir -p /tmp/user_code/assets
-          cp -r lib /tmp/user_code/
-          cp pubspec.yaml /tmp/user_code/
+          mkdir -p assets
           for f in *.zip; do
             if [ -f "$f" ]; then
-              unzip -o "$f" -d /tmp/fonts/
+              unzip -o "$f" -d /tmp/fonts/ || true
             fi
           done
-          find /tmp/fonts -type f -iname "*.ttf" -exec cp {} /tmp/user_code/assets/jameel.ttf \;
+          if [ -d "/tmp/fonts" ]; then
+            find /tmp/fonts -type f -iname "*.ttf" -exec cp {} assets/jameel.ttf \; -quit || true
+          fi
 
-      - name: Create fresh Flutter project
-        run: flutter create . --org com.qalamkaar.pro --project-name qalamkaarpro --platforms=android
-
-      - name: Restore user code and font
+      - name: Configure Android Build Settings
         run: |
-          rm -rf lib
-          cp -r /tmp/user_code/lib .
-          cp /tmp/user_code/pubspec.yaml .
-          cp -r /tmp/user_code/assets .
-
-      - name: Fix Android Build Settings (SDK & MultiDex)
-        run: |
-          sed -i 's/flutter.minSdkVersion/23/g' android/app/build.gradle
-          sed -i 's/defaultConfig {/defaultConfig {\n        multiDexEnabled true/g' android/app/build.gradle
+          if [ ! -d "android" ]; then
+            flutter create . --org com.qalamkaar.pro --project-name qalamkaarpro --platforms=android
+          fi
+          
+          # 🔥 YAHAN INTERNET PERMISSION AUTOMATICALLY ADD HO JAYEGI 🔥
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
+          
+          # Ensure compileSdkVersion and targetSdkVersion are compatible
+          sed -i 's/compileSdkVersion [0-9]*/compileSdkVersion 34/g' android/app/build.gradle || true
+          sed -i 's/targetSdkVersion [0-9]*/targetSdkVersion 34/g' android/app/build.gradle || true
+          sed -i 's/minSdkVersion [0-9]*/minSdkVersion 23/g' android/app/build.gradle || true
+          
+          # Enable MultiDex
+          if ! grep -q "multiDexEnabled true" android/app/build.gradle; then
+            sed -i '/defaultConfig {/a \        multiDexEnabled true' android/app/build.gradle || true
+          fi
 
       - name: Get dependencies
         run: flutter pub get
 
       - name: Build APK for Testing
-        run: flutter build apk --release
+        run: flutter build apk --release --no-tree-shake-icons
 
       - name: Build AAB for Play Store
-        run: flutter build appbundle --release
+        run: flutter build appbundle --release --no-tree-shake-icons
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
