@@ -102,6 +102,49 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   }
 
   // ============================================================================
+  // 🔥 SMART MAGIC RESIZE ENGINE (CANVA STYLE) 🔥
+  // ============================================================================
+  void _smartResizeCanvas(double newRatio) {
+    saveState();
+    
+    // Canvas ka purana size save karna
+    double oldW = currentCanvasW > 0 ? currentCanvasW : 1;
+    double oldH = currentCanvasH > 0 ? currentCanvasH : 1;
+
+    setState(() {
+      canvasRatio = newRatio;
+    });
+    
+    // UI ko naye ratio par build hone ka time dena (1 frame delay)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      double newW = currentCanvasW > 0 ? currentCanvasW : 1;
+      double newH = currentCanvasH > 0 ? currentCanvasH : 1;
+      
+      // Pata lagana ki canvas kitna bada ya chhota hua hai
+      double scaleX = newW / oldW;
+      double scaleY = newH / oldH;
+
+      setState(() {
+        for (var e in elements) {
+          if (e.isBorder) {
+            // 🌟 Borders ko screen ke naye size ke hisaab se auto-fit karna
+            e.x = 15;
+            e.y = 15;
+            e.width = (newW > 50 ? newW : 300) - 30;
+            e.height = (newH > 50 ? newH : 300) - 30;
+            e.angle = 0;
+          } else {
+            // 🌟 Baki tamam elements (Text, Images, Shapes) ko smart reposition karna
+            e.x = e.x * scaleX;
+            e.y = e.y * scaleY;
+          }
+        }
+      });
+      _triggerCanvasUpdate();
+    });
+  }
+
+  // ============================================================================
   // 🔥 THE NEW GLASSMORPHISM ENGINE FOR COMPACT MODALS 🔥
   // ============================================================================
   Widget _buildGlassContainer(BuildContext context, {required Widget child, required double height, EdgeInsetsGeometry? padding}) {
@@ -111,7 +154,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         margin: const EdgeInsets.only(left: 15, right: 15, bottom: 20),
         height: height,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.85),
+          color: Colors.white.withOpacity(0.85), // Translucent Background
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: Colors.white, width: 1.5),
           boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 15, spreadRadius: -5)]
@@ -119,7 +162,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15), // Glass Blur Effect
             child: Padding(
               padding: padding ?? const EdgeInsets.all(16),
               child: child,
@@ -2696,10 +2739,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                 child: ListView(
                   physics: const BouncingScrollPhysics(),
                   children: [
-                    ListTile(dense: true, leading: const Icon(Icons.crop_square), title: const Text('1:1 (Square/Logo)'), onTap: () { saveState(); setState(() => canvasRatio = 1.0); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                    ListTile(dense: true, leading: const Icon(Icons.crop_16_9), title: const Text('16:9 (YouTube/Post)'), onTap: () { saveState(); setState(() => canvasRatio = 16/9); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                    ListTile(dense: true, leading: const Icon(Icons.crop_portrait), title: const Text('9:16 (Story/Reel)'), onTap: () { saveState(); setState(() => canvasRatio = 9/16); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                    ListTile(dense: true, leading: const Icon(Icons.description), title: const Text('1:1.414 (A4 Print)'), onTap: () { saveState(); setState(() => canvasRatio = 1/1.414); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                    ListTile(dense: true, leading: const Icon(Icons.crop_square), title: const Text('1:1 (Square/Logo)'), onTap: () { _smartResizeCanvas(1.0); Navigator.pop(context); }),
+                    ListTile(dense: true, leading: const Icon(Icons.crop_16_9), title: const Text('16:9 (YouTube/Post)'), onTap: () { _smartResizeCanvas(16/9); Navigator.pop(context); }),
+                    ListTile(dense: true, leading: const Icon(Icons.crop_portrait), title: const Text('9:16 (Story/Reel)'), onTap: () { _smartResizeCanvas(9/16); Navigator.pop(context); }),
+                    ListTile(dense: true, leading: const Icon(Icons.description), title: const Text('1:1.414 (A4 Print)'), onTap: () { _smartResizeCanvas(1/1.414); Navigator.pop(context); }),
                   ]
                 )
               )
