@@ -151,11 +151,11 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     setState(() { _isWritingContent = true; _generatedContent = ''; });
     
     try {
+      // MASLA YAHAN FIX KIYA HAI: Direct URL ke andar ?key= lagakar bhej diya
       final response = await http.post(
-        Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'),
+        Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$GEMINI_API_KEY'),
         headers: {
           'Content-Type': 'application/json',
-          'x-goog-api-key': GEMINI_API_KEY, // Yahan problem fix ho gayi hai
         },
         body: jsonEncode({
           "contents": [
