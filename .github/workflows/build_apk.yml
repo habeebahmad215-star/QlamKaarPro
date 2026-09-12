@@ -38,21 +38,26 @@ jobs:
             find /tmp/fonts -type f -iname "*.ttf" -exec cp {} assets/jameel.ttf \; -quit || true
           fi
 
-      - name: Configure Android Build Settings
+      - name: Create fresh Android folder
         run: |
-          if [ ! -d "android" ]; then
-            flutter create . --org com.qalamkaar.pro --project-name qalamkaarpro --platforms=android
-          fi
-          
-          # 🔥 YAHAN INTERNET PERMISSION AUTOMATICALLY ADD HO JAYEGI 🔥
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
-          
-          # Ensure compileSdkVersion and targetSdkVersion are compatible
+          flutter create . --org com.qalamkaar.pro --project-name qalamkaarpro --platforms=android
+
+      - name: Add Internet Permission (Bulletproof Fix)
+        run: |
+          python3 -c "
+          import os
+          path = 'android/app/src/main/AndroidManifest.xml'
+          with open(path, 'r') as f: content = f.read()
+          if 'android.permission.INTERNET' not in content:
+              content = content.replace('<application', '<uses-permission android:name=\"android.permission.INTERNET\"/>\n    <application')
+              with open(path, 'w') as f: f.write(content)
+          "
+
+      - name: Fix Android Build Settings (SDK & MultiDex)
+        run: |
           sed -i 's/compileSdkVersion [0-9]*/compileSdkVersion 34/g' android/app/build.gradle || true
           sed -i 's/targetSdkVersion [0-9]*/targetSdkVersion 34/g' android/app/build.gradle || true
           sed -i 's/minSdkVersion [0-9]*/minSdkVersion 23/g' android/app/build.gradle || true
-          
-          # Enable MultiDex
           if ! grep -q "multiDexEnabled true" android/app/build.gradle; then
             sed -i '/defaultConfig {/a \        multiDexEnabled true' android/app/build.gradle || true
           fi
