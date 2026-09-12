@@ -11,9 +11,9 @@ import 'package:image_gallery_saver/image_gallery_saver.dart';
 // ============================================================================
 // 🔥 AAPKI ASLI API KEYS YAHAN SET KAREIN 🔥
 // ============================================================================
-const String GEMINI_API_KEY = "YAHAN_APNI_GEMINI_KEY_PASTE_KAREIN";
-const String REMOVE_BG_API_KEY = "YAHAN_APNI_REMOVE_BG_KEY_PASTE_KAREIN";
-const String HUGGING_FACE_API_KEY = "YAHAN_APNI_HUGGING_FACE_KEY_PASTE_KAREIN";
+const String GEMINI_API_KEY = "AQ.Ab8RN6KGHBFzJOqQVKPqWttuoWQ6dYxpH1kioenzMO_qkAXPLw";
+const String REMOVE_BG_API_KEY = "ViZorV1xopiwHEdvEiERE2XN";
+const String HUGGING_FACE_API_KEY = "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";
 // ============================================================================
 
 class AiDesignScreen extends StatefulWidget {
