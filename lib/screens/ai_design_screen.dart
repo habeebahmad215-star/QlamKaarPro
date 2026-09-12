@@ -3,6 +3,18 @@ import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:http/http.dart' as http;
+import 'package:image_gallery_saver/image_gallery_saver.dart';
+
+// ============================================================================
+// 🔥 AAPKI ASLI API KEYS YAHAN SET HO CHUKI HAIN 🔥
+// ============================================================================
+const String GEMINI_API_KEY = "AQ.Ab8RN6JaClVslgrhmEdllE5_jZrZn5-0YBgMKm3amNwn5anUmA";
+const String REMOVE_BG_API_KEY = "owu8zLS27XjHQtx8eehSVWkj";
+const String HUGGING_FACE_API_KEY = "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";
+// ============================================================================
 
 class AiDesignScreen extends StatefulWidget {
   const AiDesignScreen({Key? key}) : super(key: key);
@@ -18,12 +30,12 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
   // AI Image Generator Variables
   final TextEditingController _promptController = TextEditingController();
   bool _isGeneratingImage = false;
-  bool _imageGenerated = false;
+  Uint8List? _generatedImageBytes;
 
   // AI Background Remover Variables
   File? _selectedImageForBg;
   bool _isRemovingBg = false;
-  bool _bgRemoved = false;
+  Uint8List? _bgRemovedBytes;
 
   // AI Content Writer Variables
   final TextEditingController _topicController = TextEditingController();
@@ -45,51 +57,111 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
   }
 
   // ==========================================
-  // Simulated AI Functions (Connect APIs Later)
+  // REAL API INTEGRATIONS
   // ==========================================
   
+  // 1. Hugging Face Image Generation API
   Future<void> _generateAIImage() async {
-    if (_promptController.text.isEmpty) return;
+    if (_promptController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
-    setState(() { _isGeneratingImage = true; _imageGenerated = false; });
+    setState(() { _isGeneratingImage = true; _generatedImageBytes = null; });
     
-    // Simulate API Call delay
-    await Future.delayed(const Duration(seconds: 3));
-    
-    setState(() { _isGeneratingImage = false; _imageGenerated = true; });
-    HapticFeedback.heavyImpact();
+    try {
+      final response = await http.post(
+        Uri.parse('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0'),
+        headers: {
+          'Authorization': 'Bearer $HUGGING_FACE_API_KEY',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'inputs': _promptController.text}),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() { _generatedImageBytes = response.bodyBytes; });
+        HapticFeedback.heavyImpact();
+      } else {
+        throw Exception("Server Error: ${response.statusCode}");
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Image Generation Failed! Please try again.')));
+    } finally {
+      setState(() { _isGeneratingImage = false; });
+    }
   }
 
+  // 2. Remove.BG API
   Future<void> _pickAndRemoveBg() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       setState(() { 
         _selectedImageForBg = File(image.path); 
         _isRemovingBg = true; 
-        _bgRemoved = false; 
+        _bgRemovedBytes = null; 
       });
       
-      // Simulate Background Removal API delay
-      await Future.delayed(const Duration(seconds: 3));
-      
-      setState(() { _isRemovingBg = false; _bgRemoved = true; });
-      HapticFeedback.heavyImpact();
+      try {
+        var request = http.MultipartRequest('POST', Uri.parse('https://api.remove.bg/v1.0/removebg'));
+        request.headers['X-Api-Key'] = REMOVE_BG_API_KEY;
+        request.files.add(await http.MultipartFile.fromPath('image_file', _selectedImageForBg!.path));
+        
+        var response = await request.send();
+        if (response.statusCode == 200) {
+          var responseData = await response.stream.toBytes();
+          setState(() { _bgRemovedBytes = responseData; });
+          HapticFeedback.heavyImpact();
+        } else {
+          throw Exception("Server Error: ${response.statusCode}");
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Background hatane mein masla hua! Net connection check karein.')));
+      } finally {
+        setState(() { _isRemovingBg = false; });
+      }
     }
   }
 
+  // 3. Google Gemini API (Text Generation)
   Future<void> _writeAIContent() async {
-    if (_topicController.text.isEmpty) return;
+    if (_topicController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isWritingContent = true; _generatedContent = ''; });
     
-    // Simulate OpenAI Text Generation API delay
-    await Future.delayed(const Duration(seconds: 3));
-    
-    setState(() { 
-      _isWritingContent = false; 
-      _generatedContent = 'یہ ایک مصنوعی ذہانت (AI) سے تیار کردہ نمونہ تحریر ہے۔ آپ کا موضوع تھا: "${_topicController.text}"۔\n\nقلمکار پرو کے ذریعے آپ اپنے خیالات کو باآسانی خوبصورت الفاظ اور ڈیزائن میں تبدیل کر سکتے ہیں۔ مستقبل میں یہاں اصل تحریر نظر آئے گی۔'; 
-    });
-    HapticFeedback.heavyImpact();
+    try {
+      final response = await http.post(
+        Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$GEMINI_API_KEY'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "contents": [
+            {
+              "parts": [
+                {"text": "Write a beautiful, professional, and engaging text in pure Urdu language about: '${_topicController.text}'. The text should be ready to be used in a graphic design poster. Do not use English words. Keep it structured."}
+              ]
+            }
+          ]
+        })
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        String aiText = data['candidates'][0]['content']['parts'][0]['text'];
+        setState(() { _generatedContent = aiText.trim(); });
+        HapticFeedback.heavyImpact();
+      } else {
+        throw Exception("Server Error");
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Content Generate nahi ho saka! Net connection check karein.')));
+    } finally {
+      setState(() { _isWritingContent = false; });
+    }
+  }
+
+  // Save Image Function
+  Future<void> _saveImageToGallery(Uint8List bytes) async {
+    final result = await ImageGallerySaver.saveImage(bytes, quality: 100, name: "QalamKaarAI_${DateTime.now().millisecondsSinceEpoch}");
+    if (result != null && result['isSuccess'] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved to Gallery successfully! ✅'), backgroundColor: Color(0xFF10B981)));
+    }
   }
 
   // ==========================================
@@ -225,7 +297,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
             )
           ),
           
-          if (_imageGenerated)
+          if (_generatedImageBytes != null)
             _buildGlassCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,7 +306,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('Result', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
-                      IconButton(icon: const Icon(Icons.download_rounded, color: Color(0xFF8B5CF6)), onPressed: () { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Image Saved!'))); })
+                      IconButton(icon: const Icon(Icons.download_rounded, color: Color(0xFF8B5CF6)), onPressed: () => _saveImageToGallery(_generatedImageBytes!))
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -245,8 +317,8 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
                       color: Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: Colors.grey.shade200),
-                      image: const DecorationImage(
-                        image: NetworkImage('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop'), // Placeholder beautiful image
+                      image: DecorationImage(
+                        image: MemoryImage(_generatedImageBytes!), 
                         fit: BoxFit.cover
                       )
                     ),
@@ -274,7 +346,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
               children: [
                 Container(
                   padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(color: const Color(0xFFFDF2F8), shape: BoxShape.circle),
+                  decoration: const BoxDecoration(color: Color(0xFFFDF2F8), shape: BoxShape.circle),
                   child: const Icon(Icons.auto_fix_high_rounded, color: Color(0xFFEC4899), size: 40),
                 ),
                 const SizedBox(height: 15),
@@ -313,21 +385,21 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
                       children: const [
                         CircularProgressIndicator(color: Color(0xFFEC4899)),
                         SizedBox(height: 15),
-                        Text('AI is working its magic... ✨', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black54)),
+                        Text('Removing Background... ✨', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black54)),
                       ],
                     ),
                   )
-                else if (_bgRemoved)
+                else if (_bgRemovedBytes != null)
                   Column(
                     children: [
                       Container(
                         height: 250,
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade200, // Typically PNG transparent background check pattern goes here
+                          color: Colors.grey.shade300, 
                           borderRadius: BorderRadius.circular(16),
                           image: DecorationImage(
-                            image: FileImage(_selectedImageForBg!),
+                            image: MemoryImage(_bgRemovedBytes!),
                             fit: BoxFit.contain
                           )
                         ),
@@ -338,18 +410,18 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
                           Expanded(
                             child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                              onPressed: () => setState((){ _selectedImageForBg = null; _bgRemoved = false; }),
+                              onPressed: () => setState((){ _selectedImageForBg = null; _bgRemovedBytes = null; }),
                               icon: const Icon(Icons.refresh_rounded, color: Colors.black87, size: 18),
-                              label: const Text('Try Again', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+                              label: const Text('Try Another', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
                             )
                           ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEC4899), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0),
-                              onPressed: () { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Transparent Image Saved!'))); },
+                              onPressed: () => _saveImageToGallery(_bgRemovedBytes!),
                               icon: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
-                              label: const Text('Save HD', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              label: const Text('Save HD PNG', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                             )
                           ),
                         ],
@@ -388,7 +460,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
                     controller: _topicController,
                     textDirection: TextDirection.rtl,
                     style: const TextStyle(fontFamily: 'JameelNoori', fontSize: 20),
-                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'مثال: یوم آزادی پر تقریر...', hintTextDirection: TextDirection.rtl, hintStyle: TextStyle(color: Colors.black26)),
+                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'مثال: یوم آزادی پر پوسٹ...', hintTextDirection: TextDirection.rtl, hintStyle: TextStyle(color: Colors.black26)),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -397,7 +469,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: const Color(0xFF10B981), // Emerald Green
+                      backgroundColor: const Color(0xFF10B981),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       elevation: 5,
                       shadowColor: const Color(0xFF10B981).withOpacity(0.5)
