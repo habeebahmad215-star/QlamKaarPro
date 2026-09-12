@@ -11,7 +11,7 @@ import 'package:image_gallery_saver/image_gallery_saver.dart';
 // ============================================================================
 // 🔥 AAPKI ASLI API KEYS YAHAN SET KAREIN 🔥
 // ============================================================================
-const String GEMINI_API_KEY = "AQ.Ab8RN6JX2LP0KGKca_chXBzuXLupEzgxiaRvmTY7zA_NAK1rJQ";
+const String GEMINI_API_KEY = "AQ.Ab8RN6KR7Ko-mPJ6bW0qkojCJvZ91zd3RfeQE8cLo-KknbD2lA";
 const String REMOVE_BG_API_KEY = "ViZorV1xopiwHEdvEiERE2XN";
 const String HUGGING_FACE_API_KEY = "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";
 // ============================================================================
