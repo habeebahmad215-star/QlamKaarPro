@@ -152,8 +152,11 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     
     try {
       final response = await http.post(
-        Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$GEMINI_API_KEY'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': GEMINI_API_KEY, // Yahan problem fix ho gayi hai
+        },
         body: jsonEncode({
           "contents": [
             {
