@@ -9,11 +9,11 @@ import 'package:http/http.dart' as http;
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 
 // ============================================================================
-// 🔥 AAPKI ASLI API KEYS YAHAN SET HO CHUKI HAIN 🔥
+// 🔥 AAPKI ASLI API KEYS YAHAN SET KAREIN 🔥
 // ============================================================================
-const String GEMINI_API_KEY = "AQ.Ab8RN6JaClVslgrhmEdllE5_jZrZn5-0YBgMKm3amNwn5anUmA";
-const String REMOVE_BG_API_KEY = "owu8zLS27XjHQtx8eehSVWkj";
-const String HUGGING_FACE_API_KEY = "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";
+const String GEMINI_API_KEY = "YAHAN_APNI_GEMINI_KEY_PASTE_KAREIN";
+const String REMOVE_BG_API_KEY = "YAHAN_APNI_REMOVE_BG_KEY_PASTE_KAREIN";
+const String HUGGING_FACE_API_KEY = "YAHAN_APNI_HUGGING_FACE_KEY_PASTE_KAREIN";
 // ============================================================================
 
 class AiDesignScreen extends StatefulWidget {
@@ -57,7 +57,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
   }
 
   // ==========================================
-  // REAL API INTEGRATIONS
+  // REAL API INTEGRATIONS (WITH SMART ERROR HANDLING)
   // ==========================================
   
   // 1. Hugging Face Image Generation API
@@ -68,22 +68,37 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     
     try {
       final response = await http.post(
-        Uri.parse('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0'),
+        // Lighter and faster model for free API
+        Uri.parse('https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5'),
         headers: {
           'Authorization': 'Bearer $HUGGING_FACE_API_KEY',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({'inputs': _promptController.text}),
+        body: jsonEncode({
+          'inputs': _promptController.text,
+          // Ye option API ko batata hai ki jab tak model load na ho, wait karo, error mat do
+          'options': {'wait_for_model': true} 
+        }),
       );
 
       if (response.statusCode == 200) {
         setState(() { _generatedImageBytes = response.bodyBytes; });
         HapticFeedback.heavyImpact();
       } else {
-        throw Exception("Server Error: ${response.statusCode}");
+        // Asal error server se nikal kar dikhayega
+        String errorMsg = 'Server Error ${response.statusCode}';
+        try {
+          var data = jsonDecode(response.body);
+          if (data['error'] != null) errorMsg = data['error'].toString();
+        } catch (_) {}
+        throw Exception(errorMsg);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Image Generation Failed! Please try again.')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Fail: ${e.toString().replaceAll('Exception: ', '')}'),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 4),
+      ));
     } finally {
       setState(() { _isGeneratingImage = false; });
     }
@@ -110,10 +125,19 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
           setState(() { _bgRemovedBytes = responseData; });
           HapticFeedback.heavyImpact();
         } else {
-          throw Exception("Server Error: ${response.statusCode}");
+          String err = 'Error ${response.statusCode}';
+          var respString = await response.stream.bytesToString();
+          try {
+            var data = jsonDecode(respString);
+            if (data['errors'] != null) err = data['errors'][0]['title'];
+          } catch (_) {}
+          throw Exception(err);
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Background hatane mein masla hua! Net connection check karein.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('BG Error: ${e.toString().replaceAll('Exception: ', '')}'),
+          backgroundColor: Colors.red,
+        ));
       } finally {
         setState(() { _isRemovingBg = false; });
       }
@@ -147,10 +171,18 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
         setState(() { _generatedContent = aiText.trim(); });
         HapticFeedback.heavyImpact();
       } else {
-        throw Exception("Server Error");
+        String errorMsg = 'Error ${response.statusCode}';
+        try {
+          var data = jsonDecode(response.body);
+          if (data['error'] != null) errorMsg = data['error']['message'].toString();
+        } catch (_) {}
+        throw Exception(errorMsg);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Content Generate nahi ho saka! Net connection check karein.')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Gemini Error: ${e.toString().replaceAll('Exception: ', '')}'),
+        backgroundColor: Colors.red,
+      ));
     } finally {
       setState(() { _isWritingContent = false; });
     }
@@ -469,7 +501,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: const Color(0xFF10B981),
+                      backgroundColor: const Color(0xFF10B981), // Emerald Green
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       elevation: 5,
                       shadowColor: const Color(0xFF10B981).withOpacity(0.5)
