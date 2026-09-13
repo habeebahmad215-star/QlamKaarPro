@@ -8,19 +8,16 @@ import 'dart:typed_data';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/design_models.dart';
 import '../widgets/custom_widgets.dart';
 import '../utils/constants.dart';
 import 'my_folder_screen.dart';
 
-// 🔥 NAYE MODULAR TOOLS JO AAPNE BANA LIYE HAIN 🔥
+// 🔥 NAYE MODULAR TOOLS 🔥
 import 'workspace_tools/workspace_painters.dart';
 import 'workspace_tools/workspace_color_picker.dart';
+import 'workspace_tools/workspace_export.dart'; 
 
 class ProWorkspaceScreen extends StatefulWidget {
   final ProjectModel? project;
@@ -184,8 +181,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     saveState();
     setState(() {
       var newEl = DesignElement(
-        id: Random().nextInt(10000).toString(), x: 80, y: 150, content: stickerStr,
-        isText: true, width: 150, height: 150, fontSize: 80, 
+        id: Random().nextInt(10000).toString(),
+        x: 80, y: 150,
+        content: stickerStr,
+        isText: true,
+        width: 150, height: 150,
+        fontSize: 80, 
       );
       elements.add(newEl);
       selectedId = newEl.id;
@@ -219,6 +220,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         ),
         textAlign: e.textAlign, textDirection: TextDirection.ltr,
       )..layout(maxWidth: e.width > 80 ? e.width : 80);
+      
       return textPainter.size.height + (e.hasShadow ? e.shadowBlur * 2 : 0) + (e.hasStroke ? e.strokeWidth * 2 : 0) + 10;
     }
     return 150;
@@ -237,9 +239,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         String contents = await file.readAsString();
         jsonList = jsonDecode(contents);
       }
+      
       ProjectModel p = ProjectModel(
         id: projectId, name: projectName, pages: pages, lastModified: DateTime.now().millisecondsSinceEpoch
       );
+      
       jsonList.removeWhere((item) => item['id'] == projectId);
       jsonList.add(p.toJson());
       await file.writeAsString(jsonEncode(jsonList));
@@ -316,82 +320,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   }
 
   void _rotateElement(DragUpdateDetails d, DesignElement e) { e.angle += (d.delta.dx + d.delta.dy) * 0.015; _fastUpdateElement(e.id); }
-
-  // 🔥 ADVANCE 4K EXPORT ENGINE (BUILT-IN) 🔥
-  Future<void> _renderAndSave(double targetWidth, String format) async {
-    Color originalColor = pageColor;
-    bool changedToWhite = false;
-    
-    // JPG Export fix (transparent background ko white banata hai)
-    if (format == 'JPG' && pageColor == Colors.transparent && bgImageBytes == null && bgGradient == null) {
-      setState(() { pageColor = Colors.white; });
-      changedToWhite = true;
-      await Future.delayed(const Duration(milliseconds: 150)); 
-    }
-
-    setState(() { selectedId = null; _isExporting = true; activeToolbarMenu = 'main'; });
-    _triggerCanvasUpdate();
-    await Future.delayed(const Duration(milliseconds: 400));
-    
-    try {
-      RenderRepaintBoundary boundary = _canvasKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      double logicalW = currentCanvasW > 0 ? currentCanvasW : 1000;
-      double pixelRatio = targetWidth / logicalW;
-      if (pixelRatio > 15.0) pixelRatio = 15.0; 
-
-      ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
-      ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) throw Exception("Failed");
-      Uint8List pngBytes = byteData.buffer.asUint8List();
-      
-      if (format == 'JPG' || format == 'PNG') {
-        final result = await ImageGallerySaver.saveImage(pngBytes, quality: 100, name: "QalamKaarPro_${targetWidth.toInt()}p_${DateTime.now().millisecondsSinceEpoch}");
-        if (mounted && result != null && result['isSuccess'] == true) _showSuccessDialog('Saved Successfully!', 'Aapka High-Resolution design gallery mein save ho gaya hai.');
-      } else if (format == 'PDF') {
-        final pdf = pw.Document(); final imagePdf = pw.MemoryImage(pngBytes);
-        pdf.addPage(pw.Page(pageFormat: PdfPageFormat(image.width.toDouble(), image.height.toDouble()), margin: pw.EdgeInsets.zero, build: (pw.Context context) { return pw.Center(child: pw.Image(imagePdf)); }));
-        Uint8List pdfBytes = await pdf.save();
-        await Printing.sharePdf(bytes: pdfBytes, filename: "QalamKaarPro_Print_${DateTime.now().millisecondsSinceEpoch}.pdf");
-      }
-    } catch (e) {
-      debugPrint('Error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Hardware limit reached! Try a lower quality.'), backgroundColor: Colors.red));
-    } finally {
-      setState(() { 
-        _isExporting = false; 
-        if (changedToWhite) pageColor = originalColor;
-      });
-      _triggerCanvasUpdate();
-    }
-  }
-
-  void _showSuccessDialog(String title, String message) {
-    HapticFeedback.mediumImpact();
-    showDialog(
-      context: context, builder: (context) => AlertDialog(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)), content: Column(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.check_circle, color: Colors.green, size: 60), const SizedBox(height: 15), Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(height: 10), Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)), const SizedBox(height: 20), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)), onPressed: () => Navigator.pop(context), child: const Text('OK', style: TextStyle(color: Colors.white)))]))
-    );
-  }
-
-  void _showExportMenu() {
-    showModalBottomSheet(context: context, barrierColor: Colors.transparent, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (context) {
-      return _buildGlassContainer(context, height: 380, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Pro Print & Export', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))]),
-        const Text('Banner aur Flex printing ke liye 4K/8K select karein', style: TextStyle(fontSize: 11, color: Colors.black54)),
-        const Divider(color: Colors.black12), const SizedBox(height: 5),
-        Expanded(child: ListView(physics: const BouncingScrollPhysics(), children: [
-          _buildExportOption(Icons.hd, 'Standard HD (1080p)', 'Social Media, WhatsApp status ke liye', Colors.blue, () { Navigator.pop(context); _renderAndSave(1920.0, 'JPG'); }), const SizedBox(height: 8),
-          _buildExportOption(Icons.layers_clear, 'Transparent Logo PNG', 'Bina background ke PNG logo save karein', Colors.green, () { Navigator.pop(context); _renderAndSave(1920.0, 'PNG'); }), const SizedBox(height: 8),
-          _buildExportOption(Icons.four_k, 'Ultra 4K Resolution', 'Posters aur A4 size printing ke liye', Colors.purple, () { Navigator.pop(context); _renderAndSave(3840.0, 'JPG'); }), const SizedBox(height: 8),
-          _buildExportOption(Icons.photo_size_select_large, '8K Banner Quality', 'Bade Flex aur Banners ke liye', Colors.red, () { Navigator.pop(context); _renderAndSave(7680.0, 'JPG'); }), const SizedBox(height: 8),
-          _buildExportOption(Icons.picture_as_pdf, 'Save as PDF', 'High-Quality Document format', Colors.orange, () { Navigator.pop(context); _renderAndSave(3840.0, 'PDF'); }),
-        ]))
-      ]));
-    });
-  }
-
-  Widget _buildExportOption(IconData icon, String title, String subtitle, Color color, VoidCallback onTap) {
-    return InkWell(onTap: onTap, child: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: Row(children: [Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color, shape: BoxShape.circle), child: Icon(icon, color: Colors.white, size: 18)), const SizedBox(width: 15), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)), Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.black54))])), Icon(Icons.arrow_forward_ios, color: color, size: 14)])));
-  }
 
   void _showPoetryLibrary(TextEditingController textController) {
     showModalBottomSheet(
@@ -535,9 +463,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
         final bytes = await image.readAsBytes();
-        saveState(); // 🔥 BUG 3 FIXED: BG image par bhi undo support
-        setState(() { bgImageBytes = bytes; bgGradient = null; pageColor = Colors.transparent; }); 
-        _triggerCanvasUpdate();
+        setState(() { bgImageBytes = bytes; bgGradient = null; pageColor = Colors.white; }); _triggerCanvasUpdate();
       }
     } catch (e) { debugPrint("BG Image Error: $e"); }
   }
@@ -564,7 +490,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
           return InkWell(onTap: () {
             saveState();
             setState(() {
-              // 🔥 BUG 1 FIXED: Ab Background option background hi banayega, shape nahi!
               if (styleName == 'bg') {
                 pageColor = item['color'] as Color;
                 bgImageBytes = null;
@@ -895,7 +820,22 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
           Center(child: InkWell(onTap: _saveProjectLocally, borderRadius: BorderRadius.circular(8), child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)), child: const Text('Save', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12))))), const SizedBox(width: 8), 
           Center(
             child: InkWell(
-              onTap: _showExportMenu, 
+              onTap: () {
+                ProExportEngine.showExportMenu(
+                  context: context,
+                  canvasKey: _canvasKey,
+                  currentCanvasW: currentCanvasW,
+                  currentCanvasH: currentCanvasH,
+                  onExportStart: () {
+                    setState(() { selectedId = null; _isExporting = true; activeToolbarMenu = 'main'; });
+                    _triggerCanvasUpdate();
+                  },
+                  onExportEnd: () {
+                    setState(() { _isExporting = false; });
+                    _triggerCanvasUpdate();
+                  },
+                );
+              }, 
               borderRadius: BorderRadius.circular(20), 
               child: Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)]), borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: const Color(0xFF8B5CF6).withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))]), child: Row(children: const [Icon(Icons.ios_share_rounded, color: Colors.white, size: 14), SizedBox(width: 4), Text('Export', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12))]))
             )
@@ -926,10 +866,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                               child: RepaintBoundary(
                                 key: _canvasKey,
                                 child: Container(
-                                  // 🔥 BUG FIX 2: Background actually becomes Transparent now
-                                  decoration: bgImageBytes != null 
-                                      ? BoxDecoration(image: DecorationImage(image: MemoryImage(bgImageBytes!), fit: BoxFit.cover)) 
-                                      : (bgGradient != null ? BoxDecoration(gradient: LinearGradient(colors: bgGradient!)) : BoxDecoration(color: pageColor)),
+                                  decoration: bgImageBytes != null ? BoxDecoration(image: DecorationImage(image: MemoryImage(bgImageBytes!), fit: BoxFit.cover)) : (bgGradient != null ? BoxDecoration(gradient: LinearGradient(colors: bgGradient!)) : BoxDecoration(color: pageColor)),
                                   child: Stack(
                                     clipBehavior: Clip.none,
                                     children: [
