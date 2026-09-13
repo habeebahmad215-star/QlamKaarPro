@@ -39,6 +39,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   final TransformationController _transformController = TransformationController();
   final ValueNotifier<int> _canvasNotifier = ValueNotifier<int>(0);
 
+  // 🔥 ADVANCE SPEED ENGINE (ZERO LAG) 🔥
+  final Map<String, ValueNotifier<int>> _elementNotifiers = {};
+
   bool _isCanvasLocked = false;
   bool _showGrid = false;
   double currentCanvasW = 1000;
@@ -98,7 +101,20 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void dispose() {
     _transformController.dispose();
     _canvasNotifier.dispose();
+    for (var n in _elementNotifiers.values) {
+      n.dispose();
+    }
     super.dispose();
+  }
+
+  // ============================================================================
+  // 🔥 THE NEW MICRO-REACTIVITY SYSTEM (ZERO LAG ENGINE) 🔥
+  // ============================================================================
+  void _fastUpdateElement(String id) {
+    if (!_elementNotifiers.containsKey(id)) {
+      _elementNotifiers[id] = ValueNotifier<int>(0);
+    }
+    _elementNotifiers[id]!.value++;
   }
 
   // ============================================================================
@@ -106,8 +122,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   // ============================================================================
   void _smartResizeCanvas(double newRatio) {
     saveState();
-    
-    // Canvas ka purana size save karna
     double oldW = currentCanvasW > 0 ? currentCanvasW : 1;
     double oldH = currentCanvasH > 0 ? currentCanvasH : 1;
 
@@ -115,38 +129,30 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       canvasRatio = newRatio;
     });
     
-    // UI ko naye ratio par build hone ka time dena (1 frame delay)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       double newW = currentCanvasW > 0 ? currentCanvasW : 1;
       double newH = currentCanvasH > 0 ? currentCanvasH : 1;
       
-      // Pata lagana ki canvas kitna bada ya chhota hua hai
       double scaleX = newW / oldW;
       double scaleY = newH / oldH;
 
-      setState(() {
-        for (var e in elements) {
-          if (e.isBorder) {
-            // 🌟 Borders ko screen ke naye size ke hisaab se auto-fit karna
-            e.x = 15;
-            e.y = 15;
-            e.width = (newW > 50 ? newW : 300) - 30;
-            e.height = (newH > 50 ? newH : 300) - 30;
-            e.angle = 0;
-          } else {
-            // 🌟 Baki tamam elements (Text, Images, Shapes) ko smart reposition karna
-            e.x = e.x * scaleX;
-            e.y = e.y * scaleY;
-          }
+      for (var e in elements) {
+        if (e.isBorder) {
+          e.x = 15;
+          e.y = 15;
+          e.width = (newW > 50 ? newW : 300) - 30;
+          e.height = (newH > 50 ? newH : 300) - 30;
+          e.angle = 0;
+        } else {
+          e.x = e.x * scaleX;
+          e.y = e.y * scaleY;
         }
-      });
+        _fastUpdateElement(e.id);
+      }
       _triggerCanvasUpdate();
     });
   }
 
-  // ============================================================================
-  // 🔥 THE NEW GLASSMORPHISM ENGINE FOR COMPACT MODALS 🔥
-  // ============================================================================
   Widget _buildGlassContainer(BuildContext context, {required Widget child, required double height, EdgeInsetsGeometry? padding}) {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -154,7 +160,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         margin: const EdgeInsets.only(left: 15, right: 15, bottom: 20),
         height: height,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.85), // Translucent Background
+          color: Colors.white.withOpacity(0.85),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: Colors.white, width: 1.5),
           boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 15, spreadRadius: -5)]
@@ -162,7 +168,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15), // Glass Blur Effect
+            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
             child: Padding(
               padding: padding ?? const EdgeInsets.all(16),
               child: child,
@@ -341,7 +347,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         e.y += (oldH - e.height) * cos(e.angle);
       }
     }
-    _triggerCanvasUpdate();
+    _fastUpdateElement(e.id);
   }
 
   void _scaleCorner(DragUpdateDetails d, DesignElement e, String corner) {
@@ -393,12 +399,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         e.y -= wDiff * sin(e.angle);
       }
     }
-    _triggerCanvasUpdate();
+    _fastUpdateElement(e.id);
   }
 
   void _rotateElement(DragUpdateDetails d, DesignElement e) {
     e.angle += (d.delta.dx + d.delta.dy) * 0.015;
-    _triggerCanvasUpdate();
+    _fastUpdateElement(e.id);
   }
 
   Future<void> _captureAndSave(String format) async {
@@ -795,6 +801,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                   existingElement.content = controller.text; 
                                   existingElement.textAlign = isRTL ? TextAlign.right : TextAlign.left; 
                                 }); 
+                                _fastUpdateElement(existingElement.id);
                               } else { 
                                 var newEl = DesignElement(
                                   id: Random().nextInt(10000).toString(), 
@@ -1109,13 +1116,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                         Row(
                           children: [
                             const Text('Width: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            Expanded(child: Slider(value: sel.width.clamp(100.0, 1500.0), min: 100.0, max: 1500.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setModalState((){ sel.width = val; }); }))
+                            Expanded(child: Slider(value: sel.width.clamp(100.0, 1500.0), min: 100.0, max: 1500.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setModalState((){ sel.width = val; }); _fastUpdateElement(sel.id); }))
                           ]
                         ),
                         Row(
                           children: [
                             const Text('Height: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            Expanded(child: Slider(value: sel.height.clamp(50.0, 1500.0), min: 50.0, max: 1500.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setModalState((){ sel.height = val; }); }))
+                            Expanded(child: Slider(value: sel.height.clamp(50.0, 1500.0), min: 50.0, max: 1500.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setModalState((){ sel.height = val; }); _fastUpdateElement(sel.id); }))
                           ]
                         ),
                       ],
@@ -1129,7 +1136,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       onPressed: () { 
                         saveState(); 
                         setState(() { sel.tableData = tempTable; }); 
-                        _triggerCanvasUpdate(); 
+                        _fastUpdateElement(sel.id);
                         Navigator.pop(context); 
                       },
                       child: const Text('Save Table Data', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14))
@@ -1168,7 +1175,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         final bytes = await image.readAsBytes();
         saveState();
         setState(() => sel.textTextureBytes = bytes);
-        _triggerCanvasUpdate();
+        _fastUpdateElement(sel.id);
       }
     } catch (e) {
       debugPrint("Texture Error: $e");
@@ -1364,7 +1371,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       sel.height = (currentCanvasH > 50 ? currentCanvasH : 300) - 30;
       sel.angle = 0; 
     });
-    _triggerCanvasUpdate();
+    _fastUpdateElement(sel.id);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Border perfectly fitted to page!', style: TextStyle(color: Colors.white)), 
@@ -1402,7 +1409,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         onColorChanged: (c) {
           saveState();
           onColorChanged(c);
-          _triggerCanvasUpdate();
         }
       )
     );
@@ -1417,7 +1423,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
           pageColor = c; 
           bgImageBytes = null; 
           bgGradient = null; 
-        }); 
+        });
+        _triggerCanvasUpdate();
       }
     );
   }
@@ -1495,6 +1502,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       allowClear: true, 
       onColorChanged: (c){ 
         setState(()=> sel.textBgColor = c == Colors.transparent ? null : c); 
+        _fastUpdateElement(sel.id);
       }
     );
   }
@@ -1539,7 +1547,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                 currentColor: sel.customGradColor1 ?? Colors.white, 
                                 onColorChanged: (c){ 
                                   setModalState(()=> sel.customGradColor1 = c); 
-                                  _triggerCanvasUpdate(); 
+                                  _fastUpdateElement(sel.id);
                                 }
                               ), 
                               child: Container(
@@ -1554,7 +1562,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                 currentColor: sel.customGradColor2 ?? Colors.white, 
                                 onColorChanged: (c){ 
                                   setModalState(()=> sel.customGradColor2 = c); 
-                                  _triggerCanvasUpdate(); 
+                                  _fastUpdateElement(sel.id);
                                 }
                               ), 
                               child: Container(
@@ -1569,7 +1577,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                   saveState();
                                   setState(() => sel.textGradient = [sel.customGradColor1!, sel.customGradColor2!]);
                                   setModalState((){});
-                                  _triggerCanvasUpdate();
+                                  _fastUpdateElement(sel.id);
                                   Navigator.pop(context);
                                 }
                               },
@@ -1582,7 +1590,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   ),
                   const SizedBox(height: 8),
                   InkWell(
-                    onTap: () { saveState(); setState(() { sel.textGradient = null; }); _triggerCanvasUpdate(); Navigator.pop(context); },
+                    onTap: () { saveState(); setState(() { sel.textGradient = null; }); _fastUpdateElement(sel.id); Navigator.pop(context); },
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       alignment: Alignment.center,
@@ -1607,7 +1615,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                             saveState(); 
                             setState(() { sel.textGradient = g; }); 
                             setModalState((){}); 
-                            _triggerCanvasUpdate(); 
+                            _fastUpdateElement(sel.id);
                           },
                           child: Container(decoration: BoxDecoration(gradient: LinearGradient(colors: g), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.white)))
                         );
@@ -1636,6 +1644,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
             sel.elementColor = c; 
           }
         }); 
+        _fastUpdateElement(sel.id);
       }
     );
   }
@@ -1662,7 +1671,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       Switch(
                         activeColor: const Color(0xFF8B5CF6),
                         value: sel.hasStroke,
-                        onChanged: (val) { saveState(); setState(() => sel.hasStroke = val); setModalState((){}); _triggerCanvasUpdate(); }
+                        onChanged: (val) { saveState(); setState(() => sel.hasStroke = val); setModalState((){}); _fastUpdateElement(sel.id); }
                       ),
                       IconButton(icon: const Icon(Icons.close), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
                     ]
@@ -1677,7 +1686,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                             value: sel.strokeWidth.clamp(1.0, 20.0), 
                             min: 1.0, max: 20.0, 
                             activeColor: const Color(0xFF8B5CF6), 
-                            onChanged: (val) { setState(() => sel.strokeWidth = val); setModalState((){}); _triggerCanvasUpdate(); }
+                            onChanged: (val) { setState(() => sel.strokeWidth = val); setModalState((){}); _fastUpdateElement(sel.id); }
                           )
                         )
                       ]
@@ -1697,7 +1706,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                            _openProColorPicker(
                              title: 'Stroke Color', 
                              currentColor: sel.strokeColor, 
-                             onColorChanged: (c) { setState(()=> sel.strokeColor = c); }
+                             onColorChanged: (c) { setState(()=> sel.strokeColor = c); _fastUpdateElement(sel.id); }
                            );
                         },
                         icon: const Icon(Icons.color_lens_rounded, color: Color(0xFF8B5CF6), size: 18),
@@ -1736,7 +1745,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       Switch(
                         activeColor: const Color(0xFF8B5CF6),
                         value: sel.hasShadow,
-                        onChanged: (val) { saveState(); setState(() => sel.hasShadow = val); setModalState((){}); _triggerCanvasUpdate(); }
+                        onChanged: (val) { saveState(); setState(() => sel.hasShadow = val); setModalState((){}); _fastUpdateElement(sel.id); }
                       ),
                       IconButton(icon: const Icon(Icons.close), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
                     ]
@@ -1746,19 +1755,19 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     Row(
                       children: [
                         const SizedBox(width: 50, child: Text('Blur:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                        Expanded(child: Slider(value: sel.shadowBlur.clamp(0.0, 30.0), min: 0.0, max: 30.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val){ setState(()=> sel.shadowBlur = val); setModalState((){}); _triggerCanvasUpdate();}))
+                        Expanded(child: Slider(value: sel.shadowBlur.clamp(0.0, 30.0), min: 0.0, max: 30.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val){ setState(()=> sel.shadowBlur = val); setModalState((){}); _fastUpdateElement(sel.id);}))
                       ]
                     ),
                     Row(
                       children: [
                         const SizedBox(width: 50, child: Text('X:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                        Expanded(child: Slider(value: sel.shadowOffsetX.clamp(-20.0, 20.0), min: -20.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val){ setState(()=> sel.shadowOffsetX = val); setModalState((){}); _triggerCanvasUpdate();}))
+                        Expanded(child: Slider(value: sel.shadowOffsetX.clamp(-20.0, 20.0), min: -20.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val){ setState(()=> sel.shadowOffsetX = val); setModalState((){}); _fastUpdateElement(sel.id);}))
                       ]
                     ),
                     Row(
                       children: [
                         const SizedBox(width: 50, child: Text('Y:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                        Expanded(child: Slider(value: sel.shadowOffsetY.clamp(-20.0, 20.0), min: -20.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val){ setState(()=> sel.shadowOffsetY = val); setModalState((){}); _triggerCanvasUpdate();}))
+                        Expanded(child: Slider(value: sel.shadowOffsetY.clamp(-20.0, 20.0), min: -20.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val){ setState(()=> sel.shadowOffsetY = val); setModalState((){}); _fastUpdateElement(sel.id);}))
                       ]
                     ),
                     const SizedBox(height: 5),
@@ -1776,7 +1785,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                            _openProColorPicker(
                              title: 'Shadow Color', 
                              currentColor: sel.shadowColor, 
-                             onColorChanged: (c) { setState(()=> sel.shadowColor = c); }
+                             onColorChanged: (c) { setState(()=> sel.shadowColor = c); _fastUpdateElement(sel.id); }
                            );
                         },
                         icon: const Icon(Icons.color_lens_rounded, color: Color(0xFF8B5CF6), size: 18),
@@ -1821,7 +1830,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     max: 1.0, 
                     activeColor: const Color(0xFF8B5CF6),
                     onChangeStart: (val) => saveState(),
-                    onChanged: (v){ setState(()=>sel.opacity=v); setModalState((){}); _triggerCanvasUpdate(); }
+                    onChanged: (v){ setState(()=>sel.opacity=v); setModalState((){}); _fastUpdateElement(sel.id); }
                   )
                 ]
               )
@@ -1869,21 +1878,21 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           title: const Text('Bevel & Emboss (اُبھرا ہوا)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                           activeColor: const Color(0xFF8B5CF6),
                           value: sel.isBevel,
-                          onChanged: (val) { saveState(); setState(() => sel.isBevel = val); setModalState((){}); _triggerCanvasUpdate(); }
+                          onChanged: (val) { saveState(); setState(() => sel.isBevel = val); setModalState((){}); _fastUpdateElement(sel.id); }
                         ),
                         SwitchListTile(
                           dense: true,
                           title: const Text('Inner Shadow (اندرونی سایہ)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                           activeColor: const Color(0xFF8B5CF6),
                           value: sel.isInnerShadow,
-                          onChanged: (val) { saveState(); setState(() => sel.isInnerShadow = val); setModalState((){}); _triggerCanvasUpdate(); }
+                          onChanged: (val) { saveState(); setState(() => sel.isInnerShadow = val); setModalState((){}); _fastUpdateElement(sel.id); }
                         ),
                         SwitchListTile(
                           dense: true,
                           title: const Text('Glass Effect (شیشے کا انداز)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                           activeColor: const Color(0xFF8B5CF6),
                           value: sel.isGlass,
-                          onChanged: (val) { saveState(); setState(() => sel.isGlass = val); setModalState((){}); _triggerCanvasUpdate(); }
+                          onChanged: (val) { saveState(); setState(() => sel.isGlass = val); setModalState((){}); _fastUpdateElement(sel.id); }
                         ),
                         ListTile(
                           dense: true,
@@ -1893,7 +1902,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               if (sel.textTextureBytes != null)
-                                IconButton(icon: const Icon(Icons.delete, color: Colors.red, size: 18), onPressed: () { saveState(); setState(() => sel.textTextureBytes = null); setModalState((){}); _triggerCanvasUpdate(); }),
+                                IconButton(icon: const Icon(Icons.delete, color: Colors.red, size: 18), onPressed: () { saveState(); setState(() => sel.textTextureBytes = null); setModalState((){}); _fastUpdateElement(sel.id); }),
                               const Icon(Icons.arrow_forward_ios, size: 14)
                             ]
                           ),
@@ -1943,7 +1952,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           min: 0.0, max: 30.0,
                           activeColor: const Color(0xFF8B5CF6),
                           onChangeStart: (val) => saveState(),
-                          onChanged: (val) { setState(() => sel.text3dDepth = val); setModalState(() {}); _triggerCanvasUpdate(); }
+                          onChanged: (val) { setState(() => sel.text3dDepth = val); setModalState(() {}); _fastUpdateElement(sel.id); }
                         )
                       )
                     ]
@@ -1963,7 +1972,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                          _openProColorPicker(
                            title: '3D Color', 
                            currentColor: sel.text3dColor, 
-                           onColorChanged: (c) { setState(()=> sel.text3dColor = c); }
+                           onColorChanged: (c) { setState(()=> sel.text3dColor = c); _fastUpdateElement(sel.id); }
                          );
                       },
                       icon: const Icon(Icons.color_lens_rounded, color: Color(0xFF8B5CF6), size: 18),
@@ -2011,7 +2020,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           min: 1.0, max: 50.0,
                           activeColor: const Color(0xFF8B5CF6),
                           onChangeStart: (val) => saveState(),
-                          onChanged: (val) { setState(() => sel.strokeWidth = val); setModalState((){}); _triggerCanvasUpdate(); }
+                          onChanged: (val) { setState(() => sel.strokeWidth = val); setModalState((){}); _fastUpdateElement(sel.id); }
                         )
                       )
                     ]
@@ -2025,7 +2034,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           min: 0.0, max: 150.0,
                           activeColor: const Color(0xFF10B981),
                           onChangeStart: (val) => saveState(),
-                          onChanged: (val) { setState(() => sel.cornerRadius = val); setModalState((){}); _triggerCanvasUpdate(); }
+                          onChanged: (val) { setState(() => sel.cornerRadius = val); setModalState((){}); _fastUpdateElement(sel.id); }
                         )
                       )
                     ]
@@ -2066,7 +2075,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     min: 0.0, max: 150.0,
                     activeColor: const Color(0xFF8B5CF6),
                     onChangeStart: (val) => saveState(),
-                    onChanged: (val) { setState(() => sel.cornerRadius = val); setModalState((){}); _triggerCanvasUpdate(); }
+                    onChanged: (val) { setState(() => sel.cornerRadius = val); setModalState((){}); _fastUpdateElement(sel.id); }
                   )
                 ]
               )
@@ -2125,7 +2134,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   Widget _buildShapeOption(DesignElement sel, StateSetter setModalState, String title, int val, IconData icon) {
     bool isSel = sel.clipShape == val;
     return InkWell(
-      onTap: () { saveState(); setState(() => sel.clipShape = val); setModalState((){}); _triggerCanvasUpdate(); },
+      onTap: () { saveState(); setState(() => sel.clipShape = val); setModalState((){}); _fastUpdateElement(sel.id); },
       child: Container(
         width: 75,
         margin: const EdgeInsets.only(right: 10),
@@ -2193,7 +2202,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   Widget _buildFilterOption(DesignElement sel, StateSetter setModalState, String title, int filterVal, Color iconColor) {
     bool isSel = sel.imageFilter == filterVal;
     return InkWell(
-      onTap: () { saveState(); setState(() => sel.imageFilter = filterVal); setModalState((){}); _triggerCanvasUpdate(); },
+      onTap: () { saveState(); setState(() => sel.imageFilter = filterVal); setModalState((){}); _fastUpdateElement(sel.id); },
       child: Container(
         width: 75,
         margin: const EdgeInsets.only(right: 10),
@@ -2239,19 +2248,19 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   Row(
                     children: [
                       const SizedBox(width: 45, child: Text('Line:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      Expanded(child: Slider(value: sel.lineHeight.clamp(0.5, 3.5), min: 0.5, max: 3.5, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.lineHeight = val); setModalState((){}); _triggerCanvasUpdate(); }))
+                      Expanded(child: Slider(value: sel.lineHeight.clamp(0.5, 3.5), min: 0.5, max: 3.5, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.lineHeight = val); setModalState((){}); _fastUpdateElement(sel.id); }))
                     ]
                   ),
                   Row(
                     children: [
                       const SizedBox(width: 45, child: Text('Word:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      Expanded(child: Slider(value: sel.wordSpacing.clamp(-10.0, 30.0), min: -10.0, max: 30.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.wordSpacing = val); setModalState((){}); _triggerCanvasUpdate(); }))
+                      Expanded(child: Slider(value: sel.wordSpacing.clamp(-10.0, 30.0), min: -10.0, max: 30.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.wordSpacing = val); setModalState((){}); _fastUpdateElement(sel.id); }))
                     ]
                   ),
                   Row(
                     children: [
                       const SizedBox(width: 45, child: Text('Letter:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      Expanded(child: Slider(value: sel.letterSpacing.clamp(-5.0, 20.0), min: -5.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.letterSpacing = val); setModalState((){}); _triggerCanvasUpdate(); }))
+                      Expanded(child: Slider(value: sel.letterSpacing.clamp(-5.0, 20.0), min: -5.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.letterSpacing = val); setModalState((){}); _fastUpdateElement(sel.id); }))
                     ]
                   )
                 ]
@@ -2290,7 +2299,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     min: 10.0, max: 150.0,
                     activeColor: const Color(0xFF8B5CF6),
                     onChangeStart: (val) => saveState(),
-                    onChanged: (val) { setState(() => sel.fontSize = val); setModalState((){}); _triggerCanvasUpdate(); }
+                    onChanged: (val) { setState(() => sel.fontSize = val); setModalState((){}); _fastUpdateElement(sel.id); }
                   )
                 ]
               )
@@ -2328,7 +2337,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     min: -pi, max: pi,
                     activeColor: const Color(0xFF8B5CF6),
                     onChangeStart: (val) => saveState(),
-                    onChanged: (val) { setState(() => sel.angle = val); setModalState((){}); _triggerCanvasUpdate(); }
+                    onChanged: (val) { setState(() => sel.angle = val); setModalState((){}); _fastUpdateElement(sel.id); }
                   ),
                   Text('${(sel.angle * 180 / pi).toInt()}°', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))
                 ]
@@ -2365,17 +2374,17 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   Row(
                     children: [
                       const SizedBox(width: 45, child: Text('X-Axis:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      Expanded(child: Slider(value: sel.pitch.clamp(-pi / 2, pi / 2), min: -pi / 2, max: pi / 2, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.pitch=val); setModalState((){}); _triggerCanvasUpdate(); }))
+                      Expanded(child: Slider(value: sel.pitch.clamp(-pi / 2, pi / 2), min: -pi / 2, max: pi / 2, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.pitch=val); setModalState((){}); _fastUpdateElement(sel.id); }))
                     ]
                   ),
                   Row(
                     children: [
                       const SizedBox(width: 45, child: Text('Y-Axis:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      Expanded(child: Slider(value: sel.yaw.clamp(-pi / 2, pi / 2), min: -pi / 2, max: pi / 2, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.yaw=val); setModalState((){}); _triggerCanvasUpdate(); }))
+                      Expanded(child: Slider(value: sel.yaw.clamp(-pi / 2, pi / 2), min: -pi / 2, max: pi / 2, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.yaw=val); setModalState((){}); _fastUpdateElement(sel.id); }))
                     ]
                   ),
                   ElevatedButton(
-                    onPressed: () { saveState(); setState((){ sel.pitch = 0; sel.yaw = 0; }); setModalState((){}); _triggerCanvasUpdate(); },
+                    onPressed: () { saveState(); setState((){ sel.pitch = 0; sel.yaw = 0; }); setModalState((){}); _fastUpdateElement(sel.id); },
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.white.withOpacity(0.6), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                     child: const Text('Reset Perspective', style: TextStyle(color: Colors.black87, fontSize: 12))
                   )
@@ -2409,12 +2418,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     if (other.id != sel.id && other.groupId == sel.groupId && !other.isLocked) {
                       other.x += dx;
                       other.y += dy;
+                      _fastUpdateElement(other.id);
                     }
                   }
                 }
               });
               setModalState((){});
-              _triggerCanvasUpdate();
+              _fastUpdateElement(sel.id);
             }
 
             Widget buildDpadBtn(IconData icon, VoidCallback onTap) {
@@ -2564,7 +2574,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                             margin: const EdgeInsets.only(bottom: 8),
                             child: InkWell(
                               borderRadius: BorderRadius.circular(12),
-                              onTap: () { saveState(); setState(() => sel.fontFamily = font['name']!); _triggerCanvasUpdate(); Navigator.pop(context); },
+                              onTap: () { saveState(); setState(() => sel.fontFamily = font['name']!); _fastUpdateElement(sel.id); Navigator.pop(context); },
                               child: Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Row(
@@ -2602,7 +2612,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                               margin: const EdgeInsets.only(bottom: 8),
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(12),
-                                onTap: () { saveState(); setState(() => sel.fontFamily = fontName); _triggerCanvasUpdate(); Navigator.pop(context); },
+                                onTap: () { saveState(); setState(() => sel.fontFamily = fontName); _fastUpdateElement(sel.id); Navigator.pop(context); },
                                 child: Padding(
                                   padding: const EdgeInsets.all(10.0),
                                   child: Row(
@@ -2649,7 +2659,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         sel.textAlign = TextAlign.right;
       }
     });
-    _triggerCanvasUpdate();
+    _fastUpdateElement(sel.id);
   }
 
   void _showAlignmentModal(DesignElement sel) {
@@ -2676,18 +2686,18 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildAlignButton(Icons.align_horizontal_left, 'Left', () { saveState(); setState(() => sel.x = 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                  _buildAlignButton(Icons.align_horizontal_center, 'Center', () { saveState(); setState(() => sel.x = (currentCanvasW / 2) - (_getElWidth(sel) / 2)); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                  _buildAlignButton(Icons.align_horizontal_right, 'Right', () { saveState(); setState(() => sel.x = currentCanvasW - _getElWidth(sel) - 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_horizontal_left, 'Left', () { saveState(); setState(() => sel.x = 10); _fastUpdateElement(sel.id); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_horizontal_center, 'Center', () { saveState(); setState(() => sel.x = (currentCanvasW / 2) - (_getElWidth(sel) / 2)); _fastUpdateElement(sel.id); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_horizontal_right, 'Right', () { saveState(); setState(() => sel.x = currentCanvasW - _getElWidth(sel) - 10); _fastUpdateElement(sel.id); Navigator.pop(context); }),
                 ]
               ),
               const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildAlignButton(Icons.align_vertical_top, 'Top', () { saveState(); setState(() => sel.y = 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                  _buildAlignButton(Icons.align_vertical_center, 'Middle', () { saveState(); setState(() => sel.y = (currentCanvasH / 2) - (_getElHeight(sel) / 2)); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                  _buildAlignButton(Icons.align_vertical_bottom, 'Bottom', () { saveState(); setState(() => sel.y = currentCanvasH - _getElHeight(sel) - 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_vertical_top, 'Top', () { saveState(); setState(() => sel.y = 10); _fastUpdateElement(sel.id); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_vertical_center, 'Middle', () { saveState(); setState(() => sel.y = (currentCanvasH / 2) - (_getElHeight(sel) / 2)); _fastUpdateElement(sel.id); Navigator.pop(context); }),
+                  _buildAlignButton(Icons.align_vertical_bottom, 'Bottom', () { saveState(); setState(() => sel.y = currentCanvasH - _getElHeight(sel) - 10); _fastUpdateElement(sel.id); Navigator.pop(context); }),
                 ]
               )
             ]
@@ -2778,14 +2788,14 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           if (selectedForGroup.length > 1)
                             ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 8)), 
-                              onPressed: () { saveState(); String gId = Random().nextInt(10000).toString(); setState(() { for (var e in elements) { if (selectedForGroup.contains(e.id)) { e.groupId = gId; } } selectedForGroup.clear(); }); _triggerCanvasUpdate(); setModalState((){}); }, 
+                              onPressed: () { saveState(); String gId = Random().nextInt(10000).toString(); setState(() { for (var e in elements) { if (selectedForGroup.contains(e.id)) { e.groupId = gId; _fastUpdateElement(e.id); } } selectedForGroup.clear(); }); setModalState((){}); }, 
                               icon: const Icon(Icons.group, color: Colors.white, size: 14), label: const Text('Group', style: TextStyle(color: Colors.white, fontSize: 11))
                             ),
                           if (selectedForGroup.isNotEmpty) ...[
                             const SizedBox(width: 5),
                             ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 8)), 
-                              onPressed: () { saveState(); setState(() { for (var e in elements) { if (selectedForGroup.contains(e.id)) { e.groupId = null; } } selectedForGroup.clear(); }); _triggerCanvasUpdate(); setModalState((){}); }, 
+                              onPressed: () { saveState(); setState(() { for (var e in elements) { if (selectedForGroup.contains(e.id)) { e.groupId = null; _fastUpdateElement(e.id); } } selectedForGroup.clear(); }); setModalState((){}); }, 
                               icon: const Icon(Icons.link_off, color: Colors.white, size: 14), label: const Text('Ungroup', style: TextStyle(color: Colors.white, fontSize: 11))
                             ),
                           ],
@@ -2973,17 +2983,17 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   Row(
                     children: [
                       const SizedBox(width: 55, child: Text('Bend:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      Expanded(child: Slider(value: sel.textCurveRadius.clamp(-150.0, 150.0), min: -150.0, max: 150.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.textCurveRadius = val); setModalState((){}); _triggerCanvasUpdate(); }))
+                      Expanded(child: Slider(value: sel.textCurveRadius.clamp(-150.0, 150.0), min: -150.0, max: 150.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.textCurveRadius = val); setModalState((){}); _fastUpdateElement(sel.id); }))
                     ]
                   ),
                   Row(
                     children: [
                       const SizedBox(width: 55, child: Text('Spacing:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      Expanded(child: Slider(value: sel.letterSpacing.clamp(-5.0, 20.0), min: -5.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.letterSpacing = val); setModalState((){}); _triggerCanvasUpdate(); }))
+                      Expanded(child: Slider(value: sel.letterSpacing.clamp(-5.0, 20.0), min: -5.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.letterSpacing = val); setModalState((){}); _fastUpdateElement(sel.id); }))
                     ]
                   ),
                   ElevatedButton(
-                    onPressed: () { saveState(); setState(() => sel.textCurveRadius = 0.0); setModalState((){}); _triggerCanvasUpdate(); },
+                    onPressed: () { saveState(); setState(() => sel.textCurveRadius = 0.0); setModalState((){}); _fastUpdateElement(sel.id); },
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.white.withOpacity(0.6), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                     child: const Text('Reset Curve', style: TextStyle(color: Colors.black87, fontSize: 12))
                   )
@@ -3030,7 +3040,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           dense: true,
                           title: Text(bName, style: TextStyle(fontWeight: isSel ? FontWeight.bold : FontWeight.normal, color: isSel ? const Color(0xFF8B5CF6) : Colors.black87)),
                           trailing: isSel ? const Icon(Icons.check_circle, color: Color(0xFF8B5CF6), size: 18) : null,
-                          onTap: () { saveState(); setState(() => sel.blendModeIndex = index); _triggerCanvasUpdate(); Navigator.pop(context); }
+                          onTap: () { saveState(); setState(() => sel.blendModeIndex = index); _fastUpdateElement(sel.id); Navigator.pop(context); }
                         );
                       }
                     )
@@ -3061,14 +3071,14 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
            moreTools.add(_buildGridToolBtn(Icons.arrow_upward_rounded, 'Bring Fwd', () { bringForward(); Navigator.pop(context); }));
            moreTools.add(_buildGridToolBtn(Icons.arrow_downward_rounded, 'Send Bwd', () { sendBackward(); Navigator.pop(context); }));
         } else {
-           if (sel.imageBytes != null || sel.isShape) moreTools.add(_buildGridToolBtn(Icons.format_paint_rounded, 'Tint', () { Navigator.pop(context); _openProColorPicker(title: 'Color', currentColor: sel.elementColor, onColorChanged: (c) { setState(()=> sel.elementColor = c); }); }));
+           if (sel.imageBytes != null || sel.isShape) moreTools.add(_buildGridToolBtn(Icons.format_paint_rounded, 'Tint', () { Navigator.pop(context); _openProColorPicker(title: 'Color', currentColor: sel.elementColor, onColorChanged: (c) { setState(()=> sel.elementColor = c); _fastUpdateElement(sel.id); }); }));
            if (sel.imageBytes != null) moreTools.add(_buildGridToolBtn(Icons.auto_awesome_motion_rounded, 'Blend', () { Navigator.pop(context); _showBlendModeModal(sel); }));
            moreTools.add(_buildGridToolBtn(Icons.center_focus_strong_rounded, 'Position', () { Navigator.pop(context); _showAlignmentModal(sel); }));
            moreTools.add(_buildGridToolBtn(Icons.open_with_rounded, 'Move', () { Navigator.pop(context); showMoveModal(sel); }));
            moreTools.add(_buildGridToolBtn(Icons.rotate_right_rounded, 'Rotate', () { Navigator.pop(context); showRotationModal(sel); }));
            moreTools.add(_buildGridToolBtn(Icons.view_in_ar_rounded, 'Perspective', () { Navigator.pop(context); show3DModal(sel); }));
-           moreTools.add(_buildGridToolBtn(Icons.flip_rounded, 'Flip H', () { saveState(); setState(() => sel.flipX = !sel.flipX); _triggerCanvasUpdate(); Navigator.pop(context); }));
-           moreTools.add(_buildGridToolBtn(Icons.flip_camera_android_rounded, 'Flip V', () { saveState(); setState(() => sel.flipY = !sel.flipY); _triggerCanvasUpdate(); Navigator.pop(context); }));
+           moreTools.add(_buildGridToolBtn(Icons.flip_rounded, 'Flip H', () { saveState(); setState(() => sel.flipX = !sel.flipX); _fastUpdateElement(sel.id); Navigator.pop(context); }));
+           moreTools.add(_buildGridToolBtn(Icons.flip_camera_android_rounded, 'Flip V', () { saveState(); setState(() => sel.flipY = !sel.flipY); _fastUpdateElement(sel.id); Navigator.pop(context); }));
            moreTools.add(_buildGridToolBtn(Icons.opacity_rounded, 'Opacity', () { Navigator.pop(context); _showOpacityModal(sel); }));
            if (!sel.isBorder && !sel.isTable) moreTools.add(_buildGridToolBtn(Icons.rounded_corner_rounded, 'Radius', () { Navigator.pop(context); _showRadiusModal(sel); }));
            moreTools.add(_buildGridToolBtn(Icons.arrow_upward_rounded, 'Bring Fwd', () { bringForward(); Navigator.pop(context); }));
@@ -3356,196 +3366,205 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                       
                                       ...elements.map((e) {
                                         if (e.isHidden) return const SizedBox.shrink();
-                                        bool isSel = (e.id == selectedId) && !_isExporting;
                                         
-                                        Matrix4 matrix = Matrix4.identity()
-                                          ..setEntry(3, 2, 0.002) 
-                                          ..rotateX(e.pitch)
-                                          ..rotateY(e.yaw)
-                                          ..rotateZ(e.angle);
-                                        
-                                        if (e.flipX) matrix.rotateY(pi);
-                                        if (e.flipY) matrix.rotateX(pi);
-
-                                        double currentWidth = _getElWidth(e); 
-                                        double currentHeight = _getElHeight(e);
-                                        double bp = 20.0; 
-                                        
-                                        Widget contentWidget;
-                                        if (e.isBorder) {
-                                          contentWidget = SizedBox(
-                                            width: currentWidth,
-                                            height: currentHeight,
-                                            child: CustomPaint(
-                                              painter: AdvancedBorderPainter(
-                                                color: e.elementColor,
-                                                strokeWidth: e.strokeWidth,
-                                                radius: e.cornerRadius,
-                                                styleIndex: int.tryParse(e.borderStyle) ?? 0,
-                                              ),
-                                            ),
-                                          );
-                                        } else if (e.isTable && e.tableData != null) {
-                                          contentWidget = CustomTableWidget(tableData: e.tableData!, width: currentWidth, height: currentHeight, fontFamily: e.fontFamily, textColor: e.textColor, borderColor: e.elementColor, hasBorder: true);
-                                        } else if (e.isShape) {
-                                          contentWidget = Container(width: currentWidth, height: currentHeight, decoration: BoxDecoration(color: e.elementColor, borderRadius: BorderRadius.circular(e.cornerRadius)));
-                                        } else if (e.imageBytes != null) {
-                                          Widget img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, fit: BoxFit.fill);
-                                          if (e.isTinted) img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, color: e.elementColor, fit: BoxFit.fill);
-                                          else {
-                                            if (e.imageFilter == 1) img = ColorFiltered(colorFilter: const ColorFilter.matrix([0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0, 0, 0, 1, 0]), child: img);
-                                            else if (e.imageFilter == 2) img = ColorFiltered(colorFilter: const ColorFilter.matrix([0.393, 0.769, 0.189, 0, 0, 0.349, 0.686, 0.168, 0, 0, 0.272, 0.534, 0.131, 0, 0, 0, 0, 0, 1, 0]), child: img);
-                                            else if (e.imageFilter == 3) img = ColorFiltered(colorFilter: const ColorFilter.matrix([-1, 0, 0, 0, 255, 0, -1, 0, 0, 255, 0, 0, -1, 0, 255, 0, 0, 0, 1, 0]), child: img);
-                                          }
-                                          if (e.blendModeIndex != 0) img = ColorFiltered(colorFilter: ColorFilter.mode(Colors.white.withOpacity(0.0), AppConstants.blendModes[e.blendModeIndex]), child: img);
-                                          Widget clippedImg = img;
-                                          if (e.clipShape == 1) clippedImg = Container(clipBehavior: Clip.antiAlias, decoration: const BoxDecoration(shape: BoxShape.circle), child: img);
-                                          else if (e.clipShape == 2) clippedImg = ClipPath(clipper: TriangleClipper(), child: img);
-                                          else if (e.clipShape == 3) clippedImg = ClipPath(clipper: StarClipper(), child: img);
-                                          else if (e.clipShape == 4) clippedImg = ClipPath(clipper: HexagonClipper(), child: img);
-                                          contentWidget = SizedBox(width: currentWidth, height: e.clipShape == 0 ? currentHeight : currentWidth, child: clippedImg);
-                                        } else {
-                                          Widget buildTextWidget(Color c, [List<Shadow>? shadow]) {
-                                            List<Shadow> currentShadows = shadow != null ? List.from(shadow) : [];
-                                            if (shadow == null && e.hasShadow) currentShadows.add(Shadow(color: e.shadowColor, blurRadius: e.shadowBlur, offset: Offset(e.shadowOffsetX, e.shadowOffsetY)));
-
-                                            Color finalTextColor = c;
+                                        // 🔥 THE MAGIC ENGINE: Har element ab azaad hai, poora canvas hang nahi hoga!
+                                        return ValueListenableBuilder<int>(
+                                          valueListenable: _elementNotifiers.putIfAbsent(e.id, () => ValueNotifier<int>(0)),
+                                          builder: (context, _, __) {
+                                            bool isSel = (e.id == selectedId) && !_isExporting;
                                             
-                                            if (e.isGlass && e.textGradient == null && e.textTextureBytes == null) {
-                                               finalTextColor = c.withOpacity(0.35);
-                                               currentShadows.add(const Shadow(color: Colors.white, offset: Offset(0, 0), blurRadius: 15));
-                                               currentShadows.add(const Shadow(color: Colors.black26, offset: Offset(2, 2), blurRadius: 5));
-                                            }
-
-                                            if (e.isBevel) {
-                                               currentShadows.add(const Shadow(color: Colors.white70, offset: Offset(-2, -2), blurRadius: 2));
-                                               currentShadows.add(const Shadow(color: Colors.black54, offset: Offset(2, 2), blurRadius: 2));
-                                            }
-
-                                            if (e.isInnerShadow) {
-                                               currentShadows.add(const Shadow(color: Colors.black87, offset: Offset(1.5, 1.5), blurRadius: 2));
-                                            }
-
-                                            TextStyle st = TextStyle(
-                                              fontFamily: e.fontFamily, 
-                                              fontSize: e.fontSize, 
-                                              color: finalTextColor, 
-                                              letterSpacing: e.letterSpacing, 
-                                              wordSpacing: e.wordSpacing, 
-                                              height: e.lineHeight, 
-                                              shadows: currentShadows.isNotEmpty ? currentShadows : null, 
-                                              fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal, 
-                                              fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal
-                                            );
+                                            Matrix4 matrix = Matrix4.identity()
+                                              ..setEntry(3, 2, 0.002) 
+                                              ..rotateX(e.pitch)
+                                              ..rotateY(e.yaw)
+                                              ..rotateZ(e.angle);
                                             
-                                            if (e.textCurveRadius != 0) return CurvedTextWidget(text: e.content, style: st, radius: e.textCurveRadius);
-                                            return SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: st));
-                                          }
-                                          
-                                          List<Widget> blockLayers = [];
-                                          if (e.text3dDepth > 0) {
-                                            for (double i = e.text3dDepth; i > 0; i -= 1.0) blockLayers.add(Transform.translate(offset: Offset(i, i), child: buildTextWidget(e.text3dColor, [])));
-                                          }
-                                          
-                                          Widget mainTxt = buildTextWidget(e.textGradient != null ? Colors.white : e.textColor);
-                                          if (e.textGradient != null) mainTxt = ShaderMask(shaderCallback: (bounds) => LinearGradient(colors: e.textGradient!).createShader(bounds), child: mainTxt);
-                                          if (e.textTextureBytes != null) mainTxt = TextureTextWrapper(child: mainTxt, textureBytes: e.textTextureBytes!);
-                                          blockLayers.add(mainTxt);
-                                          
-                                          Widget txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: blockLayers);
-                                          
-                                          if (e.hasStroke) {
-                                            TextStyle stStroke = TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, letterSpacing: e.letterSpacing, wordSpacing: e.wordSpacing, height: e.lineHeight, foreground: Paint()..style = PaintingStyle.stroke..strokeWidth = e.strokeWidth..color = e.strokeColor, fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal, fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal);
-                                            Widget strokeTxt = e.textCurveRadius != 0 ? CurvedTextWidget(text: e.content, style: stStroke, radius: e.textCurveRadius) : SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: stStroke));
-                                            txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [strokeTxt, txt]);
-                                          }
-                                          
-                                          if (e.textBgColor != null) txt = Container(padding: const EdgeInsets.all(5), decoration: BoxDecoration(color: e.textBgColor, borderRadius: BorderRadius.circular(e.cornerRadius)), child: txt);
-                                          contentWidget = txt; 
-                                        }
-                                        
-                                        if (_isExporting) { 
-                                          return Positioned(left: e.x, top: e.y, child: Transform(transform: matrix, alignment: Alignment.center, child: contentWidget));
-                                        }
-                                        
-                                        return Positioned(
-                                          left: e.x - bp, 
-                                          top: e.y - bp,
-                                          child: Transform(
-                                            transform: matrix, alignment: Alignment.center,
-                                            child: SizedBox(
-                                              width: currentWidth + (bp * 2), height: currentHeight + (bp * 2),
-                                              child: Stack(
-                                                clipBehavior: Clip.none,
-                                                children: [
-                                                  Positioned(
-                                                    left: bp, top: bp, right: bp, bottom: bp,
-                                                    child: GestureDetector(
-                                                      behavior: HitTestBehavior.opaque,
-                                                      onTap: () { 
-                                                        if (e.isLocked) {
-                                                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Layer is Locked')));
-                                                        } else {
-                                                          setState(() => selectedId = e.id);
-                                                          _triggerCanvasUpdate();
-                                                        }
-                                                      },
-                                                      onPanStart: (d) { if(!e.isLocked) saveState(); },
-                                                      onPanUpdate: (d) {
-                                                        if(!e.isLocked && selectedId == e.id) {
-                                                          e.x += d.delta.dx; 
-                                                          e.y += d.delta.dy; 
-                                                          if (e.groupId != null) {
-                                                            for (var other in elements) {
-                                                              if (other.id != e.id && other.groupId == e.groupId && !other.isLocked) {
-                                                                other.x += d.delta.dx; other.y += d.delta.dy;
-                                                              }
-                                                            }
-                                                          }
-                                                          _triggerCanvasUpdate();
-                                                        }
-                                                      },
-                                                      child: Container(
-                                                        decoration: isSel ? BoxDecoration(border: Border.all(color: const Color(0xFF8B5CF6), width: 1.0)) : null,
-                                                        child: Opacity(opacity: e.opacity.clamp(0.0, 1.0), child: contentWidget)
-                                                      )
-                                                    )
+                                            if (e.flipX) matrix.rotateY(pi);
+                                            if (e.flipY) matrix.rotateX(pi);
+
+                                            double currentWidth = _getElWidth(e); 
+                                            double currentHeight = _getElHeight(e);
+                                            double bp = 20.0; 
+                                            
+                                            Widget contentWidget;
+                                            if (e.isBorder) {
+                                              contentWidget = SizedBox(
+                                                width: currentWidth,
+                                                height: currentHeight,
+                                                child: CustomPaint(
+                                                  painter: AdvancedBorderPainter(
+                                                    color: e.elementColor,
+                                                    strokeWidth: e.strokeWidth,
+                                                    radius: e.cornerRadius,
+                                                    styleIndex: int.tryParse(e.borderStyle) ?? 0,
                                                   ),
-                                                  
-                                                  if (isSel) ...[
-                                                    Positioned(top: 0, left: bp + currentWidth/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'T', e), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildPill(true)))),
-                                                    Positioned(bottom: 0, left: bp + currentWidth/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'B', e), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildPill(true)))),
-                                                    Positioned(left: 0, top: bp + currentHeight/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'L', e), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildPill(false)))),
-                                                    Positioned(right: 0, top: bp + currentHeight/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'R', e), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildPill(false)))),
-                                                    
-                                                    Positioned(top: 0, left: 0, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TL'), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildCircle()))),
-                                                    Positioned(top: 0, right: 0, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TR'), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildCircle()))),
-                                                    Positioned(bottom: 0, left: 0, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BL'), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildCircle()))),
-                                                    Positioned(bottom: 0, right: 0, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BR'), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildCircle()))),
-                                                    
-                                                    Positioned(
-                                                      top: 0, right: 0, 
-                                                      child: GestureDetector(
-                                                        behavior: HitTestBehavior.opaque,
-                                                        onPanStart: (_) => saveState(),
-                                                        onPanUpdate: (d) => _rotateElement(d, e), 
-                                                        child: Container(padding: const EdgeInsets.only(top: 0, right: 0, bottom: 20, left: 20), color: Colors.transparent, child: _buildIconCircle(Icons.rotate_right))
-                                                      )
-                                                    ),
-                                                    Positioned(
-                                                      bottom: 0, left: 0, 
-                                                      child: GestureDetector(
-                                                        behavior: HitTestBehavior.opaque,
-                                                        onPanStart: (_) => saveState(),
-                                                        onPanUpdate: (d) => _scaleCorner(d, e, 'BL'),
-                                                        child: Container(padding: const EdgeInsets.only(bottom: 0, left: 0, top: 20, right: 20), color: Colors.transparent, child: _buildIconCircle(Icons.open_in_full))
-                                                      )
-                                                    ),
-                                                  ]
-                                                ],
+                                                ),
+                                              );
+                                            } else if (e.isTable && e.tableData != null) {
+                                              contentWidget = CustomTableWidget(tableData: e.tableData!, width: currentWidth, height: currentHeight, fontFamily: e.fontFamily, textColor: e.textColor, borderColor: e.elementColor, hasBorder: true);
+                                            } else if (e.isShape) {
+                                              contentWidget = Container(width: currentWidth, height: currentHeight, decoration: BoxDecoration(color: e.elementColor, borderRadius: BorderRadius.circular(e.cornerRadius)));
+                                            } else if (e.imageBytes != null) {
+                                              Widget img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, fit: BoxFit.fill);
+                                              if (e.isTinted) img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, color: e.elementColor, fit: BoxFit.fill);
+                                              else {
+                                                if (e.imageFilter == 1) img = ColorFiltered(colorFilter: const ColorFilter.matrix([0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0, 0, 0, 1, 0]), child: img);
+                                                else if (e.imageFilter == 2) img = ColorFiltered(colorFilter: const ColorFilter.matrix([0.393, 0.769, 0.189, 0, 0, 0.349, 0.686, 0.168, 0, 0, 0.272, 0.534, 0.131, 0, 0, 0, 0, 0, 1, 0]), child: img);
+                                                else if (e.imageFilter == 3) img = ColorFiltered(colorFilter: const ColorFilter.matrix([-1, 0, 0, 0, 255, 0, -1, 0, 0, 255, 0, 0, -1, 0, 255, 0, 0, 0, 1, 0]), child: img);
+                                              }
+                                              if (e.blendModeIndex != 0) img = ColorFiltered(colorFilter: ColorFilter.mode(Colors.white.withOpacity(0.0), AppConstants.blendModes[e.blendModeIndex]), child: img);
+                                              Widget clippedImg = img;
+                                              if (e.clipShape == 1) clippedImg = Container(clipBehavior: Clip.antiAlias, decoration: const BoxDecoration(shape: BoxShape.circle), child: img);
+                                              else if (e.clipShape == 2) clippedImg = ClipPath(clipper: TriangleClipper(), child: img);
+                                              else if (e.clipShape == 3) clippedImg = ClipPath(clipper: StarClipper(), child: img);
+                                              else if (e.clipShape == 4) clippedImg = ClipPath(clipper: HexagonClipper(), child: img);
+                                              contentWidget = SizedBox(width: currentWidth, height: e.clipShape == 0 ? currentHeight : currentWidth, child: clippedImg);
+                                            } else {
+                                              Widget buildTextWidget(Color c, [List<Shadow>? shadow]) {
+                                                List<Shadow> currentShadows = shadow != null ? List.from(shadow) : [];
+                                                if (shadow == null && e.hasShadow) currentShadows.add(Shadow(color: e.shadowColor, blurRadius: e.shadowBlur, offset: Offset(e.shadowOffsetX, e.shadowOffsetY)));
+
+                                                Color finalTextColor = c;
+                                                
+                                                if (e.isGlass && e.textGradient == null && e.textTextureBytes == null) {
+                                                   finalTextColor = c.withOpacity(0.35);
+                                                   currentShadows.add(const Shadow(color: Colors.white, offset: Offset(0, 0), blurRadius: 15));
+                                                   currentShadows.add(const Shadow(color: Colors.black26, offset: Offset(2, 2), blurRadius: 5));
+                                                }
+
+                                                if (e.isBevel) {
+                                                   currentShadows.add(const Shadow(color: Colors.white70, offset: Offset(-2, -2), blurRadius: 2));
+                                                   currentShadows.add(const Shadow(color: Colors.black54, offset: Offset(2, 2), blurRadius: 2));
+                                                }
+
+                                                if (e.isInnerShadow) {
+                                                   currentShadows.add(const Shadow(color: Colors.black87, offset: Offset(1.5, 1.5), blurRadius: 2));
+                                                }
+
+                                                TextStyle st = TextStyle(
+                                                  fontFamily: e.fontFamily, 
+                                                  fontSize: e.fontSize, 
+                                                  color: finalTextColor, 
+                                                  letterSpacing: e.letterSpacing, 
+                                                  wordSpacing: e.wordSpacing, 
+                                                  height: e.lineHeight, 
+                                                  shadows: currentShadows.isNotEmpty ? currentShadows : null, 
+                                                  fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal, 
+                                                  fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal
+                                                );
+                                                
+                                                if (e.textCurveRadius != 0) return CurvedTextWidget(text: e.content, style: st, radius: e.textCurveRadius);
+                                                return SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: st));
+                                              }
+                                              
+                                              List<Widget> blockLayers = [];
+                                              if (e.text3dDepth > 0) {
+                                                for (double i = e.text3dDepth; i > 0; i -= 1.0) blockLayers.add(Transform.translate(offset: Offset(i, i), child: buildTextWidget(e.text3dColor, [])));
+                                              }
+                                              
+                                              Widget mainTxt = buildTextWidget(e.textGradient != null ? Colors.white : e.textColor);
+                                              if (e.textGradient != null) mainTxt = ShaderMask(shaderCallback: (bounds) => LinearGradient(colors: e.textGradient!).createShader(bounds), child: mainTxt);
+                                              if (e.textTextureBytes != null) mainTxt = TextureTextWrapper(child: mainTxt, textureBytes: e.textTextureBytes!);
+                                              blockLayers.add(mainTxt);
+                                              
+                                              Widget txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: blockLayers);
+                                              
+                                              if (e.hasStroke) {
+                                                TextStyle stStroke = TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, letterSpacing: e.letterSpacing, wordSpacing: e.wordSpacing, height: e.lineHeight, foreground: Paint()..style = PaintingStyle.stroke..strokeWidth = e.strokeWidth..color = e.strokeColor, fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal, fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal);
+                                                Widget strokeTxt = e.textCurveRadius != 0 ? CurvedTextWidget(text: e.content, style: stStroke, radius: e.textCurveRadius) : SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: stStroke));
+                                                txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [strokeTxt, txt]);
+                                              }
+                                              
+                                              if (e.textBgColor != null) txt = Container(padding: const EdgeInsets.all(5), decoration: BoxDecoration(color: e.textBgColor, borderRadius: BorderRadius.circular(e.cornerRadius)), child: txt);
+                                              contentWidget = txt; 
+                                            }
+                                            
+                                            if (_isExporting) { 
+                                              return Positioned(left: e.x, top: e.y, child: Transform(transform: matrix, alignment: Alignment.center, child: contentWidget));
+                                            }
+                                            
+                                            return Positioned(
+                                              left: e.x - bp, 
+                                              top: e.y - bp,
+                                              child: Transform(
+                                                transform: matrix, alignment: Alignment.center,
+                                                child: SizedBox(
+                                                  width: currentWidth + (bp * 2), height: currentHeight + (bp * 2),
+                                                  child: Stack(
+                                                    clipBehavior: Clip.none,
+                                                    children: [
+                                                      Positioned(
+                                                        left: bp, top: bp, right: bp, bottom: bp,
+                                                        child: GestureDetector(
+                                                          behavior: HitTestBehavior.opaque,
+                                                          onTap: () { 
+                                                            if (e.isLocked) {
+                                                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Layer is Locked')));
+                                                            } else {
+                                                              setState(() => selectedId = e.id);
+                                                              _triggerCanvasUpdate();
+                                                            }
+                                                          },
+                                                          onPanStart: (d) { if(!e.isLocked) saveState(); },
+                                                          onPanUpdate: (d) {
+                                                            if(!e.isLocked && selectedId == e.id) {
+                                                              e.x += d.delta.dx; 
+                                                              e.y += d.delta.dy; 
+                                                              if (e.groupId != null) {
+                                                                for (var other in elements) {
+                                                                  if (other.id != e.id && other.groupId == e.groupId && !other.isLocked) {
+                                                                    other.x += d.delta.dx; other.y += d.delta.dy;
+                                                                    _fastUpdateElement(other.id);
+                                                                  }
+                                                                }
+                                                              }
+                                                              // 🔥 ZERO LAG MOVEMENT UPDATE
+                                                              _fastUpdateElement(e.id);
+                                                            }
+                                                          },
+                                                          child: Container(
+                                                            decoration: isSel ? BoxDecoration(border: Border.all(color: const Color(0xFF8B5CF6), width: 1.0)) : null,
+                                                            child: Opacity(opacity: e.opacity.clamp(0.0, 1.0), child: contentWidget)
+                                                          )
+                                                        )
+                                                      ),
+                                                      
+                                                      if (isSel) ...[
+                                                        Positioned(top: 0, left: bp + currentWidth/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'T', e), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildPill(true)))),
+                                                        Positioned(bottom: 0, left: bp + currentWidth/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'B', e), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildPill(true)))),
+                                                        Positioned(left: 0, top: bp + currentHeight/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'L', e), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildPill(false)))),
+                                                        Positioned(right: 0, top: bp + currentHeight/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'R', e), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildPill(false)))),
+                                                        
+                                                        Positioned(top: 0, left: 0, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TL'), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildCircle()))),
+                                                        Positioned(top: 0, right: 0, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TR'), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildCircle()))),
+                                                        Positioned(bottom: 0, left: 0, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BL'), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildCircle()))),
+                                                        Positioned(bottom: 0, right: 0, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BR'), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildCircle()))),
+                                                        
+                                                        Positioned(
+                                                          top: 0, right: 0, 
+                                                          child: GestureDetector(
+                                                            behavior: HitTestBehavior.opaque,
+                                                            onPanStart: (_) => saveState(),
+                                                            onPanUpdate: (d) => _rotateElement(d, e), 
+                                                            child: Container(padding: const EdgeInsets.only(top: 0, right: 0, bottom: 20, left: 20), color: Colors.transparent, child: _buildIconCircle(Icons.rotate_right))
+                                                          )
+                                                        ),
+                                                        Positioned(
+                                                          bottom: 0, left: 0, 
+                                                          child: GestureDetector(
+                                                            behavior: HitTestBehavior.opaque,
+                                                            onPanStart: (_) => saveState(),
+                                                            onPanUpdate: (d) => _scaleCorner(d, e, 'BL'),
+                                                            child: Container(padding: const EdgeInsets.only(bottom: 0, left: 0, top: 20, right: 20), color: Colors.transparent, child: _buildIconCircle(Icons.open_in_full))
+                                                          )
+                                                        ),
+                                                      ]
+                                                    ],
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                          ),
+                                            );
+                                          }
                                         );
                                       }).toList(),
                                     ],
@@ -3609,8 +3628,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       topRow.add(_buildToolBtn(Icons.copy_rounded, 'Duplicate', duplicateSelected, Colors.blue));
       topRow.add(_buildToolBtn(Icons.opacity_rounded, 'Opacity', () => _showOpacityModal(sel)));
       topRow.add(_buildToolBtn(Icons.content_copy_rounded, 'Copy', () { Clipboard.setData(ClipboardData(text: sel.content)); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Text Copied!'))); }));
-      topRow.add(_buildToolBtn(Icons.flip_rounded, 'Flip H', () { saveState(); setState(() => sel.flipX = !sel.flipX); _triggerCanvasUpdate(); }));
-      topRow.add(_buildToolBtn(Icons.flip_camera_android_rounded, 'Flip V', () { saveState(); setState(() => sel.flipY = !sel.flipY); _triggerCanvasUpdate(); }));
+      topRow.add(_buildToolBtn(Icons.flip_rounded, 'Flip H', () { saveState(); setState(() => sel.flipX = !sel.flipX); _fastUpdateElement(sel.id); }));
+      topRow.add(_buildToolBtn(Icons.flip_camera_android_rounded, 'Flip V', () { saveState(); setState(() => sel.flipY = !sel.flipY); _fastUpdateElement(sel.id); }));
       topRow.add(_buildToolBtn(Icons.open_with_rounded, 'Move', () => showMoveModal(sel)));
       topRow.add(_buildToolBtn(Icons.lock_outline_rounded, 'Lock', () { saveState(); setState(() { sel.isLocked = true; selectedId = null; }); _triggerCanvasUpdate(); }, Colors.orange));
 
@@ -3619,7 +3638,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       bottomRow.add(_buildToolBtn(Icons.font_download_rounded, 'Font', () => showFontPickerModal(sel)));
       bottomRow.add(_buildToolBtn(Icons.palette_rounded, 'Colour', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
       bottomRow.add(_buildToolBtn(Icons.gradient_rounded, 'Gradient', () => _showGradientPickerModal(sel)));
-      bottomRow.add(_buildToolBtn(Icons.format_bold_rounded, 'Bold', () { saveState(); setState(() => sel.isBold = !sel.isBold); _triggerCanvasUpdate(); }));
+      bottomRow.add(_buildToolBtn(Icons.format_bold_rounded, 'Bold', () { saveState(); setState(() => sel.isBold = !sel.isBold); _fastUpdateElement(sel.id); }));
       bottomRow.add(_buildToolBtn(Icons.height_rounded, 'Spacing', () => showSpacingModal(sel)));
       bottomRow.add(_buildToolBtn(Icons.format_color_fill_rounded, 'Text BG', () => _showTextBgPickerModal(sel)));
       bottomRow.add(_buildToolBtn(Icons.auto_awesome_rounded, 'Effect', () => _showTextEffectsModal(sel), const Color(0xFF10B981)));
