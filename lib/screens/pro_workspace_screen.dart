@@ -18,6 +18,10 @@ import '../widgets/custom_widgets.dart';
 import '../utils/constants.dart';
 import 'my_folder_screen.dart';
 
+// 🔥 NAYE MODULAR TOOLS JO AAPNE BANA LIYE HAIN 🔥
+import 'workspace_tools/workspace_painters.dart';
+import 'workspace_tools/workspace_color_picker.dart';
+
 class ProWorkspaceScreen extends StatefulWidget {
   final ProjectModel? project;
   final String? initialAction;
@@ -126,6 +130,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       double newW = currentCanvasW > 0 ? currentCanvasW : 1;
       double newH = currentCanvasH > 0 ? currentCanvasH : 1;
+      
       double scaleX = newW / oldW;
       double scaleY = newH / oldH;
 
@@ -261,7 +266,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     if (undoStack.length > 10) undoStack.removeAt(0); 
   }
 
-  void undoAction() {
+  void _undoAction() {
     if (undoStack.isNotEmpty) {
       redoStack.add(elements.map((e) => e.clone()).toList());
       setState(() { elements = undoStack.removeLast(); selectedId = null; activeToolbarMenu = 'main'; });
@@ -269,7 +274,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     }
   }
 
-  void redoAction() {
+  void _redoAction() {
     if (redoStack.isNotEmpty) {
       undoStack.add(elements.map((e) => e.clone()).toList());
       setState(() { elements = redoStack.removeLast(); selectedId = null; activeToolbarMenu = 'main'; });
@@ -312,11 +317,22 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   void _rotateElement(DragUpdateDetails d, DesignElement e) { e.angle += (d.delta.dx + d.delta.dy) * 0.015; _fastUpdateElement(e.id); }
 
-  // 🔥 ADVANCE 4K EXPORT ENGINE 🔥
+  // 🔥 ADVANCE 4K EXPORT ENGINE (BUILT-IN) 🔥
   Future<void> _renderAndSave(double targetWidth, String format) async {
+    Color originalColor = pageColor;
+    bool changedToWhite = false;
+    
+    // JPG Export fix (transparent background ko white banata hai)
+    if (format == 'JPG' && pageColor == Colors.transparent && bgImageBytes == null && bgGradient == null) {
+      setState(() { pageColor = Colors.white; });
+      changedToWhite = true;
+      await Future.delayed(const Duration(milliseconds: 150)); 
+    }
+
     setState(() { selectedId = null; _isExporting = true; activeToolbarMenu = 'main'; });
     _triggerCanvasUpdate();
     await Future.delayed(const Duration(milliseconds: 400));
+    
     try {
       RenderRepaintBoundary boundary = _canvasKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
       double logicalW = currentCanvasW > 0 ? currentCanvasW : 1000;
@@ -341,7 +357,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       debugPrint('Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Hardware limit reached! Try a lower quality.'), backgroundColor: Colors.red));
     } finally {
-      setState(() { _isExporting = false; });
+      setState(() { 
+        _isExporting = false; 
+        if (changedToWhite) pageColor = originalColor;
+      });
       _triggerCanvasUpdate();
     }
   }
@@ -361,9 +380,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         const Divider(color: Colors.black12), const SizedBox(height: 5),
         Expanded(child: ListView(physics: const BouncingScrollPhysics(), children: [
           _buildExportOption(Icons.hd, 'Standard HD (1080p)', 'Social Media, WhatsApp status ke liye', Colors.blue, () { Navigator.pop(context); _renderAndSave(1920.0, 'JPG'); }), const SizedBox(height: 8),
+          _buildExportOption(Icons.layers_clear, 'Transparent Logo PNG', 'Bina background ke PNG logo save karein', Colors.green, () { Navigator.pop(context); _renderAndSave(1920.0, 'PNG'); }), const SizedBox(height: 8),
           _buildExportOption(Icons.four_k, 'Ultra 4K Resolution', 'Posters aur A4 size printing ke liye', Colors.purple, () { Navigator.pop(context); _renderAndSave(3840.0, 'JPG'); }), const SizedBox(height: 8),
-          _buildExportOption(Icons.photo_size_select_large, '8K Banner Quality', 'Bade Flex aur Banners ke liye (Heavy File)', Colors.red, () { Navigator.pop(context); _renderAndSave(7680.0, 'JPG'); }), const SizedBox(height: 8),
-          _buildExportOption(Icons.picture_as_pdf, 'Save as PDF (Print Ready)', 'High-Quality Document format', Colors.orange, () { Navigator.pop(context); _renderAndSave(3840.0, 'PDF'); }),
+          _buildExportOption(Icons.photo_size_select_large, '8K Banner Quality', 'Bade Flex aur Banners ke liye', Colors.red, () { Navigator.pop(context); _renderAndSave(7680.0, 'JPG'); }), const SizedBox(height: 8),
+          _buildExportOption(Icons.picture_as_pdf, 'Save as PDF', 'High-Quality Document format', Colors.orange, () { Navigator.pop(context); _renderAndSave(3840.0, 'PDF'); }),
         ]))
       ]));
     });
@@ -515,7 +535,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
         final bytes = await image.readAsBytes();
-        setState(() { bgImageBytes = bytes; bgGradient = null; pageColor = Colors.white; }); _triggerCanvasUpdate();
+        saveState(); // 🔥 BUG 3 FIXED: BG image par bhi undo support
+        setState(() { bgImageBytes = bytes; bgGradient = null; pageColor = Colors.transparent; }); 
+        _triggerCanvasUpdate();
       }
     } catch (e) { debugPrint("BG Image Error: $e"); }
   }
@@ -523,7 +545,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   Future<void> _addTextureToText(DesignElement sel) async {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-      if (image != null) { final bytes = await image.readAsBytes(); saveState(); setState(() => sel.textTextureBytes = bytes); _fastUpdateElement(sel.id); }
+      if (image != null) { final bytes = await image.readAsBytes(); saveState(); setState(() { sel.textTextureBytes = bytes; }); _fastUpdateElement(sel.id); }
     } catch (e) { debugPrint("Texture Error: $e"); }
   }
 
@@ -542,13 +564,17 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
           return InkWell(onTap: () {
             saveState();
             setState(() {
-              if (styleName == 'border') {
+              // 🔥 BUG 1 FIXED: Ab Background option background hi banayega, shape nahi!
+              if (styleName == 'bg') {
+                pageColor = item['color'] as Color;
+                bgImageBytes = null;
+                bgGradient = null;
+              }
+              else if (styleName == 'border') {
                 double safeW = currentCanvasW > 50 ? currentCanvasW - 30 : 200; double safeH = currentCanvasH > 50 ? currentCanvasH - 30 : 200;
                 elements.add(DesignElement(id: Random().nextInt(10000).toString(), x: 15, y: 15, content: 'Border', width: safeW, height: safeH, isText: false, isBorder: true, borderStyle: item['style_id'].toString(), elementColor: Colors.black, strokeWidth: 4.0, cornerRadius: 0.0));
               } else if (styleName.contains('shape') || styleName == 'badge') {
                 elements.add(DesignElement(id: Random().nextInt(10000).toString(), x: 90, y: 180, content: 'Shape', width: 100, height: 100, isText: false, isShape: true, elementColor: item['color'] as Color));
-              } else {
-                elements.insert(0, DesignElement(id: Random().nextInt(10000).toString(), x: 0, y: 0, content: 'BG', width: 400, height: 400, isText: false, isShape: true, elementColor: item['color'] as Color));
               }
             }); _triggerCanvasUpdate(); Navigator.pop(context);
           }, child: Container(decoration: BoxDecoration(color: Colors.white.withOpacity(0.5), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white)), child: styleName == 'border' ? Padding(padding: const EdgeInsets.all(8.0), child: CustomPaint(painter: AdvancedBorderPainter(color: Colors.black, strokeWidth: 2.0, radius: 0.0, styleIndex: item['style_id']), child: Center(child: Text(item['title'], textAlign: TextAlign.center, style: const TextStyle(fontSize: 8, color: Colors.black54))))) : Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(item['icon'], color: item['color'], size: 24), const SizedBox(height: 4), Text(item['title'], textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: item['color']))])));
@@ -569,7 +595,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     showModalBottomSheet(context: context, barrierColor: Colors.transparent, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (ctx) => AdvancedColorPickerModal(title: title, initialColor: currentColor, documentColors: docColors.toList(), allowClear: allowClear, onColorChanged: (c) { saveState(); onColorChanged(c); }));
   }
 
-  void _showCanvasBgColorModal() { _openProColorPicker(title: 'Canvas Color', currentColor: pageColor, onColorChanged: (c){ setState((){ pageColor = c; bgImageBytes = null; bgGradient = null; }); _triggerCanvasUpdate(); }); }
+  void _showCanvasBgColorModal() { _openProColorPicker(title: 'Canvas Color', currentColor: pageColor, allowClear: true, onColorChanged: (c){ setState((){ pageColor = c == Colors.transparent ? Colors.transparent : c; bgImageBytes = null; bgGradient = null; }); _triggerCanvasUpdate(); }); }
 
   void _showCanvasBgGradientModal() {
     showModalBottomSheet(context: context, barrierColor: Colors.transparent, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (context) {
@@ -809,131 +835,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     });
   }
 
-  Future<void> _importCustomFont() async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['ttf', 'otf']);
-      if (result != null && result.files.single.path != null) {
-        String filePath = result.files.single.path!; String fontName = result.files.single.name.replaceAll('.ttf', '').replaceAll('.otf', '');
-        var fontLoader = FontLoader(fontName); fontLoader.addFont(Future.value(ByteData.view(File(filePath).readAsBytesSync().buffer)));
-        await fontLoader.load(); setState(() { if (!customFonts.contains(fontName)) customFonts.add(fontName); });
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Font "$fontName" import ho gaya!')));
-      }
-    } catch (e) { debugPrint("Font Import Error: $e"); }
-  }
-
-  void _showFontPickerModal(DesignElement sel) {
-    showModalBottomSheet(context: context, barrierColor: Colors.transparent, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (context) {
-      return StatefulBuilder(builder: (context, setModalState) {
-        return _buildGlassContainer(context, height: MediaQuery.of(context).size.height * 0.70, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Select Font', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), Row(children: [ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), elevation: 0), onPressed: () async { await _importCustomFont(); setModalState(() {}); }, icon: const Icon(Icons.add, color: Colors.white, size: 14), label: const Text('Add', style: TextStyle(color: Colors.white, fontSize: 11))), const SizedBox(width: 8), IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))])]), const Divider(color: Colors.black12),
-          Expanded(child: ListView(physics: const BouncingScrollPhysics(), children: [
-            const Padding(padding: EdgeInsets.symmetric(vertical: 8.0), child: Text('Pre-installed Fonts', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-            ...availableFontsData.map((font) {
-              bool isSelected = sel.fontFamily == font['name'];
-              return Card(elevation: 0, color: isSelected ? Colors.white.withOpacity(0.8) : Colors.white.withOpacity(0.4), shape: RoundedRectangleBorder(side: BorderSide(color: isSelected ? const Color(0xFF8B5CF6) : Colors.transparent), borderRadius: BorderRadius.circular(12)), margin: const EdgeInsets.only(bottom: 8), child: InkWell(borderRadius: BorderRadius.circular(12), onTap: () { saveState(); setState(() { sel.fontFamily = font['name']!; }); _fastUpdateElement(sel.id); Navigator.pop(context); }, child: Padding(padding: const EdgeInsets.all(10.0), child: Row(children: [Expanded(flex: 2, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(font['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)), Text(font['desc']!, style: const TextStyle(fontSize: 9, color: Colors.black54))])), Expanded(flex: 3, child: Text(font['title']!, textAlign: TextAlign.right, textDirection: TextDirection.rtl, style: TextStyle(fontFamily: font['name'], fontSize: 22, color: Colors.black))), const SizedBox(width: 10), Icon(isSelected ? Icons.check_circle : Icons.radio_button_unchecked, color: isSelected ? const Color(0xFF8B5CF6) : Colors.black26, size: 18)]))));
-            }),
-            if (customFonts.isNotEmpty) ...[
-              const Padding(padding: EdgeInsets.only(top: 15, bottom: 8.0), child: Text('My Custom Fonts', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12))),
-              ...customFonts.map((fontName) {
-                bool isSelected = sel.fontFamily == fontName;
-                return Card(elevation: 0, color: isSelected ? Colors.white.withOpacity(0.8) : Colors.white.withOpacity(0.4), shape: RoundedRectangleBorder(side: BorderSide(color: isSelected ? const Color(0xFF8B5CF6) : Colors.transparent), borderRadius: BorderRadius.circular(12)), margin: const EdgeInsets.only(bottom: 8), child: InkWell(borderRadius: BorderRadius.circular(12), onTap: () { saveState(); setState(() { sel.fontFamily = fontName; }); _fastUpdateElement(sel.id); Navigator.pop(context); }, child: Padding(padding: const EdgeInsets.all(10.0), child: Row(children: [Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(fontName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)), const Text('Imported TTF', style: TextStyle(fontSize: 9, color: Colors.black54))])), const Text('نمونہ تحریر', textAlign: TextAlign.right, textDirection: TextDirection.rtl, style: TextStyle(fontSize: 22)), const SizedBox(width: 10), Icon(isSelected ? Icons.check_circle : Icons.radio_button_unchecked, color: isSelected ? const Color(0xFF8B5CF6) : Colors.black26, size: 18)]))));
-              })
-            ]
-          ]))
-        ]));
-      });
-    });
-  }
-
-  void _toggleAlignment(DesignElement sel) {
-    saveState(); setState(() { if (sel.textAlign == TextAlign.right) { sel.textAlign = TextAlign.center; } else if (sel.textAlign == TextAlign.center) { sel.textAlign = TextAlign.left; } else { sel.textAlign = TextAlign.right; } }); _fastUpdateElement(sel.id);
-  }
-
-  void _showAlignmentModal(DesignElement sel) {
-    showModalBottomSheet(context: context, barrierColor: Colors.transparent, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (context) {
-      return _buildGlassContainer(context, height: 180, child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Position on Page', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))]), const SizedBox(height: 10),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [_buildAlignButton(Icons.align_horizontal_left, 'Left', () { saveState(); setState(() { sel.x = 10; }); _fastUpdateElement(sel.id); Navigator.pop(context); }), _buildAlignButton(Icons.align_horizontal_center, 'Center', () { saveState(); setState(() { sel.x = (currentCanvasW / 2) - (_getElWidth(sel) / 2); }); _fastUpdateElement(sel.id); Navigator.pop(context); }), _buildAlignButton(Icons.align_horizontal_right, 'Right', () { saveState(); setState(() { sel.x = currentCanvasW - _getElWidth(sel) - 10; }); _fastUpdateElement(sel.id); Navigator.pop(context); })]), const SizedBox(height: 10),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [_buildAlignButton(Icons.align_vertical_top, 'Top', () { saveState(); setState(() { sel.y = 10; }); _fastUpdateElement(sel.id); Navigator.pop(context); }), _buildAlignButton(Icons.align_vertical_center, 'Middle', () { saveState(); setState(() { sel.y = (currentCanvasH / 2) - (_getElHeight(sel) / 2); }); _fastUpdateElement(sel.id); Navigator.pop(context); }), _buildAlignButton(Icons.align_vertical_bottom, 'Bottom', () { saveState(); setState(() { sel.y = currentCanvasH - _getElHeight(sel) - 10; }); _fastUpdateElement(sel.id); Navigator.pop(context); })])
-      ]));
-    });
-  }
-
-  Widget _buildAlignButton(IconData icon, String label, VoidCallback onTap) {
-    return InkWell(onTap: onTap, child: Container(padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10), decoration: BoxDecoration(color: Colors.white.withOpacity(0.5), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white)), child: Column(children: [Icon(icon, color: const Color(0xFF8B5CF6), size: 20), const SizedBox(height: 4), Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold))])));
-  }
-
-  void _showResizeModal() {
-    showModalBottomSheet(context: context, barrierColor: Colors.transparent, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (context) {
-      return _buildGlassContainer(context, height: 280, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Resize Canvas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))]), const Divider(color: Colors.black12),
-        Expanded(child: ListView(physics: const BouncingScrollPhysics(), children: [
-          ListTile(dense: true, leading: const Icon(Icons.crop_square), title: const Text('1:1 (Square/Logo)'), onTap: () { _smartResizeCanvas(1.0); Navigator.pop(context); }),
-          ListTile(dense: true, leading: const Icon(Icons.crop_16_9), title: const Text('16:9 (YouTube/Post)'), onTap: () { _smartResizeCanvas(16/9); Navigator.pop(context); }),
-          ListTile(dense: true, leading: const Icon(Icons.crop_portrait), title: const Text('9:16 (Story/Reel)'), onTap: () { _smartResizeCanvas(9/16); Navigator.pop(context); }),
-          ListTile(dense: true, leading: const Icon(Icons.description), title: const Text('1:1.414 (A4 Print)'), onTap: () { _smartResizeCanvas(1/1.414); Navigator.pop(context); }),
-        ]))
-      ]));
-    });
-  }
-
-  void _showLayersPanel() {
-    Set<String> selectedForGroup = {};
-    showModalBottomSheet(context: context, barrierColor: Colors.transparent, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (context) {
-      return StatefulBuilder(builder: (BuildContext context, StateSetter setModalState) {
-        return _buildGlassContainer(context, height: 400, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Layers', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), Row(children: [if (selectedForGroup.length > 1) ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 8)), onPressed: () { saveState(); String gId = Random().nextInt(10000).toString(); setState(() { for (var e in elements) { if (selectedForGroup.contains(e.id)) { e.groupId = gId; _fastUpdateElement(e.id); } } selectedForGroup.clear(); }); setModalState((){}); }, icon: const Icon(Icons.group, color: Colors.white, size: 14), label: const Text('Group', style: TextStyle(color: Colors.white, fontSize: 11))), if (selectedForGroup.isNotEmpty) ...[const SizedBox(width: 5), ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 8)), onPressed: () { saveState(); setState(() { for (var e in elements) { if (selectedForGroup.contains(e.id)) { e.groupId = null; _fastUpdateElement(e.id); } } selectedForGroup.clear(); }); setModalState((){}); }, icon: const Icon(Icons.link_off, color: Colors.white, size: 14), label: const Text('Ungroup', style: TextStyle(color: Colors.white, fontSize: 11)))], IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))])]), const Divider(color: Colors.black12),
-          Expanded(child: elements.isEmpty ? const Center(child: Text('No elements yet.', style: TextStyle(color: Colors.black54))) : ListView.builder(physics: const BouncingScrollPhysics(), itemCount: elements.length, itemBuilder: (context, index) {
-            int actualIndex = elements.length - 1 - index; DesignElement e = elements[actualIndex]; bool isSel = selectedId == e.id; bool isGroupChecked = selectedForGroup.contains(e.id);
-            return Card(color: isSel ? Colors.white.withOpacity(0.9) : (e.groupId != null ? Colors.blue.withOpacity(0.1) : Colors.white.withOpacity(0.4)), elevation: 0, margin: const EdgeInsets.only(bottom: 6), shape: RoundedRectangleBorder(side: BorderSide(color: isSel ? const Color(0xFF8B5CF6) : Colors.transparent), borderRadius: BorderRadius.circular(10)), child: ListTile(dense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8), leading: Row(mainAxisSize: MainAxisSize.min, children: [Checkbox(value: isGroupChecked, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setModalState((){ if(val == true) selectedForGroup.add(e.id); else selectedForGroup.remove(e.id); }); }), CircleAvatar(radius: 12, backgroundColor: e.isText ? e.textColor : Colors.black54, child: Icon(e.isText ? Icons.text_fields : (e.isShape ? Icons.category : Icons.image), size: 12, color: Colors.white))]), title: Row(children: [Expanded(child: Text(e.isText ? e.content.replaceAll('\n', '') : (e.isBorder ? 'Border' : 'Image/Shape'), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: isSel ? FontWeight.bold : FontWeight.normal, fontSize: 13))), if (e.groupId != null) const Icon(Icons.link, size: 14, color: Colors.blue)]), trailing: Row(mainAxisSize: MainAxisSize.min, children: [IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(e.isHidden ? Icons.visibility_off : Icons.visibility, size: 18, color: Colors.black54), onPressed: () { saveState(); setState(() { e.isHidden = !e.isHidden; }); _triggerCanvasUpdate(); setModalState((){}); }), const SizedBox(width: 8), IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(e.isLocked ? Icons.lock : Icons.lock_open, size: 18, color: e.isLocked ? Colors.red : Colors.black54), onPressed: () { saveState(); setState(() { e.isLocked = !e.isLocked; if(e.isLocked && selectedId == e.id) selectedId = null; }); _triggerCanvasUpdate(); setModalState((){}); }), const SizedBox(width: 8), IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.arrow_upward, size: 18, color: Colors.black54), onPressed: () { saveState(); if (actualIndex < elements.length - 1) { setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex + 1, item); }); _triggerCanvasUpdate(); setModalState((){}); } }), const SizedBox(width: 8), IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.arrow_downward, size: 18, color: Colors.black54), onPressed: () { saveState(); if (actualIndex > 0) { setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex - 1, item); }); _triggerCanvasUpdate(); setModalState((){}); } })]), onTap: () { if(!e.isLocked && !e.isHidden) { setState(() { selectedId = e.id; }); _triggerCanvasUpdate(); setModalState((){}); } }));
-          }))
-        ]));
-      });
-    });
-  }
-
-  void _showPagesPanel() {
-    showModalBottomSheet(context: context, barrierColor: Colors.transparent, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (context) {
-      return StatefulBuilder(builder: (BuildContext context, StateSetter setModalState) {
-        return _buildGlassContainer(context, height: 350, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Pages صفحات', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))]), const Divider(color: Colors.black12),
-          Expanded(child: ListView.builder(physics: const BouncingScrollPhysics(), itemCount: pages.length, itemBuilder: (context, index) {
-            bool isCurrent = currentPageIndex == index;
-            return Card(color: isCurrent ? Colors.white.withOpacity(0.9) : Colors.white.withOpacity(0.4), elevation: 0, margin: const EdgeInsets.only(bottom: 8), shape: RoundedRectangleBorder(side: BorderSide(color: isCurrent ? const Color(0xFF8B5CF6) : Colors.transparent), borderRadius: BorderRadius.circular(10)), child: ListTile(dense: true, leading: Icon(Icons.description, color: isCurrent ? const Color(0xFF8B5CF6) : Colors.black54), title: Text(pages[index].title, style: TextStyle(fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal, fontSize: 14)), trailing: Row(mainAxisSize: MainAxisSize.min, children: [IconButton(icon: const Icon(Icons.copy, color: Colors.blue, size: 18), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () { setState(() { pages.add(DesignPage(title: '${pages[index].title} Copy', elements: pages[index].elements.map((e) => e.clone()).toList(), pageColor: pages[index].pageColor, bgGradient: pages[index].bgGradient, bgImageBytes: pages[index].bgImageBytes, canvasRatio: pages[index].canvasRatio)); }); setModalState((){}); }), if(pages.length > 1) ...[const SizedBox(width: 15), IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () { setState(() { pages.removeAt(index); if (currentPageIndex >= pages.length) currentPageIndex = pages.length - 1; }); _triggerCanvasUpdate(); setModalState((){}); })]]), onTap: () { setState(() { currentPageIndex = index; selectedId = null; }); _triggerCanvasUpdate(); Navigator.pop(context); }));
-          })), const SizedBox(height: 10),
-          SizedBox(width: double.infinity, child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))), onPressed: () { setState(() { pages.add(DesignPage(title: 'Page ${pages.length + 1}', elements: [], pageColor: Colors.white)); }); setModalState((){}); }, child: const Text('Add New Page', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))))
-        ]));
-      });
-    });
-  }
-
-  void _showCurveModal(DesignElement sel) {
-    showModalBottomSheet(context: context, barrierColor: Colors.transparent, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (context) {
-      return StatefulBuilder(builder: (context, setModalState) {
-        return _buildGlassContainer(context, height: 200, child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Curve Text گولائی', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))]),
-          Row(children: [const SizedBox(width: 55, child: Text('Bend:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))), Expanded(child: Slider(value: sel.textCurveRadius.clamp(-150.0, 150.0), min: -150.0, max: 150.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState((){ sel.textCurveRadius = val; }); setModalState((){}); _fastUpdateElement(sel.id); }))]),
-          Row(children: [const SizedBox(width: 55, child: Text('Spacing:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))), Expanded(child: Slider(value: sel.letterSpacing.clamp(-5.0, 20.0), min: -5.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState((){ sel.letterSpacing = val; }); setModalState((){}); _fastUpdateElement(sel.id); }))]),
-          ElevatedButton(onPressed: () { saveState(); setState(() { sel.textCurveRadius = 0.0; }); setModalState((){}); _fastUpdateElement(sel.id); }, style: ElevatedButton.styleFrom(backgroundColor: Colors.white.withOpacity(0.6), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))), child: const Text('Reset Curve', style: TextStyle(color: Colors.black87, fontSize: 12)))
-        ]));
-      });
-    });
-  }
-
-  void _showBlendModeModal(DesignElement sel) {
-    showModalBottomSheet(context: context, barrierColor: Colors.transparent, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (context) {
-      return StatefulBuilder(builder: (context, setModalState) {
-        return _buildGlassContainer(context, height: 280, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Blend Modes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))]), const Divider(color: Colors.black12),
-          Expanded(child: ListView.builder(physics: const BouncingScrollPhysics(), itemCount: AppConstants.blendModes.length, itemBuilder: (context, index) {
-            String bName = AppConstants.blendModes[index].toString().replaceAll('BlendMode.', ''); bool isSel = sel.blendModeIndex == index;
-            return ListTile(dense: true, title: Text(bName, style: TextStyle(fontWeight: isSel ? FontWeight.bold : FontWeight.normal, color: isSel ? const Color(0xFF8B5CF6) : Colors.black87)), trailing: isSel ? const Icon(Icons.check_circle, color: Color(0xFF8B5CF6), size: 18) : null, onTap: () { saveState(); setState(() { sel.blendModeIndex = index; }); _fastUpdateElement(sel.id); Navigator.pop(context); });
-          }))
-        ]));
-      });
-    });
-  }
-
   void _showMoreOptionsModal(DesignElement sel) {
     showModalBottomSheet(context: context, barrierColor: Colors.transparent, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (context) {
       List<Widget> moreTools = [];
@@ -989,7 +890,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white, elevation: 0, shape: Border(bottom: BorderSide(color: Colors.grey.shade200, width: 1)), titleSpacing: 0, leadingWidth: 40,
         leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E293B), size: 20), onPressed: () => Navigator.pop(context)),
-        title: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [_buildTopToolBtn(Icons.undo_rounded, 'Undo', undoAction, color: const Color(0xFF64748B)), _buildTopToolBtn(Icons.redo_rounded, 'Redo', redoAction, color: const Color(0xFF64748B)), _buildTopToolBtn(Icons.layers_rounded, 'Layers', _showLayersPanel, color: const Color(0xFF1E293B)), _buildTopToolBtn(Icons.auto_stories_rounded, 'Pages', _showPagesPanel, color: const Color(0xFF1E293B))]),
+        title: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [_buildTopToolBtn(Icons.undo_rounded, 'Undo', _undoAction, color: const Color(0xFF64748B)), _buildTopToolBtn(Icons.redo_rounded, 'Redo', _redoAction, color: const Color(0xFF64748B)), _buildTopToolBtn(Icons.layers_rounded, 'Layers', _showLayersPanel, color: const Color(0xFF1E293B)), _buildTopToolBtn(Icons.auto_stories_rounded, 'Pages', _showPagesPanel, color: const Color(0xFF1E293B))]),
         actions: [
           Center(child: InkWell(onTap: _saveProjectLocally, borderRadius: BorderRadius.circular(8), child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)), child: const Text('Save', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12))))), const SizedBox(width: 8), 
           Center(
@@ -1025,8 +926,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                               child: RepaintBoundary(
                                 key: _canvasKey,
                                 child: Container(
-                                  color: bgImageBytes != null || bgGradient != null ? null : (pageColor == Colors.transparent ? Colors.white : pageColor),
-                                  decoration: bgImageBytes != null ? BoxDecoration(image: DecorationImage(image: MemoryImage(bgImageBytes!), fit: BoxFit.cover)) : (bgGradient != null ? BoxDecoration(gradient: LinearGradient(colors: bgGradient!)) : null),
+                                  // 🔥 BUG FIX 2: Background actually becomes Transparent now
+                                  decoration: bgImageBytes != null 
+                                      ? BoxDecoration(image: DecorationImage(image: MemoryImage(bgImageBytes!), fit: BoxFit.cover)) 
+                                      : (bgGradient != null ? BoxDecoration(gradient: LinearGradient(colors: bgGradient!)) : BoxDecoration(color: pageColor)),
                                   child: Stack(
                                     clipBehavior: Clip.none,
                                     children: [
@@ -1089,7 +992,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                 Widget strokeTxt = e.textCurveRadius != 0 ? CurvedTextWidget(text: e.content, style: stStroke, radius: e.textCurveRadius) : SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: stStroke));
                                                 txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [strokeTxt, txt]);
                                               }
-                                              if (e.textBgColor != null) txt = Container(padding: const EdgeInsets.all(5), decoration: BoxDecoration(color: e.textBgColor, borderRadius: BorderRadius.circular(e.cornerRadius)), child: txt);
+                                              if (e.textBgColor != null) txt = Container(padding: const EdgeInsets.all(5), decoration: BoxDecoration(color: e.textBgColor, borderRadius: BorderRadius.circular(e.textBgRadius)), child: txt);
                                               contentWidget = txt; 
                                             }
                                             
@@ -1179,7 +1082,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   _buildToolBtn(Icons.image, 'BG Image', _setCanvasBackground),
                   _buildToolBtn(Icons.format_color_fill, 'BG Color', _showCanvasBgColorModal),
                   _buildToolBtn(Icons.gradient, 'BG Gradient', _showCanvasBgGradientModal),
-                  _buildToolBtn(Icons.layers_clear, 'Clear BG', () { saveState(); setState((){ pageColor = Colors.white; bgImageBytes = null; bgGradient = null; }); _triggerCanvasUpdate(); }),
+                  _buildToolBtn(Icons.layers_clear, 'Clear BG', () { saveState(); setState((){ pageColor = Colors.transparent; bgImageBytes = null; bgGradient = null; }); _triggerCanvasUpdate(); }),
                 ],
               ),
             ),
@@ -1258,396 +1161,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
           const SizedBox(height: 6),
           SingleChildScrollView(scrollDirection: Axis.horizontal, physics: const BouncingScrollPhysics(), child: Row(children: bottomRow)),
         ],
-      ),
-    );
-  }
-}
-
-class AdvancedBorderPainter extends CustomPainter {
-  final Color color;
-  final double strokeWidth;
-  final double radius;
-  final int styleIndex;
-
-  AdvancedBorderPainter({
-    required this.color,
-    required this.strokeWidth,
-    required this.radius,
-    required this.styleIndex,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final Rect baseRect = (Offset.zero & size).deflate(strokeWidth / 2);
-
-    int type = styleIndex % 5; 
-    double varVal = (styleIndex ~/ 5).toDouble() * 3.0;
-
-    switch (type) {
-      case 0:
-        final double offset = varVal;
-        final Rect innerRect = baseRect.deflate(offset);
-        canvas.drawRRect(RRect.fromRectAndRadius(innerRect, Radius.circular(radius)), paint);
-        break;
-
-      case 1:
-        canvas.drawRRect(RRect.fromRectAndRadius(baseRect, Radius.circular(radius)), paint);
-        if (varVal >= 0) {
-          paint.strokeWidth = strokeWidth * 0.5;
-          canvas.drawRRect(RRect.fromRectAndRadius(baseRect.deflate(6 + varVal), Radius.circular(max(0, radius - 2))), paint);
-        }
-        if (varVal > 10) {
-          canvas.drawRRect(RRect.fromRectAndRadius(baseRect.deflate(12 + varVal), Radius.circular(max(0, radius - 4))), paint);
-        }
-        break;
-
-      case 2:
-        double lineLen = 20.0 + varVal;
-        if (lineLen > size.width / 2) lineLen = size.width / 2;
-        
-        canvas.drawLine(baseRect.topLeft, baseRect.topLeft + Offset(lineLen, 0), paint);
-        canvas.drawLine(baseRect.topLeft, baseRect.topLeft + Offset(0, lineLen), paint);
-        
-        canvas.drawLine(baseRect.topRight, baseRect.topRight + Offset(-lineLen, 0), paint);
-        canvas.drawLine(baseRect.topRight, baseRect.topRight + Offset(0, lineLen), paint);
-        
-        canvas.drawLine(baseRect.bottomLeft, baseRect.bottomLeft + Offset(lineLen, 0), paint);
-        canvas.drawLine(baseRect.bottomLeft, baseRect.bottomLeft + Offset(0, -lineLen), paint);
-        
-        canvas.drawLine(baseRect.bottomRight, baseRect.bottomRight + Offset(-lineLen, 0), paint);
-        canvas.drawLine(baseRect.bottomRight, baseRect.bottomRight + Offset(0, -lineLen), paint);
-        break;
-
-      case 3:
-        double gap = 15.0 + varVal;
-        if (gap > size.width / 3) gap = size.width / 3;
-        Path path = Path();
-        
-        path.moveTo(baseRect.left + gap, baseRect.top);
-        path.lineTo(baseRect.right - gap, baseRect.top);
-        
-        path.moveTo(baseRect.left + gap, baseRect.bottom);
-        path.lineTo(baseRect.right - gap, baseRect.bottom);
-        
-        path.moveTo(baseRect.left, baseRect.top + gap);
-        path.lineTo(baseRect.left, baseRect.bottom - gap);
-        
-        path.moveTo(baseRect.right, baseRect.top + gap);
-        path.lineTo(baseRect.right, baseRect.bottom - gap);
-        
-        canvas.drawPath(path, paint);
-
-        if (varVal > 5) {
-          paint.style = PaintingStyle.fill;
-          canvas.drawCircle(baseRect.topLeft + const Offset(5, 5), strokeWidth, paint);
-          canvas.drawCircle(baseRect.topRight + const Offset(-5, 5), strokeWidth, paint);
-          canvas.drawCircle(baseRect.bottomLeft + const Offset(5, -5), strokeWidth, paint);
-          canvas.drawCircle(baseRect.bottomRight + const Offset(-5, -5), strokeWidth, paint);
-        }
-        break;
-
-      case 4:
-        double dashW = varVal < 10 ? 6.0 : 2.0;
-        double spaceW = dashW + strokeWidth + 2.0;
-        
-        for (double i = 0; i < baseRect.width; i += dashW + spaceW) {
-          double endX = (i + dashW > baseRect.width) ? baseRect.width : i + dashW;
-          canvas.drawLine(Offset(baseRect.left + i, baseRect.top), Offset(baseRect.left + endX, baseRect.top), paint);
-          canvas.drawLine(Offset(baseRect.left + i, baseRect.bottom), Offset(baseRect.left + endX, baseRect.bottom), paint);
-        }
-        for (double i = 0; i < baseRect.height; i += dashW + spaceW) {
-          double endY = (i + dashW > baseRect.height) ? baseRect.height : i + dashW;
-          canvas.drawLine(Offset(baseRect.left, baseRect.top + i), Offset(baseRect.left, baseRect.top + endY), paint);
-          canvas.drawLine(Offset(baseRect.right, baseRect.top + i), Offset(baseRect.right, baseRect.top + endY), paint);
-        }
-        break;
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant AdvancedBorderPainter oldDelegate) {
-    return color != oldDelegate.color ||
-           strokeWidth != oldDelegate.strokeWidth ||
-           radius != oldDelegate.radius ||
-           styleIndex != oldDelegate.styleIndex;
-  }
-}
-
-class AdvancedColorPickerModal extends StatefulWidget {
-  final String title;
-  final Color initialColor;
-  final Function(Color) onColorChanged;
-  final List<Color> documentColors;
-  final bool allowClear;
-
-  const AdvancedColorPickerModal({
-    Key? key, 
-    required this.title, 
-    required this.initialColor, 
-    required this.onColorChanged, 
-    required this.documentColors, 
-    this.allowClear = false,
-  }) : super(key: key);
-
-  @override
-  State<AdvancedColorPickerModal> createState() => _AdvancedColorPickerModalState();
-}
-
-class _AdvancedColorPickerModalState extends State<AdvancedColorPickerModal> {
-  late HSVColor hsvColor;
-  final TextEditingController _hexCtrl = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    hsvColor = HSVColor.fromColor(widget.initialColor == Colors.transparent ? Colors.black : widget.initialColor);
-    _updateHexFromHsv();
-  }
-
-  void _updateHexFromHsv() {
-    Color c = hsvColor.toColor();
-    _hexCtrl.text = c.value.toRadixString(16).padLeft(8, '0').toUpperCase().substring(2);
-  }
-
-  void _onColorUpdate() {
-    _updateHexFromHsv();
-    widget.onColorChanged(hsvColor.toColor());
-    setState(() {});
-  }
-
-  void _handleHexInput(String val) {
-    if (val.length == 6 || val.length == 8) {
-      try {
-        String hex = val.length == 6 ? 'FF$val' : val;
-        Color c = Color(int.parse('0x$hex'));
-        setState(() { hsvColor = HSVColor.fromColor(c); });
-        widget.onColorChanged(c);
-      } catch (e) {
-        
-      }
-    }
-  }
-
-  void _setFromPreset(Color c) {
-    setState(() { hsvColor = HSVColor.fromColor(c); });
-    _onColorUpdate();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Container(
-        margin: const EdgeInsets.only(left: 15, right: 15, bottom: 20),
-        height: MediaQuery.of(context).size.height * 0.70, 
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.85),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white, width: 1.5),
-          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 15, spreadRadius: -5)]
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 15, 20, 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(widget.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
-                      Row(
-                        children: [
-                          if (widget.allowClear)
-                            TextButton.icon(
-                              onPressed: () { 
-                                widget.onColorChanged(Colors.transparent); 
-                                Navigator.pop(context); 
-                              }, 
-                              icon: const Icon(Icons.layers_clear_rounded, color: Colors.red, size: 16), 
-                              label: const Text('Clear', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12))
-                            ),
-                          IconButton(icon: const Icon(Icons.close_rounded, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context)),
-                        ],
-                      )
-                    ],
-                  ),
-                ),
-                const Divider(height: 0, color: Colors.black12),
-
-                Expanded(
-                  child: ListView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.all(15),
-                    children: [
-                      GestureDetector(
-                        onPanStart: (d) => _handleShadeDrag(d.localPosition),
-                        onPanUpdate: (d) => _handleShadeDrag(d.localPosition),
-                        child: Container(
-                          height: 160,
-                          width: double.infinity,
-                          clipBehavior: Clip.antiAlias,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            color: HSVColor.fromAHSV(1.0, hsvColor.hue, 1.0, 1.0).toColor(),
-                            border: Border.all(color: Colors.white, width: 1.5),
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))]
-                          ),
-                          child: Stack(
-                            children: [
-                              Container(decoration: const BoxDecoration(gradient: LinearGradient(colors: [Colors.white, Colors.transparent], begin: Alignment.centerLeft, end: Alignment.centerRight))),
-                              Container(decoration: const BoxDecoration(gradient: LinearGradient(colors: [Colors.transparent, Colors.black], begin: Alignment.topCenter, end: Alignment.bottomCenter))),
-                              Positioned(
-                                left: hsvColor.saturation * (MediaQuery.of(context).size.width - 60) - 12,
-                                top: (1.0 - hsvColor.value) * 160 - 12,
-                                child: Container(
-                                  width: 24, height: 24,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle, 
-                                    color: hsvColor.toColor(), 
-                                    border: Border.all(color: Colors.white, width: 3), 
-                                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)]
-                                  ),
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-
-                      GestureDetector(
-                        onPanStart: (d) => _handleHueDrag(d.localPosition),
-                        onPanUpdate: (d) => _handleHueDrag(d.localPosition),
-                        child: Container(
-                          height: 20,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.white, width: 1),
-                            gradient: const LinearGradient(colors: [Color(0xFFFF0000), Color(0xFFFFFF00), Color(0xFF00FF00), Color(0xFF00FFFF), Color(0xFF0000FF), Color(0xFFFF00FF), Color(0xFFFF0000)])
-                          ),
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Positioned(
-                                left: (hsvColor.hue / 360) * (MediaQuery.of(context).size.width - 60) - 10,
-                                top: -4,
-                                child: Container(
-                                  width: 20, height: 28, 
-                                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.grey.shade300), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)])
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      Row(
-                        children: [
-                          Container(
-                            width: 45, height: 45, 
-                            decoration: BoxDecoration(shape: BoxShape.circle, color: hsvColor.toColor(), border: Border.all(color: Colors.white, width: 2), boxShadow: [BoxShadow(color: hsvColor.toColor().withOpacity(0.3), blurRadius: 8)])
-                          ),
-                          const SizedBox(width: 15),
-                          Expanded(
-                            flex: 2,
-                            child: Container(
-                              height: 45, padding: const EdgeInsets.symmetric(horizontal: 10),
-                              decoration: BoxDecoration(color: Colors.white.withOpacity(0.5), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white)),
-                              child: Row(
-                                children: [
-                                  const Text('#', style: TextStyle(color: Colors.black54, fontWeight: FontWeight.bold, fontSize: 16)),
-                                  const SizedBox(width: 5),
-                                  Expanded(child: TextField(controller: _hexCtrl, onChanged: _handleHexInput, style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.0, fontSize: 14), decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.zero))),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 15),
-                          Expanded(
-                            flex: 3,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Opacity', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black54)),
-                                SliderTheme(
-                                  data: SliderThemeData(trackHeight: 4, activeTrackColor: const Color(0xFF8B5CF6), thumbColor: const Color(0xFF8B5CF6), overlayColor: const Color(0xFF8B5CF6).withOpacity(0.2)),
-                                  child: Slider(value: hsvColor.alpha, min: 0.0, max: 1.0, onChanged: (v) { setState(() { hsvColor = hsvColor.withAlpha(v); }); _onColorUpdate(); }),
-                                ),
-                              ],
-                            ),
-                          )
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      if (widget.documentColors.isNotEmpty) ...[
-                        const Text('Document Colors', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1E293B), fontSize: 12)),
-                        const SizedBox(height: 10),
-                        SizedBox(
-                          height: 40,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal, physics: const BouncingScrollPhysics(),
-                            itemCount: widget.documentColors.length,
-                            itemBuilder: (ctx, i) => _buildColorBubble(widget.documentColors[i]),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-
-                      const Text('Solid Palette', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1E293B), fontSize: 12)),
-                      const SizedBox(height: 10),
-                      Wrap(spacing: 12, runSpacing: 12, children: AppConstants.proColorPalette.map((c) => _buildColorBubble(c)).toList()),
-                    ],
-                  ),
-                )
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _handleShadeDrag(Offset pos) {
-    double w = MediaQuery.of(context).size.width - 60;
-    double s = (pos.dx / w).clamp(0.0, 1.0);
-    double v = 1.0 - (pos.dy / 160).clamp(0.0, 1.0);
-    setState(() { hsvColor = hsvColor.withSaturation(s).withValue(v); });
-    _onColorUpdate();
-  }
-
-  void _handleHueDrag(Offset pos) {
-    double w = MediaQuery.of(context).size.width - 60;
-    double h = ((pos.dx / w) * 360).clamp(0.0, 360.0);
-    setState(() { hsvColor = hsvColor.withHue(h); });
-    _onColorUpdate();
-  }
-
-  Widget _buildColorBubble(Color c) {
-    bool isSel = hsvColor.toColor().value == c.value;
-    return GestureDetector(
-      onTap: () => _setFromPreset(c),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 40, height: 40, margin: const EdgeInsets.only(right: 8),
-        decoration: BoxDecoration(
-          color: c, shape: BoxShape.circle,
-          border: Border.all(color: isSel ? const Color(0xFF8B5CF6) : Colors.white, width: isSel ? 3 : 1.5),
-          boxShadow: isSel ? [BoxShadow(color: c.withOpacity(0.5), blurRadius: 10)] : [const BoxShadow(color: Colors.black12, blurRadius: 2)]
-        ),
       ),
     );
   }
