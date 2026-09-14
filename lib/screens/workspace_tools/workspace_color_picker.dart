@@ -6,6 +6,7 @@ class AdvancedColorPickerModal extends StatefulWidget {
   final String title;
   final Color initialColor;
   final Function(Color) onColorChanged;
+  final Function(List<Color>)? onGradientChanged; // 🔥 Naya Safe Function Gradients ke liye
   final List<Color> documentColors;
   final bool allowClear;
 
@@ -14,6 +15,7 @@ class AdvancedColorPickerModal extends StatefulWidget {
     required this.title, 
     required this.initialColor, 
     required this.onColorChanged, 
+    this.onGradientChanged,
     required this.documentColors, 
     this.allowClear = false,
   }) : super(key: key);
@@ -52,7 +54,7 @@ class _AdvancedColorPickerModalState extends State<AdvancedColorPickerModal> {
         setState(() { hsvColor = HSVColor.fromColor(c); });
         widget.onColorChanged(c);
       } catch (e) {
-        
+        // Ignored for invalid hex
       }
     }
   }
@@ -215,6 +217,7 @@ class _AdvancedColorPickerModalState extends State<AdvancedColorPickerModal> {
                       ),
                       const SizedBox(height: 20),
 
+                      // Document Colors (Agar User Ne Code Mein Pass Kiye Hain)
                       if (widget.documentColors.isNotEmpty) ...[
                         const Text('Document Colors', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1E293B), fontSize: 12)),
                         const SizedBox(height: 10),
@@ -229,9 +232,39 @@ class _AdvancedColorPickerModalState extends State<AdvancedColorPickerModal> {
                         const SizedBox(height: 20),
                       ],
 
-                      const Text('Solid Palette', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1E293B), fontSize: 12)),
+                      // 🔥 1. PRO GRADIENT PALETTE (Single Horizontal Scroll)
+                      const Text('Pro Gradients', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1E293B), fontSize: 12)),
                       const SizedBox(height: 10),
-                      Wrap(spacing: 12, runSpacing: 12, children: AppConstants.proColorPalette.map((c) => _buildColorBubble(c)).toList()),
+                      SizedBox(
+                        height: 45,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: AppConstants.proGradientPalette.length,
+                          itemBuilder: (ctx, i) => _buildGradientBubble(AppConstants.proGradientPalette[i]),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // 🔥 2. SOLID PALETTE (Double Horizontal Scrollable Grid)
+                      const Text('Solid Palette (Scroll 👉)', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1E293B), fontSize: 12)),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        height: 95, // Do lines ke liye perfect height
+                        child: GridView.builder(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2, // Double line
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 10,
+                            childAspectRatio: 1.0, 
+                          ),
+                          itemCount: AppConstants.proColorPalette.length,
+                          itemBuilder: (ctx, i) => _buildGridColorBubble(AppConstants.proColorPalette[i]),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                     ],
                   ),
                 )
@@ -258,6 +291,7 @@ class _AdvancedColorPickerModalState extends State<AdvancedColorPickerModal> {
     _onColorUpdate();
   }
 
+  // Bubble for normal horizontal lists (Document Colors)
   Widget _buildColorBubble(Color c) {
     bool isSel = hsvColor.toColor().value == c.value;
     return GestureDetector(
@@ -269,6 +303,44 @@ class _AdvancedColorPickerModalState extends State<AdvancedColorPickerModal> {
           color: c, shape: BoxShape.circle,
           border: Border.all(color: isSel ? const Color(0xFF8B5CF6) : Colors.white, width: isSel ? 3 : 1.5),
           boxShadow: isSel ? [BoxShadow(color: c.withOpacity(0.5), blurRadius: 10)] : [const BoxShadow(color: Colors.black12, blurRadius: 2)]
+        ),
+      ),
+    );
+  }
+
+  // Bubble for Grid View (Solid Palette)
+  Widget _buildGridColorBubble(Color c) {
+    bool isSel = hsvColor.toColor().value == c.value;
+    return GestureDetector(
+      onTap: () => _setFromPreset(c),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: c, shape: BoxShape.circle,
+          border: Border.all(color: isSel ? const Color(0xFF8B5CF6) : Colors.white, width: isSel ? 3 : 1.5),
+          boxShadow: isSel ? [BoxShadow(color: c.withOpacity(0.5), blurRadius: 10)] : [const BoxShadow(color: Colors.black12, blurRadius: 2)]
+        ),
+      ),
+    );
+  }
+
+  // Naya Bubble Gradients Ke Liye
+  Widget _buildGradientBubble(List<Color> colors) {
+    return GestureDetector(
+      onTap: () {
+        if (widget.onGradientChanged != null) {
+          widget.onGradientChanged!(colors);
+        }
+        // Fallback: Gradient ka pehla color HSV mein set kar do taake UI crash na ho
+        _setFromPreset(colors.first);
+      },
+      child: Container(
+        width: 40, height: 40, margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(colors: colors, begin: Alignment.topLeft, end: Alignment.bottomRight),
+          border: Border.all(color: Colors.white, width: 1.5),
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 3)]
         ),
       ),
     );
