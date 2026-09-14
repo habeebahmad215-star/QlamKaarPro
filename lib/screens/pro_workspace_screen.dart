@@ -14,7 +14,7 @@ import '../widgets/custom_widgets.dart';
 import '../utils/constants.dart';
 import 'my_folder_screen.dart';
 
-// 🔥 NAYE MODULAR TOOLS 🔥
+// 🔥 MODULAR TOOLS IMPORT 🔥
 import 'workspace_tools/workspace_painters.dart';
 import 'workspace_tools/workspace_color_picker.dart';
 import 'workspace_tools/workspace_export.dart'; 
@@ -331,7 +331,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   }
 
   void _showTashkeelModal(TextEditingController controller) {
-    // 🔥 Naya Tatweel (Kashida) Character add kiya gaya hai
     final List<String> tashkeelList = ['َ', 'ِ', 'ُ', 'ً', 'ٍ', 'ٌ', 'ّ', 'ْ', 'ٓ', 'ٰ', 'ٖ', 'ٗ', 'ۖ', 'ۗ', 'ۘ', 'ۙ', 'ۚ', 'ـ'];
     showModalBottomSheet(
       context: context, barrierColor: Colors.transparent, backgroundColor: Colors.transparent, isScrollControlled: true,
@@ -344,16 +343,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // ============================================================================
-  // 🔥 AUTO SMART KASHIDA ENGINE 🔥
-  // ============================================================================
   String _applySmartKashida(String text, int level) {
     if (level == 0) return text.replaceAll('ـ', '');
     String cleanText = text.replaceAll('ـ', '');
     String result = "";
     String tatweel = "ـ" * level;
-    
-    // Wo huroof jo left side par nahi judte
     final nonJoining = ['ا', 'آ', 'د', 'ڈ', 'ذ', 'ر', 'ڑ', 'ز', 'ژ', 'و', 'ؤ', 'ے', ' ', '\n', '،', '۔', '؟', '!', ':', '؛'];
     final punctuations = [' ', '\n', '،', '۔', '؟', '!', ':', '؛', '(', ')', '[', ']'];
 
@@ -362,8 +356,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       if (i < cleanText.length - 1) {
         String currentChar = cleanText[i];
         String nextChar = cleanText[i + 1];
-        
-        // Check if current char can join & next char is a valid letter
         if (!nonJoining.contains(currentChar) && !punctuations.contains(nextChar)) {
            result += tatweel;
         }
@@ -390,7 +382,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
             Expanded(child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.white.withOpacity(0.6), border: Border.all(color: Colors.white), borderRadius: BorderRadius.circular(15)), child: TextField(controller: controller, maxLines: null, textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr, textAlign: isRTL ? TextAlign.right : TextAlign.left, style: TextStyle(fontFamily: isRTL ? 'JameelNoori' : null, fontSize: isRTL ? 24 : 18), decoration: InputDecoration(border: InputBorder.none, hintText: isRTL ? 'یہاں لکھیں...' : 'Type here...')))), 
             const SizedBox(height: 10),
 
-            // 🔥 AUTO KASHIDA SLIDER 🔥
             if (isRTL)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
@@ -876,23 +867,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         actions: [
           Center(child: InkWell(onTap: _saveProjectLocally, borderRadius: BorderRadius.circular(8), child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)), child: const Text('Save', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12))))), const SizedBox(width: 8), 
           
-          // 🔥 NEW EXPORT ENGINE CALL 🔥
           Center(
             child: InkWell(
               onTap: () {
                 ProExportEngine.showExportMenu(
-                  context: context,
-                  canvasKey: _canvasKey,
-                  currentCanvasW: currentCanvasW,
-                  currentCanvasH: currentCanvasH,
-                  onExportStart: () {
-                    setState(() { selectedId = null; _isExporting = true; activeToolbarMenu = 'main'; });
-                    _triggerCanvasUpdate();
-                  },
-                  onExportEnd: () {
-                    setState(() { _isExporting = false; });
-                    _triggerCanvasUpdate();
-                  },
+                  context: context, canvasKey: _canvasKey, currentCanvasW: currentCanvasW, currentCanvasH: currentCanvasH,
+                  onExportStart: () { setState(() { selectedId = null; _isExporting = true; activeToolbarMenu = 'main'; }); _triggerCanvasUpdate(); },
+                  onExportEnd: () { setState(() { _isExporting = false; }); _triggerCanvasUpdate(); },
                 );
               }, 
               borderRadius: BorderRadius.circular(20), 
