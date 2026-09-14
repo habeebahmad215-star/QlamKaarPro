@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
+import 'dart:math' as math;
 import '../../utils/constants.dart';
 
 class AdvancedColorPickerModal extends StatefulWidget {
   final String title;
   final Color initialColor;
   final Function(Color) onColorChanged;
-  final Function(List<Color>)? onGradientChanged; // 🔥 Naya Safe Function Gradients ke liye
+  final Function(List<Color>)? onGradientChanged;
   final List<Color> documentColors;
   final bool allowClear;
 
@@ -27,6 +28,9 @@ class AdvancedColorPickerModal extends StatefulWidget {
 class _AdvancedColorPickerModalState extends State<AdvancedColorPickerModal> {
   late HSVColor hsvColor;
   final TextEditingController _hexCtrl = TextEditingController();
+  
+  // 🔥 3 Options ke liye Tab Controller
+  int selectedTabIndex = 0; // 0: Solid, 1: Gradient, 2: Wheel
 
   @override
   void initState() {
@@ -54,7 +58,7 @@ class _AdvancedColorPickerModalState extends State<AdvancedColorPickerModal> {
         setState(() { hsvColor = HSVColor.fromColor(c); });
         widget.onColorChanged(c);
       } catch (e) {
-        // Ignored for invalid hex
+        // Ignored
       }
     }
   }
@@ -66,13 +70,17 @@ class _AdvancedColorPickerModalState extends State<AdvancedColorPickerModal> {
 
   @override
   Widget build(BuildContext context) {
+    // 🔥 Popup ki height kam kar di hai taake canvas clear rahe (45% of screen)
+    double modalHeight = MediaQuery.of(context).size.height * 0.45;
+    if (modalHeight < 350) modalHeight = 350; 
+
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         margin: const EdgeInsets.only(left: 15, right: 15, bottom: 20),
-        height: MediaQuery.of(context).size.height * 0.70,
+        height: modalHeight,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.85),
+          color: Colors.white.withOpacity(0.90),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: Colors.white, width: 1.5),
           boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 15, spreadRadius: -5)]
@@ -84,6 +92,7 @@ class _AdvancedColorPickerModalState extends State<AdvancedColorPickerModal> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 1. HEADER SECTION
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 15, 20, 10),
                   child: Row(
@@ -107,167 +116,62 @@ class _AdvancedColorPickerModalState extends State<AdvancedColorPickerModal> {
                     ],
                   ),
                 ),
-                const Divider(height: 0, color: Colors.black12),
-
-                Expanded(
-                  child: ListView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.all(15),
-                    children: [
-                      GestureDetector(
-                        onPanStart: (d) => _handleShadeDrag(d.localPosition),
-                        onPanUpdate: (d) => _handleShadeDrag(d.localPosition),
-                        child: Container(
-                          height: 160,
-                          width: double.infinity,
-                          clipBehavior: Clip.antiAlias,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            color: HSVColor.fromAHSV(1.0, hsvColor.hue, 1.0, 1.0).toColor(),
-                            border: Border.all(color: Colors.white, width: 1.5),
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))]
-                          ),
-                          child: Stack(
-                            children: [
-                              Container(decoration: const BoxDecoration(gradient: LinearGradient(colors: [Colors.white, Colors.transparent], begin: Alignment.centerLeft, end: Alignment.centerRight))),
-                              Container(decoration: const BoxDecoration(gradient: LinearGradient(colors: [Colors.transparent, Colors.black], begin: Alignment.topCenter, end: Alignment.bottomCenter))),
-                              Positioned(
-                                left: hsvColor.saturation * (MediaQuery.of(context).size.width - 60) - 12,
-                                top: (1.0 - hsvColor.value) * 160 - 12,
-                                child: Container(
-                                  width: 24, height: 24,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle, 
-                                    color: hsvColor.toColor(), 
-                                    border: Border.all(color: Colors.white, width: 3), 
-                                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)]
-                                  ),
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-
-                      GestureDetector(
-                        onPanStart: (d) => _handleHueDrag(d.localPosition),
-                        onPanUpdate: (d) => _handleHueDrag(d.localPosition),
-                        child: Container(
-                          height: 20,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.white, width: 1),
-                            gradient: const LinearGradient(colors: [Color(0xFFFF0000), Color(0xFFFFFF00), Color(0xFF00FF00), Color(0xFF00FFFF), Color(0xFF0000FF), Color(0xFFFF00FF), Color(0xFFFF0000)])
-                          ),
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Positioned(
-                                left: (hsvColor.hue / 360) * (MediaQuery.of(context).size.width - 60) - 10,
-                                top: -4,
-                                child: Container(
-                                  width: 20, height: 28, 
-                                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.grey.shade300), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)])
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      Row(
-                        children: [
-                          Container(
-                            width: 45, height: 45, 
-                            decoration: BoxDecoration(shape: BoxShape.circle, color: hsvColor.toColor(), border: Border.all(color: Colors.white, width: 2), boxShadow: [BoxShadow(color: hsvColor.toColor().withOpacity(0.3), blurRadius: 8)])
-                          ),
-                          const SizedBox(width: 15),
-                          Expanded(
-                            flex: 2,
-                            child: Container(
-                              height: 45, padding: const EdgeInsets.symmetric(horizontal: 10),
-                              decoration: BoxDecoration(color: Colors.white.withOpacity(0.5), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white)),
-                              child: Row(
-                                children: [
-                                  const Text('#', style: TextStyle(color: Colors.black54, fontWeight: FontWeight.bold, fontSize: 16)),
-                                  const SizedBox(width: 5),
-                                  Expanded(child: TextField(controller: _hexCtrl, onChanged: _handleHexInput, style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.0, fontSize: 14), decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.zero))),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 15),
-                          Expanded(
-                            flex: 3,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Opacity', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black54)),
-                                SliderTheme(
-                                  data: SliderThemeData(trackHeight: 4, activeTrackColor: const Color(0xFF8B5CF6), thumbColor: const Color(0xFF8B5CF6), overlayColor: const Color(0xFF8B5CF6).withOpacity(0.2)),
-                                  child: Slider(value: hsvColor.alpha, min: 0.0, max: 1.0, onChanged: (v) { setState(() => hsvColor = hsvColor.withAlpha(v)); _onColorUpdate(); }),
-                                ),
-                              ],
-                            ),
-                          )
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Document Colors (Agar User Ne Code Mein Pass Kiye Hain)
-                      if (widget.documentColors.isNotEmpty) ...[
-                        const Text('Document Colors', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1E293B), fontSize: 12)),
-                        const SizedBox(height: 10),
-                        SizedBox(
-                          height: 40,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal, physics: const BouncingScrollPhysics(),
-                            itemCount: widget.documentColors.length,
-                            itemBuilder: (ctx, i) => _buildColorBubble(widget.documentColors[i]),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
+                
+                // 2. CUSTOM TABS (Solid | Gradient | Wheel)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 15),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(12)),
+                    child: Row(
+                      children: [
+                        _buildTabButton(0, 'Solid Color', Icons.color_lens),
+                        _buildTabButton(1, 'Gradient', Icons.gradient),
+                        _buildTabButton(2, 'Wheel', Icons.donut_large),
                       ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 15),
 
-                      // 🔥 1. PRO GRADIENT PALETTE (Single Horizontal Scroll)
-                      const Text('Pro Gradients', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1E293B), fontSize: 12)),
-                      const SizedBox(height: 10),
-                      SizedBox(
-                        height: 45,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          physics: const BouncingScrollPhysics(),
-                          itemCount: AppConstants.proGradientPalette.length,
-                          itemBuilder: (ctx, i) => _buildGradientBubble(AppConstants.proGradientPalette[i]),
+                // 3. DYNAMIC CONTENT AREA
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    child: _buildSelectedTabContent(),
+                  ),
+                ),
+
+                // 4. BOTTOM HEX & OPACITY BAR (Always visible)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(15, 10, 15, 15),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40, height: 40, 
+                        decoration: BoxDecoration(shape: BoxShape.circle, color: hsvColor.toColor(), border: Border.all(color: Colors.white, width: 2), boxShadow: [BoxShadow(color: hsvColor.toColor().withOpacity(0.3), blurRadius: 8)])
+                      ),
+                      const SizedBox(width: 10),
+                      Container(
+                        width: 90, height: 40, padding: const EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.5), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white)),
+                        child: Row(
+                          children: [
+                            const Text('#', style: TextStyle(color: Colors.black54, fontWeight: FontWeight.bold, fontSize: 14)),
+                            Expanded(child: TextField(controller: _hexCtrl, onChanged: _handleHexInput, style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.0, fontSize: 13), decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.zero))),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 20),
-
-                      // 🔥 2. SOLID PALETTE (Double Horizontal Scrollable Grid)
-                      const Text('Solid Palette (Scroll 👉)', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1E293B), fontSize: 12)),
-                      const SizedBox(height: 10),
-                      SizedBox(
-                        height: 95, // Do lines ke liye perfect height
-                        child: GridView.builder(
-                          scrollDirection: Axis.horizontal,
-                          physics: const BouncingScrollPhysics(),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2, // Double line
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 10,
-                            childAspectRatio: 1.0, 
-                          ),
-                          itemCount: AppConstants.proColorPalette.length,
-                          itemBuilder: (ctx, i) => _buildGridColorBubble(AppConstants.proColorPalette[i]),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: SliderTheme(
+                          data: SliderThemeData(trackHeight: 4, activeTrackColor: const Color(0xFF8B5CF6), thumbColor: const Color(0xFF8B5CF6), overlayColor: const Color(0xFF8B5CF6).withOpacity(0.2)),
+                          child: Slider(value: hsvColor.alpha, min: 0.0, max: 1.0, onChanged: (v) { setState(() => hsvColor = hsvColor.withAlpha(v)); _onColorUpdate(); }),
                         ),
-                      ),
-                      const SizedBox(height: 10),
+                      )
                     ],
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -276,73 +180,242 @@ class _AdvancedColorPickerModalState extends State<AdvancedColorPickerModal> {
     );
   }
 
-  void _handleShadeDrag(Offset pos) {
-    double w = MediaQuery.of(context).size.width - 60;
-    double s = (pos.dx / w).clamp(0.0, 1.0);
-    double v = 1.0 - (pos.dy / 160).clamp(0.0, 1.0);
-    setState(() { hsvColor = hsvColor.withSaturation(s).withValue(v); });
+  // 🔥 TAB BUTTON BUILDER
+  Widget _buildTabButton(int index, String text, IconData icon) {
+    bool isSelected = selectedTabIndex == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => selectedTabIndex = index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: isSelected ? [const BoxShadow(color: Colors.black12, blurRadius: 4)] : [],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 14, color: isSelected ? const Color(0xFF8B5CF6) : Colors.grey.shade600),
+              const SizedBox(width: 4),
+              Text(text, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? const Color(0xFF8B5CF6) : Colors.grey.shade600)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 🔥 CONTENT SWITCHER
+  Widget _buildSelectedTabContent() {
+    if (selectedTabIndex == 0) return _buildSolidColorsTab();
+    if (selectedTabIndex == 1) return _buildGradientTab();
+    return _buildWheelTab();
+  }
+
+  // ==========================================
+  // TAB 1: SOLID COLORS (Double Horizontal Row)
+  // ==========================================
+  Widget _buildSolidColorsTab() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (widget.documentColors.isNotEmpty) ...[
+          const Text('Document Colors', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1E293B), fontSize: 11)),
+          const SizedBox(height: 6),
+          SizedBox(
+            height: 35,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal, physics: const BouncingScrollPhysics(),
+              itemCount: widget.documentColors.length,
+              itemBuilder: (ctx, i) => _buildColorBubble(widget.documentColors[i]),
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+        const Text('All Solid Colors', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1E293B), fontSize: 11)),
+        const SizedBox(height: 6),
+        Expanded(
+          child: GridView.builder(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2, // 🔥 2 Line Scrollable
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 1.0, 
+            ),
+            itemCount: AppConstants.proColorPalette.length,
+            itemBuilder: (ctx, i) => _buildGridColorBubble(AppConstants.proColorPalette[i]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ==========================================
+  // TAB 2: GRADIENTS (Double Horizontal Row)
+  // ==========================================
+  Widget _buildGradientTab() {
+    // Aapke AppConstants se data uthaya gaya hai
+    List<List<Color>> gradients = AppConstants.proGradientPalette;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Pro Gradients Library', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1E293B), fontSize: 11)),
+        const SizedBox(height: 6),
+        Expanded(
+          child: GridView.builder(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2, // 🔥 2 Line Scrollable
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 1.0, 
+            ),
+            itemCount: gradients.length,
+            itemBuilder: (ctx, i) => _buildGradientBubble(gradients[i]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ==========================================
+  // TAB 3: ROUND COLOR WHEEL (Professional)
+  // ==========================================
+  Widget _buildWheelTab() {
+    return Center(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          double size = math.min(constraints.maxWidth, constraints.maxHeight) - 20;
+          if (size < 100) size = 100;
+          
+          return GestureDetector(
+            onPanStart: (d) => _handleWheelDrag(d.localPosition, size),
+            onPanUpdate: (d) => _handleWheelDrag(d.localPosition, size),
+            onTapDown: (d) => _handleWheelDrag(d.localPosition, size),
+            child: Container(
+              width: size, height: size,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
+                // 🔥 Professional Wheel Design (Hue + Saturation)
+                gradient: SweepGradient(
+                  colors: const [
+                    Color(0xFFFF0000), Color(0xFFFF00FF), Color(0xFF0000FF), 
+                    Color(0xFF00FFFF), Color(0xFF00FF00), Color(0xFFFFFF00), Color(0xFFFF0000)
+                  ],
+                ),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [Colors.white, Colors.white.withOpacity(0.0)],
+                    stops: const [0.0, 1.0],
+                  ),
+                ),
+                child: CustomPaint(
+                  painter: _WheelThumbPainter(
+                    hue: hsvColor.hue, 
+                    saturation: hsvColor.saturation,
+                    thumbColor: hsvColor.toColor(),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+      ),
+    );
+  }
+
+  // 🔥 COLOR WHEEL MATH LOGIC (Angle aur Radius se color nikalna)
+  void _handleWheelDrag(Offset pos, double size) {
+    double radius = size / 2;
+    double dx = pos.dx - radius;
+    double dy = pos.dy - radius;
+    
+    // Calculate distance from center (Saturation)
+    double distance = math.sqrt(dx * dx + dy * dy);
+    double saturation = (distance / radius).clamp(0.0, 1.0);
+    
+    // Calculate Angle (Hue)
+    double angle = math.atan2(dy, dx); // Returns -pi to pi
+    double hue = (angle * 180 / math.pi);
+    if (hue < 0) hue += 360;
+
+    setState(() { hsvColor = hsvColor.withHue(hue).withSaturation(saturation).withValue(1.0); });
     _onColorUpdate();
   }
 
-  void _handleHueDrag(Offset pos) {
-    double w = MediaQuery.of(context).size.width - 60;
-    double h = ((pos.dx / w) * 360).clamp(0.0, 360.0);
-    setState(() { hsvColor = hsvColor.withHue(h); });
-    _onColorUpdate();
-  }
-
-  // Bubble for normal horizontal lists (Document Colors)
+  // BUBBLE WIDGETS
   Widget _buildColorBubble(Color c) {
     bool isSel = hsvColor.toColor().value == c.value;
     return GestureDetector(
       onTap: () => _setFromPreset(c),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 40, height: 40, margin: const EdgeInsets.only(right: 8),
-        decoration: BoxDecoration(
-          color: c, shape: BoxShape.circle,
-          border: Border.all(color: isSel ? const Color(0xFF8B5CF6) : Colors.white, width: isSel ? 3 : 1.5),
-          boxShadow: isSel ? [BoxShadow(color: c.withOpacity(0.5), blurRadius: 10)] : [const BoxShadow(color: Colors.black12, blurRadius: 2)]
-        ),
+        width: 35, height: 35, margin: const EdgeInsets.only(right: 8),
+        decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: isSel ? const Color(0xFF8B5CF6) : Colors.white, width: isSel ? 3 : 1.5), boxShadow: isSel ? [BoxShadow(color: c.withOpacity(0.5), blurRadius: 10)] : [const BoxShadow(color: Colors.black12, blurRadius: 2)]),
       ),
     );
   }
 
-  // Bubble for Grid View (Solid Palette)
   Widget _buildGridColorBubble(Color c) {
     bool isSel = hsvColor.toColor().value == c.value;
     return GestureDetector(
       onTap: () => _setFromPreset(c),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          color: c, shape: BoxShape.circle,
-          border: Border.all(color: isSel ? const Color(0xFF8B5CF6) : Colors.white, width: isSel ? 3 : 1.5),
-          boxShadow: isSel ? [BoxShadow(color: c.withOpacity(0.5), blurRadius: 10)] : [const BoxShadow(color: Colors.black12, blurRadius: 2)]
-        ),
+        decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: isSel ? const Color(0xFF8B5CF6) : Colors.white, width: isSel ? 3 : 1.5), boxShadow: isSel ? [BoxShadow(color: c.withOpacity(0.5), blurRadius: 10)] : [const BoxShadow(color: Colors.black12, blurRadius: 2)]),
       ),
     );
   }
 
-  // Naya Bubble Gradients Ke Liye
   Widget _buildGradientBubble(List<Color> colors) {
     return GestureDetector(
       onTap: () {
-        if (widget.onGradientChanged != null) {
-          widget.onGradientChanged!(colors);
-        }
-        // Fallback: Gradient ka pehla color HSV mein set kar do taake UI crash na ho
+        if (widget.onGradientChanged != null) widget.onGradientChanged!(colors);
         _setFromPreset(colors.first);
       },
       child: Container(
-        width: 40, height: 40, margin: const EdgeInsets.only(right: 12),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(colors: colors, begin: Alignment.topLeft, end: Alignment.bottomRight),
-          border: Border.all(color: Colors.white, width: 1.5),
-          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 3)]
-        ),
+        decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: colors, begin: Alignment.topLeft, end: Alignment.bottomRight), border: Border.all(color: Colors.white, width: 1.5), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 3)]),
       ),
     );
   }
+}
+
+// 🔥 ROUND WHEEL PE FINGER POINTER DIKHANE WALA CUSTOM PAINTER
+class _WheelThumbPainter extends CustomPainter {
+  final double hue;
+  final double saturation;
+  final Color thumbColor;
+
+  _WheelThumbPainter({required this.hue, required this.saturation, required this.thumbColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    double radius = size.width / 2;
+    double angle = hue * math.pi / 180.0;
+    double distance = saturation * radius;
+    
+    double dx = radius + distance * math.cos(angle);
+    double dy = radius + distance * math.sin(angle);
+
+    final Paint borderPaint = Paint()..color = Colors.white..style = PaintingStyle.stroke..strokeWidth = 3.0;
+    final Paint fillPaint = Paint()..color = thumbColor..style = PaintingStyle.fill;
+    final Paint shadowPaint = Paint()..color = Colors.black38..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+
+    canvas.drawCircle(Offset(dx, dy), 12, shadowPaint);
+    canvas.drawCircle(Offset(dx, dy), 12, fillPaint);
+    canvas.drawCircle(Offset(dx, dy), 12, borderPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _WheelThumbPainter oldDelegate) => true;
 }
