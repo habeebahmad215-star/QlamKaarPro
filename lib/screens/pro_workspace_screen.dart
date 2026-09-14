@@ -8,16 +8,15 @@ import 'dart:typed_data';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/design_models.dart';
 import '../widgets/custom_widgets.dart';
 import '../utils/constants.dart';
 import 'my_folder_screen.dart';
-
-// 🔥 NAYE MODULAR TOOLS 🔥
-import 'workspace_tools/workspace_painters.dart';
-import 'workspace_tools/workspace_color_picker.dart';
-import 'workspace_tools/workspace_export.dart'; 
 
 class ProWorkspaceScreen extends StatefulWidget {
   final ProjectModel? project;
@@ -108,6 +107,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     super.dispose();
   }
 
+  // ============================================================================
+  // 🔥 MICRO-REACTIVITY SYSTEM (ZERO LAG ENGINE) 🔥
+  // ============================================================================
   void _fastUpdateElement(String id) {
     if (!_elementNotifiers.containsKey(id)) {
       _elementNotifiers[id] = ValueNotifier<int>(0);
@@ -233,10 +235,14 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     return 150;
   }
 
+  Future<File> _getProjectsFile() async {
+    final directory = await getApplicationDocumentsDirectory();
+    return File('${directory.path}/qalamkaar_projects.json');
+  }
+
   Future<void> _saveProjectLocally() async {
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/qalamkaar_projects.json');
+      final file = await _getProjectsFile();
       List<dynamic> jsonList = [];
       if (await file.exists()) {
         String contents = await file.readAsString();
@@ -261,6 +267,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       );
     } catch (e) {
       debugPrint("Save error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error saving project!'))
+      );
     }
   }
 
@@ -393,6 +402,172 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void _rotateElement(DragUpdateDetails d, DesignElement e) {
     e.angle += (d.delta.dx + d.delta.dy) * 0.015;
     _fastUpdateElement(e.id);
+  }
+
+  // ============================================================================
+  // 🔥 ADVANCE 4K/8K EXPORT ENGINE 🔥
+  // ============================================================================
+  Future<void> _captureAndSave(String format, {double targetWidth = 1920.0}) async {
+    setState(() { 
+      selectedId = null; 
+      _isExporting = true; 
+      activeToolbarMenu = 'main'; 
+    });
+    
+    await Future.delayed(const Duration(milliseconds: 400));
+    
+    try {
+      RenderRepaintBoundary boundary = _canvasKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      double pixelRatio = targetWidth / currentCanvasW;
+      if (pixelRatio > 15.0) pixelRatio = 15.0; // Safeguard against OOM
+      ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
+      ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      
+      if (byteData == null) {
+        throw Exception("Failed to convert image to bytes");
+      }
+      
+      Uint8List pngBytes = byteData.buffer.asUint8List();
+      
+      if (format == 'JPG' || format == 'PNG') {
+        final result = await ImageGallerySaver.saveImage(
+          pngBytes, 
+          quality: 100, 
+          name: "QalamKaarPro_${targetWidth.toInt()}p_${DateTime.now().millisecondsSinceEpoch}"
+        );
+        if (mounted && result != null && result['isSuccess'] == true) {
+          _showSuccessDialog('Saved to Gallery!', 'Aapka High-Resolution design gallery mein save ho gaya hai.');
+        }
+      } else if (format == 'PDF') {
+        final pdf = pw.Document();
+        final imagePdf = pw.MemoryImage(pngBytes);
+        pdf.addPage(
+          pw.Page(
+            pageFormat: PdfPageFormat(image.width.toDouble(), image.height.toDouble()), 
+            margin: pw.EdgeInsets.zero, 
+            build: (pw.Context context) { 
+              return pw.Center(child: pw.Image(imagePdf)); 
+            }
+          )
+        );
+        Uint8List pdfBytes = await pdf.save();
+        await Printing.sharePdf(
+          bytes: pdfBytes, 
+          filename: "QalamKaarPro_Print_${DateTime.now().millisecondsSinceEpoch}.pdf"
+        );
+      }
+    } catch (e) {
+      debugPrint('Export Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Error exporting in high resolution.'),
+        backgroundColor: Colors.red,
+      ));
+    } finally {
+      setState(() { 
+        _isExporting = false; 
+      });
+    }
+  }
+
+  void _showSuccessDialog(String title, String message) {
+    HapticFeedback.mediumImpact();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.check_circle, color: Colors.green, size: 60),
+            const SizedBox(height: 15),
+            Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)), 
+              onPressed: () => Navigator.pop(context), 
+              child: const Text('OK', style: TextStyle(color: Colors.white))
+            )
+          ]
+        )
+      )
+    );
+  }
+
+  void _showExportMenu() {
+    showModalBottomSheet(
+      context: context,
+      barrierColor: Colors.transparent, 
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return _buildGlassContainer(
+          context,
+          height: 380,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Pro Print & Export', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(icon: const Icon(Icons.close), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
+                ]
+              ),
+              const Text('Banner aur Flex printing ke liye 4K/8K select karein', style: TextStyle(fontSize: 11, color: Colors.black54)),
+              const Divider(color: Colors.black12),
+              const SizedBox(height: 5),
+              
+              Expanded(
+                child: ListView(
+                  physics: const BouncingScrollPhysics(),
+                  children: [
+                    _buildExportOption(Icons.hd, 'Standard HD (1080p)', 'Social Media, WhatsApp status ke liye', Colors.blue, () { Navigator.pop(context); _captureAndSave('JPG', targetWidth: 1920.0); }),
+                    const SizedBox(height: 8),
+                    _buildExportOption(Icons.four_k, 'Ultra 4K Resolution', 'Posters aur A4 size printing ke liye', Colors.purple, () { Navigator.pop(context); _captureAndSave('JPG', targetWidth: 3840.0); }),
+                    const SizedBox(height: 8),
+                    _buildExportOption(Icons.photo_size_select_large, '8K Banner Quality', 'Bade Flex aur Banners ke liye (Heavy File)', Colors.red, () { Navigator.pop(context); _captureAndSave('JPG', targetWidth: 7680.0); }),
+                    const SizedBox(height: 8),
+                    _buildExportOption(Icons.picture_as_pdf, 'Save as PDF (Print Ready)', 'High-Quality Document format', Colors.orange, () { Navigator.pop(context); _captureAndSave('PDF', targetWidth: 3840.0); })
+                  ],
+                ),
+              )
+            ]
+          )
+        );
+      }
+    );
+  }
+
+  Widget _buildExportOption(IconData icon, String title, String subtitle, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8), 
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle), 
+              child: Icon(icon, color: Colors.white, size: 18)
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start, 
+                children: [
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)), 
+                  Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.black54))
+                ]
+              )
+            ),
+            Icon(Icons.arrow_forward_ios, color: color, size: 14)
+          ]
+        )
+      )
+    );
   }
 
   void _showPoetryLibrary(TextEditingController textController) {
@@ -568,7 +743,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         GestureDetector(
-                          onTap: () => setModalState(() => isRTL = false),
+                          onTap: () { setModalState(() { isRTL = false; }); },
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                             decoration: BoxDecoration(
@@ -580,7 +755,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: () => setModalState(() => isRTL = true),
+                          onTap: () { setModalState(() { isRTL = true; }); },
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                             decoration: BoxDecoration(
@@ -1070,7 +1245,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       if (image != null) {
         final bytes = await image.readAsBytes();
         saveState();
-        setState(() => sel.textTextureBytes = bytes);
+        setState(() { sel.textTextureBytes = bytes; });
         _fastUpdateElement(sel.id);
       }
     } catch (e) {
@@ -1397,7 +1572,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       currentColor: sel.textBgColor ?? Colors.transparent, 
       allowClear: true, 
       onColorChanged: (c){ 
-        setState(()=> sel.textBgColor = c == Colors.transparent ? null : c); 
+        setState(() { sel.textBgColor = c == Colors.transparent ? null : c; }); 
         _fastUpdateElement(sel.id);
       }
     );
@@ -1442,7 +1617,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                 title: 'Color 1', 
                                 currentColor: sel.customGradColor1 ?? Colors.white, 
                                 onColorChanged: (c){ 
-                                  setModalState(()=> sel.customGradColor1 = c); 
+                                  setModalState(() { sel.customGradColor1 = c; }); 
                                   _fastUpdateElement(sel.id);
                                 }
                               ), 
@@ -1457,7 +1632,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                 title: 'Color 2', 
                                 currentColor: sel.customGradColor2 ?? Colors.white, 
                                 onColorChanged: (c){ 
-                                  setModalState(()=> sel.customGradColor2 = c); 
+                                  setModalState(() { sel.customGradColor2 = c; }); 
                                   _fastUpdateElement(sel.id);
                                 }
                               ), 
@@ -1471,7 +1646,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                               onPressed: () {
                                 if(sel.customGradColor1 != null && sel.customGradColor2 != null) {
                                   saveState();
-                                  setState(() => sel.textGradient = [sel.customGradColor1!, sel.customGradColor2!]);
+                                  setState(() { sel.textGradient = [sel.customGradColor1!, sel.customGradColor2!]; });
                                   setModalState((){});
                                   _fastUpdateElement(sel.id);
                                   Navigator.pop(context);
@@ -1567,7 +1742,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       Switch(
                         activeColor: const Color(0xFF8B5CF6),
                         value: sel.hasStroke,
-                        onChanged: (val) { saveState(); setState(() => sel.hasStroke = val); setModalState((){}); _fastUpdateElement(sel.id); }
+                        onChanged: (val) { saveState(); setState(() { sel.hasStroke = val; }); setModalState((){}); _fastUpdateElement(sel.id); }
                       ),
                       IconButton(icon: const Icon(Icons.close), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
                     ]
@@ -1582,7 +1757,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                             value: sel.strokeWidth.clamp(1.0, 20.0), 
                             min: 1.0, max: 20.0, 
                             activeColor: const Color(0xFF8B5CF6), 
-                            onChanged: (val) { setState(() => sel.strokeWidth = val); setModalState((){}); _fastUpdateElement(sel.id); }
+                            onChanged: (val) { setState(() { sel.strokeWidth = val; }); setModalState((){}); _fastUpdateElement(sel.id); }
                           )
                         )
                       ]
@@ -1602,7 +1777,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                            _openProColorPicker(
                              title: 'Stroke Color', 
                              currentColor: sel.strokeColor, 
-                             onColorChanged: (c) { setState(()=> sel.strokeColor = c); _fastUpdateElement(sel.id); }
+                             onColorChanged: (c) { setState(() { sel.strokeColor = c; }); _fastUpdateElement(sel.id); }
                            );
                         },
                         icon: const Icon(Icons.color_lens_rounded, color: Color(0xFF8B5CF6), size: 18),
@@ -1641,7 +1816,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       Switch(
                         activeColor: const Color(0xFF8B5CF6),
                         value: sel.hasShadow,
-                        onChanged: (val) { saveState(); setState(() => sel.hasShadow = val); setModalState((){}); _fastUpdateElement(sel.id); }
+                        onChanged: (val) { saveState(); setState(() { sel.hasShadow = val; }); setModalState((){}); _fastUpdateElement(sel.id); }
                       ),
                       IconButton(icon: const Icon(Icons.close), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
                     ]
@@ -1651,19 +1826,19 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     Row(
                       children: [
                         const SizedBox(width: 50, child: Text('Blur:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                        Expanded(child: Slider(value: sel.shadowBlur.clamp(0.0, 30.0), min: 0.0, max: 30.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val){ setState(()=> sel.shadowBlur = val); setModalState((){}); _fastUpdateElement(sel.id);}))
+                        Expanded(child: Slider(value: sel.shadowBlur.clamp(0.0, 30.0), min: 0.0, max: 30.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val){ setState(() { sel.shadowBlur = val; }); setModalState((){}); _fastUpdateElement(sel.id);}))
                       ]
                     ),
                     Row(
                       children: [
                         const SizedBox(width: 50, child: Text('X:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                        Expanded(child: Slider(value: sel.shadowOffsetX.clamp(-20.0, 20.0), min: -20.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val){ setState(()=> sel.shadowOffsetX = val); setModalState((){}); _fastUpdateElement(sel.id);}))
+                        Expanded(child: Slider(value: sel.shadowOffsetX.clamp(-20.0, 20.0), min: -20.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val){ setState(() { sel.shadowOffsetX = val; }); setModalState((){}); _fastUpdateElement(sel.id);}))
                       ]
                     ),
                     Row(
                       children: [
                         const SizedBox(width: 50, child: Text('Y:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                        Expanded(child: Slider(value: sel.shadowOffsetY.clamp(-20.0, 20.0), min: -20.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val){ setState(()=> sel.shadowOffsetY = val); setModalState((){}); _fastUpdateElement(sel.id);}))
+                        Expanded(child: Slider(value: sel.shadowOffsetY.clamp(-20.0, 20.0), min: -20.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val){ setState(() { sel.shadowOffsetY = val; }); setModalState((){}); _fastUpdateElement(sel.id);}))
                       ]
                     ),
                     const SizedBox(height: 5),
@@ -1681,7 +1856,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                            _openProColorPicker(
                              title: 'Shadow Color', 
                              currentColor: sel.shadowColor, 
-                             onColorChanged: (c) { setState(()=> sel.shadowColor = c); _fastUpdateElement(sel.id); }
+                             onColorChanged: (c) { setState(() { sel.shadowColor = c; }); _fastUpdateElement(sel.id); }
                            );
                         },
                         icon: const Icon(Icons.color_lens_rounded, color: Color(0xFF8B5CF6), size: 18),
@@ -1726,7 +1901,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     max: 1.0, 
                     activeColor: const Color(0xFF8B5CF6),
                     onChangeStart: (val) => saveState(),
-                    onChanged: (v){ setState(()=>sel.opacity=v); setModalState((){}); _fastUpdateElement(sel.id); }
+                    onChanged: (v){ setState(() { sel.opacity=v; }); setModalState((){}); _fastUpdateElement(sel.id); }
                   )
                 ]
               )
@@ -1774,21 +1949,21 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           title: const Text('Bevel & Emboss (اُبھرا ہوا)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                           activeColor: const Color(0xFF8B5CF6),
                           value: sel.isBevel,
-                          onChanged: (val) { saveState(); setState(() => sel.isBevel = val); setModalState((){}); _fastUpdateElement(sel.id); }
+                          onChanged: (val) { saveState(); setState(() { sel.isBevel = val; }); setModalState((){}); _fastUpdateElement(sel.id); }
                         ),
                         SwitchListTile(
                           dense: true,
                           title: const Text('Inner Shadow (اندرونی سایہ)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                           activeColor: const Color(0xFF8B5CF6),
                           value: sel.isInnerShadow,
-                          onChanged: (val) { saveState(); setState(() => sel.isInnerShadow = val); setModalState((){}); _fastUpdateElement(sel.id); }
+                          onChanged: (val) { saveState(); setState(() { sel.isInnerShadow = val; }); setModalState((){}); _fastUpdateElement(sel.id); }
                         ),
                         SwitchListTile(
                           dense: true,
                           title: const Text('Glass Effect (شیشے کا انداز)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                           activeColor: const Color(0xFF8B5CF6),
                           value: sel.isGlass,
-                          onChanged: (val) { saveState(); setState(() => sel.isGlass = val); setModalState((){}); _fastUpdateElement(sel.id); }
+                          onChanged: (val) { saveState(); setState(() { sel.isGlass = val; }); setModalState((){}); _fastUpdateElement(sel.id); }
                         ),
                         ListTile(
                           dense: true,
@@ -1798,7 +1973,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               if (sel.textTextureBytes != null)
-                                IconButton(icon: const Icon(Icons.delete, color: Colors.red, size: 18), onPressed: () { saveState(); setState(() => sel.textTextureBytes = null); setModalState((){}); _fastUpdateElement(sel.id); }),
+                                IconButton(icon: const Icon(Icons.delete, color: Colors.red, size: 18), onPressed: () { saveState(); setState(() { sel.textTextureBytes = null; }); setModalState((){}); _fastUpdateElement(sel.id); }),
                               const Icon(Icons.arrow_forward_ios, size: 14)
                             ]
                           ),
@@ -1848,7 +2023,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           min: 0.0, max: 30.0,
                           activeColor: const Color(0xFF8B5CF6),
                           onChangeStart: (val) => saveState(),
-                          onChanged: (val) { setState(() => sel.text3dDepth = val); setModalState(() {}); _fastUpdateElement(sel.id); }
+                          onChanged: (val) { setState(() { sel.text3dDepth = val; }); setModalState(() {}); _fastUpdateElement(sel.id); }
                         )
                       )
                     ]
@@ -1868,7 +2043,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                          _openProColorPicker(
                            title: '3D Color', 
                            currentColor: sel.text3dColor, 
-                           onColorChanged: (c) { setState(()=> sel.text3dColor = c); _fastUpdateElement(sel.id); }
+                           onColorChanged: (c) { setState(() { sel.text3dColor = c; }); _fastUpdateElement(sel.id); }
                          );
                       },
                       icon: const Icon(Icons.color_lens_rounded, color: Color(0xFF8B5CF6), size: 18),
@@ -1916,7 +2091,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           min: 1.0, max: 50.0,
                           activeColor: const Color(0xFF8B5CF6),
                           onChangeStart: (val) => saveState(),
-                          onChanged: (val) { setState(() => sel.strokeWidth = val); setModalState((){}); _fastUpdateElement(sel.id); }
+                          onChanged: (val) { setState(() { sel.strokeWidth = val; }); setModalState((){}); _fastUpdateElement(sel.id); }
                         )
                       )
                     ]
@@ -1930,7 +2105,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           min: 0.0, max: 150.0,
                           activeColor: const Color(0xFF10B981),
                           onChangeStart: (val) => saveState(),
-                          onChanged: (val) { setState(() => sel.cornerRadius = val); setModalState((){}); _fastUpdateElement(sel.id); }
+                          onChanged: (val) { setState(() { sel.cornerRadius = val; }); setModalState((){}); _fastUpdateElement(sel.id); }
                         )
                       )
                     ]
@@ -1971,7 +2146,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     min: 0.0, max: 150.0,
                     activeColor: const Color(0xFF8B5CF6),
                     onChangeStart: (val) => saveState(),
-                    onChanged: (val) { setState(() => sel.cornerRadius = val); setModalState((){}); _fastUpdateElement(sel.id); }
+                    onChanged: (val) { setState(() { sel.cornerRadius = val; }); setModalState((){}); _fastUpdateElement(sel.id); }
                   )
                 ]
               )
@@ -2030,7 +2205,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   Widget _buildShapeOption(DesignElement sel, StateSetter setModalState, String title, int val, IconData icon) {
     bool isSel = sel.clipShape == val;
     return InkWell(
-      onTap: () { saveState(); setState(() => sel.clipShape = val); setModalState((){}); _fastUpdateElement(sel.id); },
+      onTap: () { saveState(); setState(() { sel.clipShape = val; }); setModalState((){}); _fastUpdateElement(sel.id); },
       child: Container(
         width: 75,
         margin: const EdgeInsets.only(right: 10),
@@ -2098,7 +2273,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   Widget _buildFilterOption(DesignElement sel, StateSetter setModalState, String title, int filterVal, Color iconColor) {
     bool isSel = sel.imageFilter == filterVal;
     return InkWell(
-      onTap: () { saveState(); setState(() => sel.imageFilter = filterVal); setModalState((){}); _fastUpdateElement(sel.id); },
+      onTap: () { saveState(); setState(() { sel.imageFilter = filterVal; }); setModalState((){}); _fastUpdateElement(sel.id); },
       child: Container(
         width: 75,
         margin: const EdgeInsets.only(right: 10),
@@ -2144,19 +2319,19 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   Row(
                     children: [
                       const SizedBox(width: 45, child: Text('Line:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      Expanded(child: Slider(value: sel.lineHeight.clamp(0.5, 3.5), min: 0.5, max: 3.5, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.lineHeight = val); setModalState((){}); _fastUpdateElement(sel.id); }))
+                      Expanded(child: Slider(value: sel.lineHeight.clamp(0.5, 3.5), min: 0.5, max: 3.5, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(() { sel.lineHeight = val; }); setModalState((){}); _fastUpdateElement(sel.id); }))
                     ]
                   ),
                   Row(
                     children: [
                       const SizedBox(width: 45, child: Text('Word:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      Expanded(child: Slider(value: sel.wordSpacing.clamp(-10.0, 30.0), min: -10.0, max: 30.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.wordSpacing = val); setModalState((){}); _fastUpdateElement(sel.id); }))
+                      Expanded(child: Slider(value: sel.wordSpacing.clamp(-10.0, 30.0), min: -10.0, max: 30.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(() { sel.wordSpacing = val; }); setModalState((){}); _fastUpdateElement(sel.id); }))
                     ]
                   ),
                   Row(
                     children: [
                       const SizedBox(width: 45, child: Text('Letter:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      Expanded(child: Slider(value: sel.letterSpacing.clamp(-5.0, 20.0), min: -5.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.letterSpacing = val); setModalState((){}); _fastUpdateElement(sel.id); }))
+                      Expanded(child: Slider(value: sel.letterSpacing.clamp(-5.0, 20.0), min: -5.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(() { sel.letterSpacing = val; }); setModalState((){}); _fastUpdateElement(sel.id); }))
                     ]
                   )
                 ]
@@ -2195,7 +2370,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     min: 10.0, max: 150.0,
                     activeColor: const Color(0xFF8B5CF6),
                     onChangeStart: (val) => saveState(),
-                    onChanged: (val) { setState(() => sel.fontSize = val); setModalState((){}); _fastUpdateElement(sel.id); }
+                    onChanged: (val) { setState(() { sel.fontSize = val; }); setModalState((){}); _fastUpdateElement(sel.id); }
                   )
                 ]
               )
@@ -2233,7 +2408,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     min: -pi, max: pi,
                     activeColor: const Color(0xFF8B5CF6),
                     onChangeStart: (val) => saveState(),
-                    onChanged: (val) { setState(() => sel.angle = val); setModalState((){}); _fastUpdateElement(sel.id); }
+                    onChanged: (val) { setState(() { sel.angle = val; }); setModalState((){}); _fastUpdateElement(sel.id); }
                   ),
                   Text('${(sel.angle * 180 / pi).toInt()}°', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))
                 ]
@@ -2270,17 +2445,17 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   Row(
                     children: [
                       const SizedBox(width: 45, child: Text('X-Axis:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      Expanded(child: Slider(value: sel.pitch.clamp(-pi / 2, pi / 2), min: -pi / 2, max: pi / 2, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.pitch=val); setModalState((){}); _fastUpdateElement(sel.id); }))
+                      Expanded(child: Slider(value: sel.pitch.clamp(-pi / 2, pi / 2), min: -pi / 2, max: pi / 2, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(() { sel.pitch=val; }); setModalState((){}); _fastUpdateElement(sel.id); }))
                     ]
                   ),
                   Row(
                     children: [
                       const SizedBox(width: 45, child: Text('Y-Axis:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      Expanded(child: Slider(value: sel.yaw.clamp(-pi / 2, pi / 2), min: -pi / 2, max: pi / 2, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.yaw=val); setModalState((){}); _fastUpdateElement(sel.id); }))
+                      Expanded(child: Slider(value: sel.yaw.clamp(-pi / 2, pi / 2), min: -pi / 2, max: pi / 2, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(() { sel.yaw=val; }); setModalState((){}); _fastUpdateElement(sel.id); }))
                     ]
                   ),
                   ElevatedButton(
-                    onPressed: () { saveState(); setState((){ sel.pitch = 0; sel.yaw = 0; }); setModalState((){}); _fastUpdateElement(sel.id); },
+                    onPressed: () { saveState(); setState(() { sel.pitch = 0; sel.yaw = 0; }); setModalState((){}); _fastUpdateElement(sel.id); },
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.white.withOpacity(0.6), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                     child: const Text('Reset Perspective', style: TextStyle(color: Colors.black87, fontSize: 12))
                   )
@@ -2416,14 +2591,14 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
            moreTools.add(_buildGridToolBtn(Icons.arrow_upward_rounded, 'Bring Fwd', () { bringForward(); Navigator.pop(context); }));
            moreTools.add(_buildGridToolBtn(Icons.arrow_downward_rounded, 'Send Bwd', () { sendBackward(); Navigator.pop(context); }));
         } else {
-           if (sel.imageBytes != null || sel.isShape) moreTools.add(_buildGridToolBtn(Icons.format_paint_rounded, 'Tint', () { Navigator.pop(context); _openProColorPicker(title: 'Color', currentColor: sel.elementColor, onColorChanged: (c) { setState(()=> sel.elementColor = c); _fastUpdateElement(sel.id); }); }));
+           if (sel.imageBytes != null || sel.isShape) moreTools.add(_buildGridToolBtn(Icons.format_paint_rounded, 'Tint', () { Navigator.pop(context); _openProColorPicker(title: 'Color', currentColor: sel.elementColor, onColorChanged: (c) { setState(() { sel.elementColor = c; }); _fastUpdateElement(sel.id); }); }));
            if (sel.imageBytes != null) moreTools.add(_buildGridToolBtn(Icons.auto_awesome_motion_rounded, 'Blend', () { Navigator.pop(context); _showBlendModeModal(sel); }));
            moreTools.add(_buildGridToolBtn(Icons.center_focus_strong_rounded, 'Position', () { Navigator.pop(context); _showAlignmentModal(sel); }));
            moreTools.add(_buildGridToolBtn(Icons.open_with_rounded, 'Move', () { Navigator.pop(context); showMoveModal(sel); }));
            moreTools.add(_buildGridToolBtn(Icons.rotate_right_rounded, 'Rotate', () { Navigator.pop(context); showRotationModal(sel); }));
            moreTools.add(_buildGridToolBtn(Icons.view_in_ar_rounded, 'Perspective', () { Navigator.pop(context); show3DModal(sel); }));
-           moreTools.add(_buildGridToolBtn(Icons.flip_rounded, 'Flip H', () { saveState(); setState(() => sel.flipX = !sel.flipX); _fastUpdateElement(sel.id); Navigator.pop(context); }));
-           moreTools.add(_buildGridToolBtn(Icons.flip_camera_android_rounded, 'Flip V', () { saveState(); setState(() => sel.flipY = !sel.flipY); _fastUpdateElement(sel.id); Navigator.pop(context); }));
+           moreTools.add(_buildGridToolBtn(Icons.flip_rounded, 'Flip H', () { saveState(); setState(() { sel.flipX = !sel.flipX; }); _fastUpdateElement(sel.id); Navigator.pop(context); }));
+           moreTools.add(_buildGridToolBtn(Icons.flip_camera_android_rounded, 'Flip V', () { saveState(); setState(() { sel.flipY = !sel.flipY; }); _fastUpdateElement(sel.id); Navigator.pop(context); }));
            moreTools.add(_buildGridToolBtn(Icons.opacity_rounded, 'Opacity', () { Navigator.pop(context); _showOpacityModal(sel); }));
            if (!sel.isBorder && !sel.isTable) moreTools.add(_buildGridToolBtn(Icons.rounded_corner_rounded, 'Radius', () { Navigator.pop(context); _showRadiusModal(sel); }));
            moreTools.add(_buildGridToolBtn(Icons.arrow_upward_rounded, 'Bring Fwd', () { bringForward(); Navigator.pop(context); }));
@@ -2616,23 +2791,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
           const SizedBox(width: 8),
           Center(
             child: InkWell(
-              onTap: () {
-                ProExportEngine.showExportMenu(
-                  context: context,
-                  canvasKey: _canvasKey,
-                  currentCanvasW: currentCanvasW,
-                  currentCanvasH: currentCanvasH,
-                  onExportStart: () {
-                    setState(() { selectedId = null; _isExporting = true; activeToolbarMenu = 'main'; });
-                    _triggerCanvasUpdate();
-                  },
-                  onExportEnd: () {
-                    setState(() { _isExporting = false; });
-                    _triggerCanvasUpdate();
-                  },
-                );
-              }, 
-              borderRadius: BorderRadius.circular(20), 
+              onTap: _showExportMenu,
+              borderRadius: BorderRadius.circular(20),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
@@ -2666,7 +2826,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   InkWell(
                     onTap: () {
                       HapticFeedback.selectionClick();
-                      setState(() => _isCanvasLocked = !_isCanvasLocked);
+                      setState(() { _isCanvasLocked = !_isCanvasLocked; });
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -2903,7 +3063,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                             if (e.isLocked) {
                                                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Layer is Locked')));
                                                             } else {
-                                                              setState(() => selectedId = e.id);
+                                                              setState(() { selectedId = e.id; });
                                                               _triggerCanvasUpdate();
                                                             }
                                                           },
@@ -2976,11 +3136,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           }
                         );
                       }
-                    )
-                  )
-                )
-              )
-            )
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -3002,12 +3162,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _buildToolBtn(Icons.grid_on, 'Grid', () { setState(() => _showGrid = !_showGrid); _triggerCanvasUpdate(); }), 
+                  _buildToolBtn(Icons.grid_on, 'Grid', () { setState(() { _showGrid = !_showGrid; }); _triggerCanvasUpdate(); }), 
                   _buildToolBtn(Icons.aspect_ratio, 'Resize', _showResizeModal), 
                   _buildToolBtn(Icons.image, 'BG Image', _setCanvasBackground),
                   _buildToolBtn(Icons.format_color_fill, 'BG Color', _showCanvasBgColorModal),
                   _buildToolBtn(Icons.gradient, 'BG Gradient', _showCanvasBgGradientModal),
-                  _buildToolBtn(Icons.layers_clear, 'Clear BG', () { saveState(); setState((){ pageColor = Colors.white; bgImageBytes = null; bgGradient = null; }); _triggerCanvasUpdate(); }),
+                  _buildToolBtn(Icons.layers_clear, 'Clear BG', () { saveState(); setState(() { pageColor = Colors.white; bgImageBytes = null; bgGradient = null; }); _triggerCanvasUpdate(); }),
                 ],
               ),
             ),
@@ -3029,17 +3189,17 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       topRow.add(_buildToolBtn(Icons.copy_rounded, 'Duplicate', duplicateSelected, Colors.blue));
       topRow.add(_buildToolBtn(Icons.opacity_rounded, 'Opacity', () => _showOpacityModal(sel)));
       topRow.add(_buildToolBtn(Icons.content_copy_rounded, 'Copy', () { Clipboard.setData(ClipboardData(text: sel.content)); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Text Copied!'))); }));
-      topRow.add(_buildToolBtn(Icons.flip_rounded, 'Flip H', () { saveState(); setState(() => sel.flipX = !sel.flipX); _fastUpdateElement(sel.id); }));
-      topRow.add(_buildToolBtn(Icons.flip_camera_android_rounded, 'Flip V', () { saveState(); setState(() => sel.flipY = !sel.flipY); _fastUpdateElement(sel.id); }));
+      topRow.add(_buildToolBtn(Icons.flip_rounded, 'Flip H', () { saveState(); setState(() { sel.flipX = !sel.flipX; }); _fastUpdateElement(sel.id); }));
+      topRow.add(_buildToolBtn(Icons.flip_camera_android_rounded, 'Flip V', () { saveState(); setState(() { sel.flipY = !sel.flipY; }); _fastUpdateElement(sel.id); }));
       topRow.add(_buildToolBtn(Icons.open_with_rounded, 'Move', () => showMoveModal(sel)));
       topRow.add(_buildToolBtn(Icons.lock_outline_rounded, 'Lock', () { saveState(); setState(() { sel.isLocked = true; selectedId = null; }); _triggerCanvasUpdate(); }, Colors.orange));
 
-      bottomRow.add(_buildToolBtn(Icons.close_rounded, 'Deselect', () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, Colors.redAccent));
+      bottomRow.add(_buildToolBtn(Icons.close_rounded, 'Deselect', () { setState(() { selectedId = null; }); _triggerCanvasUpdate(); }, Colors.redAccent));
       bottomRow.add(_buildToolBtn(Icons.edit_rounded, 'Edit', () => _showTextComposerDialog(existingElement: sel)));
       bottomRow.add(_buildToolBtn(Icons.font_download_rounded, 'Font', () => showFontPickerModal(sel)));
       bottomRow.add(_buildToolBtn(Icons.palette_rounded, 'Colour', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
       bottomRow.add(_buildToolBtn(Icons.gradient_rounded, 'Gradient', () => _showGradientPickerModal(sel)));
-      bottomRow.add(_buildToolBtn(Icons.format_bold_rounded, 'Bold', () { saveState(); setState(() => sel.isBold = !sel.isBold); _fastUpdateElement(sel.id); }));
+      bottomRow.add(_buildToolBtn(Icons.format_bold_rounded, 'Bold', () { saveState(); setState(() { sel.isBold = !sel.isBold; }); _fastUpdateElement(sel.id); }));
       bottomRow.add(_buildToolBtn(Icons.height_rounded, 'Spacing', () => showSpacingModal(sel)));
       bottomRow.add(_buildToolBtn(Icons.format_color_fill_rounded, 'Text BG', () => _showTextBgPickerModal(sel)));
       bottomRow.add(_buildToolBtn(Icons.auto_awesome_rounded, 'Effect', () => _showTextEffectsModal(sel), const Color(0xFF10B981)));
@@ -3047,7 +3207,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       bottomRow.add(_buildToolBtn(Icons.more_horiz_rounded, 'More', () => _showMoreOptionsModal(sel), Colors.grey.shade800));
     } 
     else if (sel.isBorder) {
-      topRow.add(_buildToolBtn(Icons.close_rounded, 'Deselect', () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, Colors.redAccent));
+      topRow.add(_buildToolBtn(Icons.close_rounded, 'Deselect', () { setState(() { selectedId = null; }); _triggerCanvasUpdate(); }, Colors.redAccent));
       topRow.add(_buildToolBtn(Icons.fullscreen_rounded, 'Fit Page', () => _fitBorderToPage(sel), const Color(0xFF10B981)));
       topRow.add(_buildToolBtn(Icons.palette_rounded, 'Colour', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
       topRow.add(_buildToolBtn(Icons.line_weight_rounded, 'Setup', () => _showBorderSettingsModal(sel)));
@@ -3061,7 +3221,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       bottomRow.add(_buildToolBtn(Icons.arrow_downward_rounded, 'Send Bwd', () => sendBackward()));
     } 
     else {
-      topRow.add(_buildToolBtn(Icons.close_rounded, 'Deselect', () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, Colors.redAccent));
+      topRow.add(_buildToolBtn(Icons.close_rounded, 'Deselect', () { setState(() { selectedId = null; }); _triggerCanvasUpdate(); }, Colors.redAccent));
       if (sel.isTable) topRow.add(_buildToolBtn(Icons.table_rows_rounded, 'Edit Table', () => _showTableEditorModal(sel), const Color(0xFF10B981)));
       if (sel.isTable) topRow.add(_buildToolBtn(Icons.font_download_rounded, 'Font', () => showFontPickerModal(sel)));
       if (sel.isTable) topRow.add(_buildToolBtn(Icons.text_fields_rounded, 'Size', () => showSizeSliderModal(sel)));
