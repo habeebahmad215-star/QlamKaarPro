@@ -10,7 +10,8 @@ import 'pro_workspace_screen.dart';
 import 'my_folder_screen.dart';
 import 'templates_screen.dart';
 import 'ai_design_screen.dart';
-import 'pro_effects_screen.dart'; // 🔥 YAHAN NAYI SCREEN IMPORT KI GAYI HAI
+import 'pro_effects_screen.dart';
+import 'magic_studio_screen.dart'; // 🔥 BILLION DOLLAR STUDIO IMPORTED
 
 import '../widgets/urdu_fonts_modal.dart';
 import '../widgets/stickers_modal.dart';
@@ -332,12 +333,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildPremiumGridTool('Layers', Icons.layers_rounded, const Color(0xFF06B6D4), const Color(0xFFECFEFF), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProWorkspaceScreen(initialAction: 'layers'))).then((_) => _loadRecentProjects());
                   }),
-                  _buildPremiumGridTool('Tools', Icons.build_rounded, const Color(0xFF64748B), const Color(0xFFF8FAFC), _showComingSoon),
+                  
+                  // 🔥 BILLION DOLLAR STUDIO BUTTON 🔥
+                  _buildPremiumGridTool('Magic Studio', Icons.auto_awesome_rounded, const Color(0xFFF59E0B), const Color(0xFFFFFBEB), () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const MagicStudioScreen())).then((_) => _loadRecentProjects());
+                  }, isNew: true),
+
                   _buildPremiumGridTool('AI Design', Icons.smart_toy_rounded, const Color(0xFF6366F1), const Color(0xFFEEF2FF), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const AiDesignScreen()));
-                  }, isNew: true),
+                  }),
                   
-                  // 🔥 PRO EFFECTS BUTTON KO NAYE SCREEN KE SATH CONNECT KIYA HAI 🔥
                   _buildPremiumGridTool('Pro Effects', Icons.auto_fix_high_rounded, const Color(0xFF14B8A6), const Color(0xFFF0FDFA), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProEffectsScreen())).then((_) => _loadRecentProjects());
                   }),
@@ -585,7 +590,6 @@ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
     });
   }
 
-  // Yahan se Seedha Canvas par bhejne ka Main Function
   void _launchDesign(double w, double h) {
     if (w < 50) w = 50;
     if (h < 50) h = 50;
@@ -607,10 +611,7 @@ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
       ]
     );
 
-    // Pehle sheet close karo
     Navigator.pop(context); 
-    
-    // Fir Canvas open karo
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -626,7 +627,6 @@ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
     _launchDesign(w, h);
   }
 
-  // 🔥 MORE SIZES MENU FUNCTION (100% Clickable & Working) 🔥
   void _showMoreSizesModal() {
     final List<Map<String, dynamic>> extendedSizes = [
       {'title': 'Square Post', 'w': 1080.0, 'h': 1080.0, 'icon': Icons.crop_square_rounded},
@@ -808,7 +808,7 @@ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
           SizedBox(
             width: double.infinity, height: 55,
             child: OutlinedButton(
-              onPressed: _showMoreSizesModal, // 🔥 NOW FULLY FUNCTIONAL 🔥
+              onPressed: _showMoreSizesModal,
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF5F3FF), 
                 side: const BorderSide(color: Colors.transparent),
@@ -833,7 +833,6 @@ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
             physics: const BouncingScrollPhysics(),
             child: Row(
               children: [
-                // 🔥 NOW CLICKABLE & FUNCTIONAL 🔥
                 _buildRecentCard('Square', 1080, 1080),
                 _buildRecentCard('YouTube Thumb', 1920, 1080),
                 _buildRecentCard('Instagram Story', 1080, 1920),
@@ -889,7 +888,6 @@ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
     );
   }
 
-  // 🔥 CLICKABLE RECENT SIZES CARDS 🔥
   Widget _buildRecentCard(String title, double w, double h) {
     return InkWell(
       onTap: () => _launchDesign(w, h),
