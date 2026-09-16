@@ -3661,6 +3661,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                               fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal
                                             );
                                             
+                                            // Agar curve hai toh normal chalao, multi style support abhi grid based hai
                                             if (e.textCurveRadius != 0) {
                                               return CurvedTextWidget(text: e.content, style: st, radius: e.textCurveRadius);
                                             }
@@ -3672,6 +3673,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                             for (int i = 0; i < words.length; i++) {
                                               TextStyle wordStyle = st;
                                               
+                                              // Check agar is lafz par user ne koi khas style lagaya hai
                                               if (e.wordStyles != null && e.wordStyles!.containsKey(i)) {
                                                 var ws = e.wordStyles![i]!;
                                                 wordStyle = st.copyWith(
@@ -3699,7 +3701,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           
                                           List<Widget> blockLayers = [];
                                           if (e.text3dDepth > 0) {
-                                            for (double i = e.text3dDepth; i > 0; i -= 1.0) blockLayers.add(Transform.translate(offset: Offset(i, i), child: buildTextWidget(e.text3dColor, [])));
+                                            // 🔥 YAHAN FIX KIYA HAI: 'shadow: []' kiya taake named parameter use ho
+                                            for (double i = e.text3dDepth; i > 0; i -= 1.0) blockLayers.add(Transform.translate(offset: Offset(i, i), child: buildTextWidget(e.text3dColor, shadow: [])));
                                           }
                                           
                                           Widget mainTxt = buildTextWidget(e.textGradient != null ? Colors.white : e.textColor);
@@ -3710,7 +3713,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           Widget txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: blockLayers);
                                           
                                           if (e.hasStroke) {
-                                            Widget strokeTxt = buildTextWidget(Colors.transparent, null, true);
+                                            // 🔥 YAHAN FIX KIYA HAI: 'isStroke: true' kiya taake named parameter use ho
+                                            Widget strokeTxt = buildTextWidget(Colors.transparent, isStroke: true);
                                             txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [strokeTxt, txt]);
                                           }
                                           
