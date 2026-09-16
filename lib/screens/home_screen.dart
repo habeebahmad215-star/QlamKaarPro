@@ -10,6 +10,7 @@ import 'pro_workspace_screen.dart';
 import 'my_folder_screen.dart';
 import 'templates_screen.dart';
 import 'ai_design_screen.dart';
+import 'pro_effects_screen.dart'; // 🔥 YAHAN NAYI SCREEN IMPORT KI GAYI HAI
 
 import '../widgets/urdu_fonts_modal.dart';
 import '../widgets/stickers_modal.dart';
@@ -335,7 +336,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildPremiumGridTool('AI Design', Icons.smart_toy_rounded, const Color(0xFF6366F1), const Color(0xFFEEF2FF), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const AiDesignScreen()));
                   }, isNew: true),
-                  _buildPremiumGridTool('Pro Effects', Icons.auto_fix_high_rounded, const Color(0xFF14B8A6), const Color(0xFFF0FDFA), _showComingSoon),
+                  
+                  // 🔥 PRO EFFECTS BUTTON KO NAYE SCREEN KE SATH CONNECT KIYA HAI 🔥
+                  _buildPremiumGridTool('Pro Effects', Icons.auto_fix_high_rounded, const Color(0xFF14B8A6), const Color(0xFFF0FDFA), () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ProEffectsScreen())).then((_) => _loadRecentProjects());
+                  }),
                 ],
               ),
 
