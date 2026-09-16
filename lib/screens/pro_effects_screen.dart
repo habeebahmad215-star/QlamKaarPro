@@ -15,7 +15,9 @@ class _ProEffectsScreenState extends State<ProEffectsScreen> {
   int _selectedEffectIndex = 0;
   late DesignElement _previewElement;
 
+  // 🔥 25 HIGH-QUALITY PREMIUM TEXT EFFECTS 🔥
   final List<Map<String, dynamic>> _effectsLibrary = [
+    // 1
     {
       'title': 'Gold & Royal',
       'icon': Icons.workspace_premium_rounded,
@@ -23,12 +25,12 @@ class _ProEffectsScreenState extends State<ProEffectsScreen> {
       'builder': (String text) => DesignElement(
         id: 'gold_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
         elementColor: Colors.white,
-        textGradient: const [Color(0xFFD4AF37), Color(0xFFFFF200)],
-        isBevel: true,
-        hasStroke: true, strokeColor: Colors.black87, strokeWidth: 2.5,
+        textGradient: const [Color(0xFFD4AF37), Color(0xFFFFF200), Color(0xFFD4AF37)],
+        isBevel: true, hasStroke: true, strokeColor: Colors.black87, strokeWidth: 2.5,
         hasShadow: true, shadowColor: Colors.black45, shadowBlur: 10, shadowOffsetX: 5, shadowOffsetY: 5,
       ),
     },
+    // 2
     {
       'title': '3D Pop-Out',
       'icon': Icons.view_in_ar_rounded,
@@ -40,6 +42,7 @@ class _ProEffectsScreenState extends State<ProEffectsScreen> {
         hasShadow: true, shadowColor: Colors.black26, shadowBlur: 15, shadowOffsetX: 15, shadowOffsetY: 15,
       ),
     },
+    // 3
     {
       'title': 'Neon Glow',
       'icon': Icons.lightbulb_circle_rounded,
@@ -51,6 +54,7 @@ class _ProEffectsScreenState extends State<ProEffectsScreen> {
         hasShadow: true, shadowColor: Colors.cyanAccent, shadowBlur: 25.0, shadowOffsetX: 0, shadowOffsetY: 0,
       ),
     },
+    // 4
     {
       'title': 'Glassmorphism',
       'icon': Icons.blur_on_rounded,
@@ -60,6 +64,7 @@ class _ProEffectsScreenState extends State<ProEffectsScreen> {
         textColor: Colors.white, isGlass: true, opacity: 0.9,
       ),
     },
+    // 5
     {
       'title': 'Vintage Stamp',
       'icon': Icons.local_post_office_rounded,
@@ -67,9 +72,256 @@ class _ProEffectsScreenState extends State<ProEffectsScreen> {
       'builder': (String text) => DesignElement(
         id: 'vintage_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
         textColor: Colors.transparent, 
-        hasStroke: true, strokeColor: const Color(0xFFB91C1C), strokeWidth: 2.0,
-        angle: -0.1, // Halka sa tehra
+        hasStroke: true, strokeColor: const Color(0xFFB91C1C), strokeWidth: 2.0, angle: -0.1, 
         isInnerShadow: true, hasShadow: true, shadowColor: Colors.black12, shadowBlur: 5,
+      ),
+    },
+    // 6
+    {
+      'title': 'Silver Platinum',
+      'icon': Icons.diamond_rounded,
+      'color': const Color(0xFF94A3B8),
+      'builder': (String text) => DesignElement(
+        id: 'silver_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
+        elementColor: Colors.white,
+        textGradient: const [Color(0xFF94A3B8), Color(0xFFE2E8F0), Color(0xFF64748B)],
+        isBevel: true, hasStroke: true, strokeColor: const Color(0xFF1E293B), strokeWidth: 2.0,
+        hasShadow: true, shadowColor: Colors.black54, shadowBlur: 8, shadowOffsetX: 4, shadowOffsetY: 4,
+      ),
+    },
+    // 7
+    {
+      'title': 'Rose Gold',
+      'icon': Icons.favorite_rounded,
+      'color': const Color(0xFFFDA4AF),
+      'builder': (String text) => DesignElement(
+        id: 'rosegold_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
+        elementColor: Colors.white,
+        textGradient: const [Color(0xFFFDA4AF), Color(0xFFFFF1F2), Color(0xFFE11D48)],
+        isBevel: true, hasStroke: true, strokeColor: const Color(0xFF881337), strokeWidth: 1.5,
+        hasShadow: true, shadowColor: const Color(0xFF881337).withOpacity(0.4), shadowBlur: 15, shadowOffsetX: 5, shadowOffsetY: 5,
+      ),
+    },
+    // 8
+    {
+      'title': 'Fire & Lava',
+      'icon': Icons.local_fire_department_rounded,
+      'color': Colors.deepOrange,
+      'builder': (String text) => DesignElement(
+        id: 'fire_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
+        elementColor: Colors.white,
+        textGradient: const [Color(0xFFEA580C), Color(0xFFFBBF24)],
+        isBevel: true, hasShadow: true, shadowColor: const Color(0xFFDC2626), shadowBlur: 20, shadowOffsetX: 0, shadowOffsetY: 5,
+      ),
+    },
+    // 9
+    {
+      'title': 'Ice / Frozen',
+      'icon': Icons.ac_unit_rounded,
+      'color': Colors.lightBlueAccent,
+      'builder': (String text) => DesignElement(
+        id: 'ice_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
+        elementColor: Colors.white,
+        textGradient: const [Color(0xFFE0F2FE), Color(0xFF38BDF8)],
+        isGlass: true, isInnerShadow: true, hasStroke: true, strokeColor: Colors.white, strokeWidth: 1.0,
+      ),
+    },
+    // 10
+    {
+      'title': 'Emerald Stone',
+      'icon': Icons.hexagon_rounded,
+      'color': const Color(0xFF10B981),
+      'builder': (String text) => DesignElement(
+        id: 'emerald_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
+        elementColor: Colors.white,
+        textGradient: const [Color(0xFF047857), Color(0xFF34D399)],
+        isBevel: true, hasStroke: true, strokeColor: const Color(0xFF064E3B), strokeWidth: 2.0,
+        text3dDepth: 5.0, text3dColor: const Color(0xFF064E3B),
+      ),
+    },
+    // 11
+    {
+      'title': 'Cyberpunk 2077',
+      'icon': Icons.memory_rounded,
+      'color': const Color(0xFFFDE047),
+      'builder': (String text) => DesignElement(
+        id: 'cyberpunk_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
+        textColor: const Color(0xFFFDE047),
+        hasStroke: true, strokeColor: const Color(0xFF22D3EE), strokeWidth: 2.0,
+        text3dDepth: 8.0, text3dColor: const Color(0xFFE11D48),
+        hasShadow: true, shadowColor: const Color(0xFFE11D48), shadowBlur: 10, shadowOffsetX: -5, shadowOffsetY: 5,
+      ),
+    },
+    // 12
+    {
+      'title': 'Hollow Outline',
+      'icon': Icons.check_box_outline_blank_rounded,
+      'color': const Color(0xFFF59E0B),
+      'builder': (String text) => DesignElement(
+        id: 'hollow_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
+        textColor: Colors.transparent,
+        hasStroke: true, strokeColor: const Color(0xFFF59E0B), strokeWidth: 4.0,
+        text3dDepth: 8.0, text3dColor: const Color(0xFFB45309),
+      ),
+    },
+    // 13
+    {
+      'title': 'Bubblegum',
+      'icon': Icons.bubble_chart_rounded,
+      'color': const Color(0xFFF472B6),
+      'builder': (String text) => DesignElement(
+        id: 'bubble_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
+        elementColor: Colors.white,
+        textGradient: const [Color(0xFFF472B6), Color(0xFFC084FC)],
+        isBevel: true,
+        hasShadow: true, shadowColor: const Color(0xFF831843).withOpacity(0.3), shadowBlur: 15, shadowOffsetX: 0, shadowOffsetY: 10,
+      ),
+    },
+    // 14
+    {
+      'title': 'Dark Engraved',
+      'icon': Icons.vertical_align_bottom_rounded,
+      'color': const Color(0xFF334155),
+      'builder': (String text) => DesignElement(
+        id: 'engraved_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
+        textColor: const Color(0xFF334155),
+        isInnerShadow: true,
+        hasShadow: true, shadowColor: Colors.white, shadowBlur: 2, shadowOffsetX: 1.5, shadowOffsetY: 1.5, // White shadow creates cutout effect
+      ),
+    },
+    // 15
+    {
+      'title': 'Retro Synthwave',
+      'icon': Icons.waves_rounded,
+      'color': const Color(0xFFD946EF),
+      'builder': (String text) => DesignElement(
+        id: 'synthwave_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
+        elementColor: Colors.white,
+        textGradient: const [Color(0xFFEC4899), Color(0xFF8B5CF6)],
+        hasStroke: true, strokeColor: Colors.white, strokeWidth: 1.5,
+        text3dDepth: 10.0, text3dColor: const Color(0xFF0F172A),
+      ),
+    },
+    // 16
+    {
+      'title': 'Chocolate Wood',
+      'icon': Icons.park_rounded,
+      'color': const Color(0xFF78350F),
+      'builder': (String text) => DesignElement(
+        id: 'wood_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
+        elementColor: Colors.white,
+        textGradient: const [Color(0xFFB45309), Color(0xFF78350F)],
+        isInnerShadow: true, isBevel: true,
+        hasShadow: true, shadowColor: Colors.black54, shadowBlur: 8, shadowOffsetX: 5, shadowOffsetY: 5,
+      ),
+    },
+    // 17
+    {
+      'title': 'Ghost Phantom',
+      'icon': Icons.visibility_off_rounded,
+      'color': Colors.grey.shade400,
+      'builder': (String text) => DesignElement(
+        id: 'ghost_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
+        textColor: Colors.white, opacity: 0.6,
+        hasShadow: true, shadowColor: Colors.white, shadowBlur: 25, shadowOffsetX: 0, shadowOffsetY: 0,
+      ),
+    },
+    // 18
+    {
+      'title': 'Toxic Green',
+      'icon': Icons.coronavirus_rounded,
+      'color': const Color(0xFF84CC16),
+      'builder': (String text) => DesignElement(
+        id: 'toxic_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
+        textColor: const Color(0xFFBEF264),
+        hasStroke: true, strokeColor: const Color(0xFF3F6212), strokeWidth: 2.0,
+        hasShadow: true, shadowColor: const Color(0xFF84CC16), shadowBlur: 20, shadowOffsetX: 0, shadowOffsetY: 0,
+      ),
+    },
+    // 19
+    {
+      'title': 'Sunset Glow',
+      'icon': Icons.wb_sunny_rounded,
+      'color': const Color(0xFFF97316),
+      'builder': (String text) => DesignElement(
+        id: 'sunset_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
+        elementColor: Colors.white,
+        textGradient: const [Color(0xFFEAB308), Color(0xFFF97316), Color(0xFFBE123C)],
+        hasShadow: true, shadowColor: const Color(0xFFF97316).withOpacity(0.5), shadowBlur: 30, shadowOffsetX: 0, shadowOffsetY: 10,
+      ),
+    },
+    // 20
+    {
+      'title': 'Candy Foil',
+      'icon': Icons.cake_rounded,
+      'color': const Color(0xFF6366F1),
+      'builder': (String text) => DesignElement(
+        id: 'candy_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
+        elementColor: Colors.white,
+        textGradient: const [Color(0xFF3B82F6), Color(0xFFEC4899), Color(0xFFEAB308)],
+        isBevel: true, hasStroke: true, strokeColor: Colors.white, strokeWidth: 1.5,
+      ),
+    },
+    // 21
+    {
+      'title': 'Chrome Metal',
+      'icon': Icons.sports_motorsports_rounded,
+      'color': const Color(0xFF475569),
+      'builder': (String text) => DesignElement(
+        id: 'chrome_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
+        elementColor: Colors.white,
+        textGradient: const [Color(0xFFF8FAFC), Color(0xFF475569), Color(0xFF0F172A), Color(0xFFF8FAFC)],
+        isBevel: true, hasStroke: true, strokeColor: Colors.black, strokeWidth: 1.5,
+      ),
+    },
+    // 22
+    {
+      'title': 'Blueprint Outline',
+      'icon': Icons.architecture_rounded,
+      'color': const Color(0xFF2563EB),
+      'builder': (String text) => DesignElement(
+        id: 'blueprint_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
+        textColor: Colors.transparent,
+        hasStroke: true, strokeColor: Colors.white, strokeWidth: 2.5,
+        hasShadow: true, shadowColor: const Color(0xFF1D4ED8), shadowBlur: 10, shadowOffsetX: -2, shadowOffsetY: 2,
+      ),
+    },
+    // 23
+    {
+      'title': 'Blood Red',
+      'icon': Icons.water_drop_rounded,
+      'color': const Color(0xFF991B1B),
+      'builder': (String text) => DesignElement(
+        id: 'blood_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
+        elementColor: Colors.white,
+        textGradient: const [Color(0xFFDC2626), Color(0xFF7F1D1D)],
+        isInnerShadow: true,
+        hasShadow: true, shadowColor: const Color(0xFF991B1B), shadowBlur: 15, shadowOffsetX: 0, shadowOffsetY: 5,
+      ),
+    },
+    // 24
+    {
+      'title': 'Cosmic Space',
+      'icon': Icons.rocket_launch_rounded,
+      'color': const Color(0xFF4C1D95),
+      'builder': (String text) => DesignElement(
+        id: 'cosmic_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
+        elementColor: Colors.white,
+        textGradient: const [Color(0xFF1E1B4B), Color(0xFF4C1D95), Color(0xFFDB2777)],
+        hasStroke: true, strokeColor: Colors.white, strokeWidth: 1.0,
+        hasShadow: true, shadowColor: Colors.pinkAccent, shadowBlur: 20, shadowOffsetX: 0, shadowOffsetY: 0,
+      ),
+    },
+    // 25
+    {
+      'title': 'Pure White 3D',
+      'icon': Icons.view_in_ar_outlined,
+      'color': Colors.grey.shade300,
+      'builder': (String text) => DesignElement(
+        id: 'purewhite_effect', x: 0, y: 0, content: text, isText: true, fontSize: 60, fontFamily: 'JameelNoori', textAlign: TextAlign.center,
+        textColor: Colors.white,
+        text3dDepth: 15.0, text3dColor: const Color(0xFFE2E8F0),
+        hasShadow: true, shadowColor: Colors.black12, shadowBlur: 20, shadowOffsetX: 10, shadowOffsetY: 10,
       ),
     }
   ];
@@ -88,12 +340,19 @@ class _ProEffectsScreenState extends State<ProEffectsScreen> {
   }
 
   void _openInWorkspace() {
-    // Canvas ke liye element ki position safe set kar rahe hain
     DesignElement finalElement = _previewElement.clone();
     finalElement.x = 60;
     finalElement.y = 200;
     finalElement.width = 300;
     finalElement.height = 150;
+
+    // Har effect ke hisaab se suitable background color (Neon ya Ghost ke liye dark, baqi ke liye white)
+    Color canvasBgColor = Colors.white;
+    if (_selectedEffectIndex == 2 || _selectedEffectIndex == 14 || _selectedEffectIndex == 16 || _selectedEffectIndex == 21) {
+      canvasBgColor = const Color(0xFF1E293B); 
+    } else if (_selectedEffectIndex == 13) {
+      canvasBgColor = const Color(0xFFF1F5F9);
+    }
 
     ProjectModel proj = ProjectModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -102,7 +361,7 @@ class _ProEffectsScreenState extends State<ProEffectsScreen> {
       pages: [
         DesignPage(
           title: 'Page 1',
-          pageColor: _selectedEffectIndex == 2 ? const Color(0xFF1E293B) : Colors.white, // Neon ke liye dark bg automatically
+          pageColor: canvasBgColor,
           elements: [finalElement],
         )
       ],
@@ -114,7 +373,6 @@ class _ProEffectsScreenState extends State<ProEffectsScreen> {
     );
   }
 
-  // Same text rendering logic as Workspace to ensure exactly matching preview
   Widget _buildPreviewText(DesignElement e) {
     Widget buildTextWidget(Color c, [List<Shadow>? shadow]) {
       List<Shadow> currentShadows = shadow != null ? List.from(shadow) : [];
@@ -176,6 +434,12 @@ class _ProEffectsScreenState extends State<ProEffectsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Neon glow ya Ghost effect ke liye canvas dark ho jayega live preview me
+    Color previewBgColor = const Color(0xFFE2E8F0);
+    if (_selectedEffectIndex == 2 || _selectedEffectIndex == 14 || _selectedEffectIndex == 16 || _selectedEffectIndex == 21) {
+      previewBgColor = const Color(0xFF1E293B); 
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -198,11 +462,10 @@ class _ProEffectsScreenState extends State<ProEffectsScreen> {
               width: double.infinity,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(24),
-                // Neon glow ke liye preview bg dark ho jata hai
-                color: _selectedEffectIndex == 2 ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                color: previewBgColor,
                 boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 5))],
-                image: _selectedEffectIndex != 2 ? const DecorationImage(
-                  image: AssetImage('assets/images/transparent_bg_grid.png'), // Agar grid image ho toh acha hai
+                image: previewBgColor == const Color(0xFFE2E8F0) ? const DecorationImage(
+                  image: AssetImage('assets/images/transparent_bg_grid.png'), // Grid background
                   repeat: ImageRepeat.repeat, opacity: 0.3
                 ) : null,
               ),
@@ -255,9 +518,15 @@ class _ProEffectsScreenState extends State<ProEffectsScreen> {
                   ),
 
                   const SizedBox(height: 25),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24),
-                    child: Text('Choose Style (انداز منتخب کریں)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Choose Style (انداز منتخب کریں)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
+                        Text('${_selectedEffectIndex + 1} / ${_effectsLibrary.length}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF8B5CF6))),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 15),
 
