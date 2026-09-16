@@ -751,6 +751,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                 setState(() { 
                                   existingElement.content = controller.text; 
                                   existingElement.textAlign = isRTL ? TextAlign.right : TextAlign.left; 
+                                  existingElement.wordStyles = null; // 🔥 RESET MULTI-STYLE ON FULL EDIT
                                 }); 
                               } else { 
                                 var newEl = DesignElement(
@@ -1208,15 +1209,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                             elementColor: item['color'] as Color
                           ));
                         } 
-                        else {
-                          elements.insert(0, DesignElement(
-                            id: Random().nextInt(10000).toString(), 
-                            x: 0, y: 0, 
-                            content: 'BG', 
-                            width: 400, height: 400, 
-                            isText: false, isShape: true, 
-                            elementColor: item['color'] as Color
-                          ));
+                        else if (styleName == 'bg') {
+                          pageColor = item['color'] as Color;
+                          bgImageBytes = null;
+                          bgGradient = null;
                         }
                       });
                       _triggerCanvasUpdate();
@@ -1926,6 +1922,273 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       icon: const Icon(Icons.color_lens_rounded, color: Color(0xFF8B5CF6), size: 18),
                       label: const Text('Choose 3D Block Color', style: TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold, fontSize: 13))
                     )
+                  )
+                ]
+              )
+            );
+          }
+        );
+      }
+    );
+  }
+
+  // ============================================================================
+  // 🔥 THE BILLION-DOLLAR FEATURE: MULTI-STYLE TEXT STUDIO (WITH GLASSMORPHISM) 🔥
+  // ============================================================================
+  void _showMultiStyleModal(DesignElement sel) {
+    if (!sel.isText || sel.content.trim().isEmpty) return;
+    
+    // Split the text while keeping original word flow
+    List<String> words = sel.content.split(' ');
+    Set<int> selectedWords = {};
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      barrierColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return _buildGlassContainer(
+              context,
+              height: MediaQuery.of(context).size.height * 0.70,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Multi-Style Studio (ملٹی اسٹائل)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
+                      IconButton(icon: const Icon(Icons.close_rounded, color: Colors.grey), onPressed: () => Navigator.pop(context))
+                    ]
+                  ),
+                  const Text('نیچے دیئے گئے الفاظ پر کلک کریں اور ان کا رنگ، سائز اور فونٹ بدلیں۔', textDirection: TextDirection.rtl, style: TextStyle(color: Colors.black54, fontFamily: 'JameelNoori', fontSize: 14)),
+                  const SizedBox(height: 20),
+                  
+                  // Wrap Container for words
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.6),
+                        border: Border.all(color: Colors.white),
+                        borderRadius: BorderRadius.circular(16)
+                      ),
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: Wrap(
+                          spacing: 12, runSpacing: 12,
+                          alignment: WrapAlignment.center,
+                          textDirection: TextDirection.rtl, // Perfect for Urdu
+                          children: List.generate(words.length, (i) {
+                            if (words[i].isEmpty) return const SizedBox.shrink();
+                            bool isSel = selectedWords.contains(i);
+                            
+                            // Visual feedback base on saved style
+                            Color currentWordColor = sel.textColor;
+                            String currentWordFont = sel.fontFamily;
+                            
+                            if (sel.wordStyles != null && sel.wordStyles!.containsKey(i)) {
+                              if (sel.wordStyles![i]!['color'] != null) currentWordColor = Color(sel.wordStyles![i]!['color']);
+                              if (sel.wordStyles![i]!['fontFamily'] != null) currentWordFont = sel.wordStyles![i]!['fontFamily'];
+                            }
+                            
+                            return ChoiceChip(
+                              label: Text(words[i], style: TextStyle(fontFamily: currentWordFont, fontSize: 22, color: isSel ? Colors.white : currentWordColor)),
+                              selected: isSel,
+                              selectedColor: const Color(0xFF8B5CF6),
+                              backgroundColor: Colors.white.withOpacity(0.8),
+                              elevation: isSel ? 5 : 1,
+                              shadowColor: Colors.black26,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: isSel ? const Color(0xFF8B5CF6) : Colors.white)),
+                              onSelected: (val) {
+                                setModalState(() {
+                                  if (val) selectedWords.add(i);
+                                  else selectedWords.remove(i);
+                                });
+                              }
+                            );
+                          })
+                        ),
+                      )
+                    )
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // Controls Box
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildMultiStyleControlBtn(Icons.palette_rounded, 'Color', selectedWords.isEmpty ? Colors.grey : const Color(0xFF8B5CF6), () {
+                        if (selectedWords.isEmpty) return;
+                        _openProColorPicker(
+                          title: 'Word Color',
+                          currentColor: sel.textColor,
+                          onColorChanged: (c) {
+                            saveState();
+                            setState(() {
+                              sel.wordStyles ??= {};
+                              for (int idx in selectedWords) {
+                                sel.wordStyles![idx] ??= {};
+                                sel.wordStyles![idx]!['color'] = c.value;
+                              }
+                            });
+                            setModalState((){});
+                            _triggerCanvasUpdate();
+                          }
+                        );
+                      }),
+                      _buildMultiStyleControlBtn(Icons.font_download_rounded, 'Font', selectedWords.isEmpty ? Colors.grey : const Color(0xFF10B981), () {
+                        if (selectedWords.isEmpty) return;
+                        _showMultiStyleFontPicker(sel, selectedWords, setModalState);
+                      }),
+                      _buildMultiStyleControlBtn(Icons.text_fields_rounded, 'Size', selectedWords.isEmpty ? Colors.grey : const Color(0xFFF59E0B), () {
+                        if (selectedWords.isEmpty) return;
+                        _showMultiStyleSizePicker(sel, selectedWords, setModalState);
+                      }),
+                      _buildMultiStyleControlBtn(Icons.layers_clear_rounded, 'Reset', selectedWords.isEmpty ? Colors.grey : Colors.redAccent, () {
+                        if (selectedWords.isEmpty) return;
+                        saveState();
+                        setState(() {
+                          if (sel.wordStyles != null) {
+                            for (int idx in selectedWords) {
+                              sel.wordStyles!.remove(idx);
+                            }
+                          }
+                        });
+                        setModalState((){});
+                        _triggerCanvasUpdate();
+                      }),
+                    ],
+                  )
+                ]
+              )
+            );
+          }
+        );
+      }
+    );
+  }
+
+  Widget _buildMultiStyleControlBtn(IconData icon, String label, Color c, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: 70, height: 70,
+        decoration: BoxDecoration(color: c.withOpacity(0.15), borderRadius: BorderRadius.circular(16), border: Border.all(color: c.withOpacity(0.3))),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: c, size: 26),
+            const SizedBox(height: 4),
+            Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: c))
+          ]
+        )
+      )
+    );
+  }
+
+  void _showMultiStyleFontPicker(DesignElement sel, Set<int> selectedWords, StateSetter parentSetState) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      barrierColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return _buildGlassContainer(
+          context,
+          height: MediaQuery.of(context).size.height * 0.5,
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Select Word Font', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  IconButton(icon: const Icon(Icons.close), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
+                ]
+              ),
+              const Divider(color: Colors.black12),
+              Expanded(
+                child: ListView.builder(
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: availableFontsData.length,
+                  itemBuilder: (ctx, i) {
+                    var font = availableFontsData[i];
+                    return ListTile(
+                      title: Text(font['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      trailing: Text('نمونہ', style: TextStyle(fontFamily: font['name'], fontSize: 22)),
+                      onTap: () {
+                        saveState();
+                        setState(() {
+                          sel.wordStyles ??= {};
+                          for (int idx in selectedWords) {
+                            sel.wordStyles![idx] ??= {};
+                            sel.wordStyles![idx]!['fontFamily'] = font['name'];
+                          }
+                        });
+                        parentSetState((){});
+                        _triggerCanvasUpdate();
+                        Navigator.pop(context);
+                      }
+                    );
+                  }
+                )
+              )
+            ]
+          )
+        );
+      }
+    );
+  }
+
+  void _showMultiStyleSizePicker(DesignElement sel, Set<int> selectedWords, StateSetter parentSetState) {
+    double currentSize = sel.fontSize;
+    if (sel.wordStyles != null && sel.wordStyles!.containsKey(selectedWords.first) && sel.wordStyles![selectedWords.first]!['fontSize'] != null) {
+      currentSize = sel.wordStyles![selectedWords.first]!['fontSize'];
+    }
+
+    showModalBottomSheet(
+      context: context,
+      barrierColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return _buildGlassContainer(
+              context,
+              height: 150,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Word Size: ${currentSize.toInt()}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      IconButton(icon: const Icon(Icons.close), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
+                    ]
+                  ),
+                  Slider(
+                    value: currentSize.clamp(10.0, 150.0),
+                    min: 10.0, max: 150.0,
+                    activeColor: const Color(0xFFF59E0B),
+                    onChangeStart: (val) => saveState(),
+                    onChanged: (val) {
+                      setState(() {
+                        currentSize = val;
+                        sel.wordStyles ??= {};
+                        for (int idx in selectedWords) {
+                          sel.wordStyles![idx] ??= {};
+                          sel.wordStyles![idx]!['fontSize'] = val;
+                        }
+                      });
+                      setModalState((){});
+                      parentSetState((){});
+                      _triggerCanvasUpdate();
+                    }
                   )
                 ]
               )
@@ -3362,7 +3625,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           else if (e.clipShape == 4) clippedImg = ClipPath(clipper: HexagonClipper(), child: img);
                                           contentWidget = SizedBox(width: currentWidth, height: e.clipShape == 0 ? currentHeight : currentWidth, child: clippedImg);
                                         } else {
-                                          Widget buildTextWidget(Color c, [List<Shadow>? shadow]) {
+                                          
+                                          // 🔥 MULTI-STYLE TEXT ENGINE 🔥
+                                          Widget buildTextWidget(Color c, {List<Shadow>? shadow, bool isStroke = false}) {
                                             List<Shadow> currentShadows = shadow != null ? List.from(shadow) : [];
                                             if (shadow == null && e.hasShadow) currentShadows.add(Shadow(color: e.shadowColor, blurRadius: e.shadowBlur, offset: Offset(e.shadowOffsetX, e.shadowOffsetY)));
 
@@ -3386,7 +3651,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                             TextStyle st = TextStyle(
                                               fontFamily: e.fontFamily, 
                                               fontSize: e.fontSize, 
-                                              color: finalTextColor, 
+                                              color: isStroke ? null : finalTextColor, 
+                                              foreground: isStroke ? (Paint()..style = PaintingStyle.stroke..strokeWidth = e.strokeWidth..color = e.strokeColor) : null,
                                               letterSpacing: e.letterSpacing, 
                                               wordSpacing: e.wordSpacing, 
                                               height: e.lineHeight, 
@@ -3395,8 +3661,40 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                               fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal
                                             );
                                             
-                                            if (e.textCurveRadius != 0) return CurvedTextWidget(text: e.content, style: st, radius: e.textCurveRadius);
-                                            return SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: st));
+                                            if (e.textCurveRadius != 0) {
+                                              return CurvedTextWidget(text: e.content, style: st, radius: e.textCurveRadius);
+                                            }
+
+                                            // Rich Text (Multi-Style) Rendering
+                                            List<String> words = e.content.split(' ');
+                                            List<InlineSpan> spans = [];
+                                            
+                                            for (int i = 0; i < words.length; i++) {
+                                              TextStyle wordStyle = st;
+                                              
+                                              if (e.wordStyles != null && e.wordStyles!.containsKey(i)) {
+                                                var ws = e.wordStyles![i]!;
+                                                wordStyle = st.copyWith(
+                                                  color: isStroke ? null : (ws['color'] != null ? Color(ws['color']) : st.color),
+                                                  fontFamily: ws['fontFamily'] ?? st.fontFamily,
+                                                  fontSize: ws['fontSize'] != null ? ws['fontSize'] : st.fontSize,
+                                                );
+                                              }
+                                              
+                                              spans.add(TextSpan(text: words[i], style: wordStyle));
+                                              if (i < words.length - 1) {
+                                                spans.add(TextSpan(text: ' ', style: st)); // Spaces ka original style
+                                              }
+                                            }
+
+                                            return SizedBox(
+                                              width: currentWidth, 
+                                              child: RichText(
+                                                textAlign: e.textAlign, 
+                                                textDirection: TextDirection.rtl, // Perfect for Urdu
+                                                text: TextSpan(children: spans)
+                                              )
+                                            );
                                           }
                                           
                                           List<Widget> blockLayers = [];
@@ -3412,8 +3710,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           Widget txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: blockLayers);
                                           
                                           if (e.hasStroke) {
-                                            TextStyle stStroke = TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, letterSpacing: e.letterSpacing, wordSpacing: e.wordSpacing, height: e.lineHeight, foreground: Paint()..style = PaintingStyle.stroke..strokeWidth = e.strokeWidth..color = e.strokeColor, fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal, fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal);
-                                            Widget strokeTxt = e.textCurveRadius != 0 ? CurvedTextWidget(text: e.content, style: stStroke, radius: e.textCurveRadius) : SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: stStroke));
+                                            Widget strokeTxt = buildTextWidget(Colors.transparent, null, true);
                                             txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [strokeTxt, txt]);
                                           }
                                           
@@ -3573,6 +3870,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
       bottomRow.add(_buildToolBtn(Icons.close_rounded, 'Deselect', () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, Colors.redAccent));
       bottomRow.add(_buildToolBtn(Icons.edit_rounded, 'Edit', () => _showTextComposerDialog(existingElement: sel)));
+      
+      // 🔥 THE BILLION DOLLAR MULTI-STYLE BUTTON 🔥
+      bottomRow.add(_buildToolBtn(Icons.style_rounded, 'Multi-Style', () => _showMultiStyleModal(sel), const Color(0xFFE11D48)));
+      
       bottomRow.add(_buildToolBtn(Icons.font_download_rounded, 'Font', () => showFontPickerModal(sel)));
       bottomRow.add(_buildToolBtn(Icons.palette_rounded, 'Colour', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
       bottomRow.add(_buildToolBtn(Icons.gradient_rounded, 'Gradient', () => _showGradientPickerModal(sel)));
