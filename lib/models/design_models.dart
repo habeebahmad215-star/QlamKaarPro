@@ -126,6 +126,9 @@ class DesignElement {
   bool isInnerShadow;
   bool isGlass;
 
+  // 🔥 THE BILLION-DOLLAR FEATURE: MULTI-STYLE TEXT ENGINE 🔥
+  Map<int, Map<String, dynamic>>? wordStyles;
+
   DesignElement({
     required this.id, required this.x, required this.y, required this.content, 
     Uint8List? imageBytes, this.imageCacheId,
@@ -150,6 +153,7 @@ class DesignElement {
     this.isBevel = false,
     this.isInnerShadow = false,
     this.isGlass = false,
+    this.wordStyles,
   }) {
     if (imageBytes != null && imageCacheId == null) {
       imageCacheId = ImageCacheManager.cacheImage(imageBytes);
@@ -196,6 +200,8 @@ class DesignElement {
     'isBevel': isBevel,
     'isInnerShadow': isInnerShadow,
     'isGlass': isGlass,
+    // JSON sirf string keys accept karta hai isliye int ko string banaya hai
+    'wordStyles': wordStyles?.map((k, v) => MapEntry(k.toString(), v)),
   };
 
   factory DesignElement.fromJson(Map<String, dynamic> json) {
@@ -248,6 +254,7 @@ class DesignElement {
       isBevel: json['isBevel'] as bool? ?? false,
       isInnerShadow: json['isInnerShadow'] as bool? ?? false,
       isGlass: json['isGlass'] as bool? ?? false,
+      wordStyles: json['wordStyles'] != null ? (json['wordStyles'] as Map<String, dynamic>).map((k, v) => MapEntry(int.parse(k), Map<String, dynamic>.from(v as Map))) : null,
     );
   }
 
@@ -278,6 +285,7 @@ class DesignElement {
       isBevel: isBevel,
       isInnerShadow: isInnerShadow,
       isGlass: isGlass,
+      wordStyles: wordStyles?.map((k, v) => MapEntry(k, Map<String, dynamic>.from(v))),
     );
   }
 }
