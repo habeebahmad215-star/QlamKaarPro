@@ -101,9 +101,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     super.dispose();
   }
 
-  // ============================================================================
-  // 🔥 THE NEW GLASSMORPHISM ENGINE FOR COMPACT MODALS 🔥
-  // ============================================================================
   Widget _buildGlassContainer(BuildContext context, {required Widget child, required double height, EdgeInsetsGeometry? padding}) {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -155,36 +152,60 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   double _getElWidth(DesignElement e) {
     if (e.isTable) return e.width > 80 ? e.width : 300;
     if (e.isBorder) return e.width > 50 ? e.width : 200; 
+    if (!e.isText && e.width > 20) return e.width;
     return e.width > 80 ? e.width : 80;
   }
 
+  // 🔥 PERMANENT FIX: SELECTION BOX HEIGHT ENGINE 🔥
   double _getElHeight(DesignElement e) {
     if (e.isTable) return e.height > 30 ? e.height : 150;
     if (e.isBorder) return e.height > 50 ? e.height : 200; 
     if (!e.isText && e.height > 20) return e.height;
-    if (e.isShape) return 90;
+    if (e.isShape) return e.height > 20 ? e.height : 90;
+    
     if (e.isText) {
       if (e.textCurveRadius != 0) {
         return e.textCurveRadius.abs() * 2.5 + 20;
       }
+
+      List<String> words = e.content.split(' ');
+      List<InlineSpan> spans = [];
+      TextStyle baseSt = TextStyle(
+        fontFamily: e.fontFamily, 
+        fontSize: e.fontSize, 
+        letterSpacing: e.letterSpacing, 
+        wordSpacing: e.wordSpacing, 
+        height: e.lineHeight,
+        fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal,
+        fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal,
+      );
+
+      for (int i = 0; i < words.length; i++) {
+        TextStyle wordStyle = baseSt;
+        if (e.wordStyles != null && e.wordStyles!.containsKey(i)) {
+          var ws = e.wordStyles![i]!;
+          wordStyle = baseSt.copyWith(
+            fontFamily: ws['fontFamily'] ?? baseSt.fontFamily,
+            fontSize: ws['fontSize'] != null ? (ws['fontSize'] as num).toDouble() : baseSt.fontSize,
+          );
+        }
+        spans.add(TextSpan(text: words[i], style: wordStyle));
+        if (i < words.length - 1) spans.add(TextSpan(text: ' ', style: baseSt));
+      }
+
       final TextPainter textPainter = TextPainter(
-        text: TextSpan(
-          text: e.content.isEmpty ? 'Text' : e.content, 
-          style: TextStyle(
-            fontFamily: e.fontFamily, 
-            fontSize: e.fontSize, 
-            letterSpacing: e.letterSpacing, 
-            wordSpacing: e.wordSpacing, 
-            height: e.lineHeight,
-            fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal,
-            fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal,
-          )
-        ),
+        text: TextSpan(children: spans),
         textAlign: e.textAlign,
-        textDirection: TextDirection.ltr,
+        textDirection: TextDirection.rtl, // Match canvas UI
       )..layout(maxWidth: e.width > 80 ? e.width : 80);
       
-      return textPainter.size.height + (e.hasShadow ? e.shadowBlur * 2 : 0) + (e.hasStroke ? e.strokeWidth * 2 : 0) + 10;
+      double extraPadding = 10;
+      if (e.hasShadow) extraPadding += e.shadowBlur * 2 + e.shadowOffsetY.abs();
+      if (e.hasStroke) extraPadding += e.strokeWidth * 2;
+      if (e.text3dDepth > 0) extraPadding += e.text3dDepth;
+      if (e.textBgColor != null) extraPadding += 20;
+      
+      return textPainter.size.height + extraPadding + 10;
     }
     return 150;
   }
@@ -301,6 +322,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     _triggerCanvasUpdate();
   }
 
+  // 🔥 PERMANENT FIX: MULTI-STYLE CORNER SCALING ENGINE 🔥
   void _scaleCorner(DragUpdateDetails d, DesignElement e, String corner) {
     double ldx = d.delta.dx;
     double ldy = d.delta.dy;
@@ -338,6 +360,15 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       if (e.isText) {
         double scaleFactor = e.width / oldWidth;
         e.fontSize = max(10.0, e.fontSize * scaleFactor);
+        
+        // Multi-Style words ko bhi same proportion mein bara karna hai
+        if (e.wordStyles != null) {
+          e.wordStyles!.forEach((k, v) {
+            if (v['fontSize'] != null) {
+              v['fontSize'] = max(10.0, (v['fontSize'] as num).toDouble() * scaleFactor);
+            }
+          });
+        }
       } else {
         double ratio = oldWidth / (e.height > 0 ? e.height : 1);
         e.height += delta / ratio;
@@ -751,7 +782,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                 setState(() { 
                                   existingElement.content = controller.text; 
                                   existingElement.textAlign = isRTL ? TextAlign.right : TextAlign.left; 
-                                  existingElement.wordStyles = null; // 🔥 RESET MULTI-STYLE ON FULL EDIT
+                                  existingElement.wordStyles = null; // RESET MULTI-STYLE ON FULL EDIT
                                 }); 
                               } else { 
                                 var newEl = DesignElement(
@@ -1182,12 +1213,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                       saveState();
                       setState(() {
                         if (styleName == 'border') {
-                          double safeW = currentCanvasW > 50 ? currentCanvasW - 30 : 200;
-                          double safeH = currentCanvasH > 50 ? currentCanvasH - 30 : 200;
+                          // 🔥 PERMANENT FIX: Default border snapping gracefully into view!
+                          double safeW = currentCanvasW > 50 ? currentCanvasW - 20 : 300;
+                          double safeH = currentCanvasH > 50 ? currentCanvasH - 20 : 300;
                           
                           elements.add(DesignElement(
                             id: Random().nextInt(10000).toString(), 
-                            x: 15, y: 15, 
+                            x: 10, y: 10, 
                             content: 'Border', 
                             width: safeW, 
                             height: safeH, 
@@ -1308,13 +1340,14 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     }
   }
 
+  // 🔥 PERMANENT FIX: FIT BORDER TO PAGE EXACTLY ALIGNED 🔥
   void _fitBorderToPage(DesignElement sel) {
     saveState();
     setState(() {
-      sel.x = 15;
-      sel.y = 15;
-      sel.width = (currentCanvasW > 50 ? currentCanvasW : 300) - 30;
-      sel.height = (currentCanvasH > 50 ? currentCanvasH : 300) - 30;
+      sel.x = 10;
+      sel.y = 10;
+      sel.width = (currentCanvasW > 50 ? currentCanvasW : 300) - 20;
+      sel.height = (currentCanvasH > 50 ? currentCanvasH : 300) - 20;
       sel.angle = 0; 
     });
     _triggerCanvasUpdate();
@@ -2148,7 +2181,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void _showMultiStyleSizePicker(DesignElement sel, Set<int> selectedWords, StateSetter parentSetState) {
     double currentSize = sel.fontSize;
     if (sel.wordStyles != null && sel.wordStyles!.containsKey(selectedWords.first) && sel.wordStyles![selectedWords.first]!['fontSize'] != null) {
-      currentSize = sel.wordStyles![selectedWords.first]!['fontSize'];
+      currentSize = (sel.wordStyles![selectedWords.first]!['fontSize'] as num).toDouble();
     }
 
     showModalBottomSheet(
@@ -3661,25 +3694,22 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                               fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal
                                             );
                                             
-                                            // Agar curve hai toh normal chalao, multi style support abhi grid based hai
                                             if (e.textCurveRadius != 0) {
                                               return CurvedTextWidget(text: e.content, style: st, radius: e.textCurveRadius);
                                             }
 
-                                            // Rich Text (Multi-Style) Rendering
                                             List<String> words = e.content.split(' ');
                                             List<InlineSpan> spans = [];
                                             
                                             for (int i = 0; i < words.length; i++) {
                                               TextStyle wordStyle = st;
                                               
-                                              // Check agar is lafz par user ne koi khas style lagaya hai
                                               if (e.wordStyles != null && e.wordStyles!.containsKey(i)) {
                                                 var ws = e.wordStyles![i]!;
                                                 wordStyle = st.copyWith(
                                                   color: isStroke ? null : (ws['color'] != null ? Color(ws['color']) : st.color),
                                                   fontFamily: ws['fontFamily'] ?? st.fontFamily,
-                                                  fontSize: ws['fontSize'] != null ? ws['fontSize'] : st.fontSize,
+                                                  fontSize: ws['fontSize'] != null ? (ws['fontSize'] as num).toDouble() : st.fontSize,
                                                 );
                                               }
                                               
@@ -3701,7 +3731,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           
                                           List<Widget> blockLayers = [];
                                           if (e.text3dDepth > 0) {
-                                            // 🔥 YAHAN FIX KIYA HAI: 'shadow: []' kiya taake named parameter use ho
                                             for (double i = e.text3dDepth; i > 0; i -= 1.0) blockLayers.add(Transform.translate(offset: Offset(i, i), child: buildTextWidget(e.text3dColor, shadow: [])));
                                           }
                                           
@@ -3713,7 +3742,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           Widget txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: blockLayers);
                                           
                                           if (e.hasStroke) {
-                                            // 🔥 YAHAN FIX KIYA HAI: 'isStroke: true' kiya taake named parameter use ho
                                             Widget strokeTxt = buildTextWidget(Colors.transparent, isStroke: true);
                                             txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [strokeTxt, txt]);
                                           }
@@ -3764,7 +3792,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                         }
                                                       },
                                                       child: Container(
-                                                        decoration: isSel ? BoxDecoration(border: Border.all(color: const Color(0xFF8B5CF6), width: 1.0)) : null,
+                                                        decoration: isSel ? BoxDecoration(border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5)) : null,
                                                         child: Opacity(opacity: e.opacity.clamp(0.0, 1.0), child: contentWidget)
                                                       )
                                                     )
