@@ -3462,10 +3462,28 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                           _triggerCanvasUpdate();
                                                         }
                                                       },
-                                                      child: Container(
-                                                        decoration: isSel ? BoxDecoration(border: Border.all(color: const Color(0xFF8B5CF6), width: 1.0)) : null,
-                                                        child: Opacity(opacity: e.opacity.clamp(0.0, 1.0), child: contentWidget)
-                                                      )
+                                                      child: Stack(
+                                                        fit: StackFit.passthrough,
+                                                        clipBehavior: Clip.none,
+                                                        children: [
+                                                          Opacity(opacity: e.opacity.clamp(0.0, 1.0), child: contentWidget),
+                                                          if (isSel)
+                                                            Positioned.fill(
+                                                              child: IgnorePointer(
+                                                                child: Container(
+                                                                  decoration: BoxDecoration(
+                                                                    border: Border.all(color: Colors.white, width: 2.0),
+                                                                  ),
+                                                                  child: Container(
+                                                                    decoration: BoxDecoration(
+                                                                      border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                        ],
+                                                      ),
                                                     )
                                                   ),
                                                   
