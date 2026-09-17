@@ -54,6 +54,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   String? selectedId;
   String activeToolbarMenu = 'main';
 
+  // 🔥 Multi-Style State Engine (Saves individual word styles per element)
+  Map<String, Map<int, Map<String, dynamic>>> textMultiStyles = {};
+  
+  // Parallel memory stacks for Undo/Redo of Multi-Styles
+  List<Map<String, Map<int, Map<String, dynamic>>>> undoMultiStylesStack = [];
+  List<Map<String, Map<int, Map<String, dynamic>>>> redoMultiStylesStack = [];
+
   final List<Map<String, String>> availableFontsData = [
     {'name': 'JameelNoori', 'title': 'جمیل نوری نستعلیق', 'desc': 'Classic Standard Urdu Font'},
     {'name': 'AlviNastaleeq', 'title': 'علوی نستعلیق', 'desc': 'Beautiful Nasta\'liq Style'},
@@ -99,6 +106,18 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     _transformController.dispose();
     _canvasNotifier.dispose();
     super.dispose();
+  }
+
+  // Deep copy helper for MultiStyles Memory
+  Map<String, Map<int, Map<String, dynamic>>> deepCopyMultiStyles(Map<String, Map<int, Map<String, dynamic>>> source) {
+    Map<String, Map<int, Map<String, dynamic>>> copy = {};
+    source.forEach((key, val) {
+      copy[key] = {};
+      val.forEach((idx, styleMap) {
+        copy[key]![idx] = Map<String, dynamic>.from(styleMap);
+      });
+    });
+    return copy;
   }
 
   Widget _buildGlassContainer(BuildContext context, {required Widget child, required double height, EdgeInsetsGeometry? padding}) {
@@ -186,6 +205,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     return 150;
   }
 
+  bool _isRTLText(String text) {
+    if (text.isEmpty) return false;
+    int char = text.codeUnitAt(0);
+    return (char >= 0x0590 && char <= 0x06FF);
+  }
+
   Future<File> _getProjectsFile() async {
     final directory = await getApplicationDocumentsDirectory();
     return File('${directory.path}/qalamkaar_projects.json');
@@ -237,15 +262,22 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   void saveState() {
     undoStack.add(elements.map((e) => e.clone()).toList());
+    undoMultiStylesStack.add(deepCopyMultiStyles(textMultiStyles));
     redoStack.clear();
-    if (undoStack.length > 10) undoStack.removeAt(0); 
+    redoMultiStylesStack.clear();
+    if (undoStack.length > 10) {
+      undoStack.removeAt(0); 
+      undoMultiStylesStack.removeAt(0);
+    }
   }
 
   void undoAction() {
     if (undoStack.isNotEmpty) {
       redoStack.add(elements.map((e) => e.clone()).toList());
+      redoMultiStylesStack.add(deepCopyMultiStyles(textMultiStyles));
       setState(() { 
         elements = undoStack.removeLast(); 
+        textMultiStyles = undoMultiStylesStack.removeLast();
         selectedId = null; 
         activeToolbarMenu = 'main'; 
       });
@@ -257,8 +289,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   void redoAction() {
     if (redoStack.isNotEmpty) {
       undoStack.add(elements.map((e) => e.clone()).toList());
+      undoMultiStylesStack.add(deepCopyMultiStyles(textMultiStyles));
       setState(() { 
         elements = redoStack.removeLast(); 
+        textMultiStyles = redoMultiStylesStack.removeLast();
         selectedId = null; 
         activeToolbarMenu = 'main'; 
       });
@@ -748,6 +782,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                 setState(() { 
                                   existingElement.content = controller.text; 
                                   existingElement.textAlign = isRTL ? TextAlign.right : TextAlign.left; 
+                                  // 🔥 CRITICAL FIX: Clear multi-styles on edit to prevent array out-of-bounds mapping
+                                  textMultiStyles.remove(existingElement.id);
                                 }); 
                               } else { 
                                 var newEl = DesignElement(
@@ -795,6 +831,198 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
           Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))
         ]
       )
+    );
+  }
+
+  // 🔥 THE PREMIUM FEATURE: Multi-Style Word Selection Engine
+  void _showMultiStyleModal(DesignElement sel) {
+    Set<int> selectedIndices = {};
+    List<String> words = sel.content.split(' ');
+    
+    if (!textMultiStyles.containsKey(sel.id)) {
+      textMultiStyles[sel.id] = {};
+    }
+
+    showModalBottomSheet(
+      context: context,
+      barrierColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return _buildGlassContainer(
+              context,
+              height: 380,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Word Style (الفاظ کے انداز)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      Row(
+                        children: [
+                          if (textMultiStyles[sel.id]!.isNotEmpty)
+                            TextButton.icon(
+                              onPressed: () {
+                                saveState();
+                                setState(() {
+                                  textMultiStyles[sel.id]!.clear();
+                                  selectedIndices.clear();
+                                });
+                                setModalState((){});
+                                _triggerCanvasUpdate();
+                              }, 
+                              icon: const Icon(Icons.clear_all, size: 14, color: Colors.red), 
+                              label: const Text('Reset', style: TextStyle(color: Colors.red, fontSize: 12))
+                            ),
+                          IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context)),
+                        ],
+                      )
+                    ]
+                  ),
+                  const Divider(color: Colors.black12),
+                  const Text('Select words below to style them individually:', style: TextStyle(fontSize: 11, color: Colors.black54)),
+                  const SizedBox(height: 10),
+                  
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        alignment: _isRTLText(sel.content) ? WrapAlignment.end : WrapAlignment.start,
+                        textDirection: _isRTLText(sel.content) ? TextDirection.rtl : TextDirection.ltr,
+                        children: List.generate(words.length, (i) {
+                          bool isSel = selectedIndices.contains(i);
+                          bool hasStyle = textMultiStyles[sel.id]!.containsKey(i);
+                          return FilterChip(
+                            label: Text(words[i], style: TextStyle(fontFamily: hasStyle ? textMultiStyles[sel.id]![i]!['fontFamily'] ?? sel.fontFamily : sel.fontFamily, fontSize: 16, color: hasStyle ? (textMultiStyles[sel.id]![i]!['color'] ?? (isSel ? Colors.white : Colors.black)) : (isSel ? Colors.white : Colors.black))),
+                            selected: isSel,
+                            selectedColor: const Color(0xFF8B5CF6),
+                            backgroundColor: Colors.white.withOpacity(0.5),
+                            checkmarkColor: Colors.white,
+                            onSelected: (val) {
+                              setModalState(() {
+                                if (val) selectedIndices.add(i);
+                                else selectedIndices.remove(i);
+                              });
+                            },
+                          );
+                        }),
+                      ),
+                    ),
+                  ),
+                  
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(border: Border(top: BorderSide(color: Colors.grey.shade200))),
+                    child: Opacity(
+                      opacity: selectedIndices.isEmpty ? 0.3 : 1.0,
+                      child: IgnorePointer(
+                        ignoring: selectedIndices.isEmpty,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), elevation: 0),
+                              icon: const Icon(Icons.color_lens, size: 16, color: Colors.white),
+                              label: const Text('Color', style: TextStyle(color: Colors.white, fontSize: 12)),
+                              onPressed: () {
+                                _openProColorPicker(
+                                  title: 'Word Color', 
+                                  currentColor: Colors.black, 
+                                  onColorChanged: (c) {
+                                    saveState();
+                                    setState(() {
+                                      for (int idx in selectedIndices) {
+                                        textMultiStyles[sel.id]![idx] ??= {};
+                                        textMultiStyles[sel.id]![idx]!['color'] = c;
+                                      }
+                                    });
+                                    setModalState((){});
+                                    _triggerCanvasUpdate();
+                                  }
+                                );
+                              }
+                            ),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.white, elevation: 0, side: BorderSide(color: Colors.grey.shade300)),
+                              icon: const Icon(Icons.font_download, size: 16, color: Colors.black87),
+                              label: const Text('Font', style: TextStyle(color: Colors.black87, fontSize: 12)),
+                              onPressed: () {
+                                showModalBottomSheet(context: context, backgroundColor: Colors.white, builder: (ctx) {
+                                  return ListView(
+                                    children: availableFontsData.map((f) => ListTile(
+                                      title: Text(f['name']!, style: TextStyle(fontFamily: f['name'])),
+                                      onTap: () {
+                                        saveState();
+                                        setState(() {
+                                          for (int idx in selectedIndices) {
+                                            textMultiStyles[sel.id]![idx] ??= {};
+                                            textMultiStyles[sel.id]![idx]!['fontFamily'] = f['name'];
+                                          }
+                                        });
+                                        _triggerCanvasUpdate();
+                                        Navigator.pop(ctx);
+                                      },
+                                    )).toList(),
+                                  );
+                                });
+                              }
+                            ),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.white, elevation: 0, side: BorderSide(color: Colors.grey.shade300)),
+                              icon: const Icon(Icons.text_increase, size: 16, color: Colors.black87),
+                              label: const Text('Size', style: TextStyle(color: Colors.black87, fontSize: 12)),
+                              onPressed: () {
+                                double currentSize = sel.fontSize;
+                                if (selectedIndices.isNotEmpty && textMultiStyles[sel.id]!.containsKey(selectedIndices.first)) {
+                                  currentSize = textMultiStyles[sel.id]![selectedIndices.first]!['fontSize'] ?? sel.fontSize;
+                                }
+                                showModalBottomSheet(context: context, backgroundColor: Colors.white, builder: (ctx) {
+                                  return StatefulBuilder(builder: (ctx, setSizeState) {
+                                    return SizedBox(
+                                      height: 150,
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text('Size: ${currentSize.toInt()}'),
+                                          Slider(
+                                            value: currentSize.clamp(10.0, 150.0), min: 10.0, max: 150.0,
+                                            activeColor: const Color(0xFF8B5CF6),
+                                            onChanged: (val) {
+                                              setSizeState(() => currentSize = val);
+                                              saveState();
+                                              setState(() {
+                                                for (int idx in selectedIndices) {
+                                                  textMultiStyles[sel.id]![idx] ??= {};
+                                                  textMultiStyles[sel.id]![idx]!['fontSize'] = val;
+                                                }
+                                              });
+                                              setModalState((){});
+                                              _triggerCanvasUpdate();
+                                            }
+                                          )
+                                        ]
+                                      )
+                                    );
+                                  });
+                                });
+                              }
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                ]
+              )
+            );
+          }
+        );
+      }
     );
   }
 
@@ -1262,6 +1490,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       saveState();
       setState(() { 
         elements.removeWhere((e) => e.id == selectedId); 
+        textMultiStyles.remove(selectedId);
         selectedId = null; 
         activeToolbarMenu = 'main'; 
       });
@@ -1275,6 +1504,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       DesignElement sel = elements.firstWhere((e) => e.id == selectedId);
       setState(() { 
         var newEl = sel.clone()..id = Random().nextInt(10000).toString()..x += 20..y += 20; 
+        if (textMultiStyles.containsKey(sel.id)) {
+          textMultiStyles[newEl.id] = {};
+          textMultiStyles[sel.id]!.forEach((idx, styleMap) {
+            textMultiStyles[newEl.id]![idx] = Map<String, dynamic>.from(styleMap);
+          });
+        }
         elements.add(newEl); 
         selectedId = newEl.id; 
         activeToolbarMenu = 'main'; 
@@ -1662,6 +1897,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
           if(sel.isText || sel.isTable){
             sel.textColor = c; 
             sel.textGradient = null; 
+            // Also reset multi-style colors if global color is changed
+            if (textMultiStyles.containsKey(sel.id)) {
+              textMultiStyles[sel.id]!.forEach((key, value) {
+                value.remove('color');
+              });
+            }
           } else {
             sel.elementColor = c; 
           }
@@ -3250,6 +3491,75 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
+  // 🔥 CORE ENGINE: Builds precise RichText to ensure Stroke and 3D depth perfectly align with Multi-Style words
+  Widget _buildTextWidget(DesignElement e, double currentWidth, Color? baseColor, {List<Shadow>? extraShadows, Paint? foregroundPaint}) {
+    List<Shadow> currentShadows = extraShadows != null ? List.from(extraShadows) : [];
+    if (extraShadows == null && e.hasShadow) {
+      currentShadows.add(Shadow(color: e.shadowColor, blurRadius: e.shadowBlur, offset: Offset(e.shadowOffsetX, e.shadowOffsetY)));
+    }
+
+    Color? finalTextColor = baseColor;
+    if (e.isGlass && e.textGradient == null && e.textTextureBytes == null && foregroundPaint == null) {
+       finalTextColor = baseColor?.withOpacity(0.35);
+       currentShadows.add(const Shadow(color: Colors.white, offset: Offset(0, 0), blurRadius: 15));
+       currentShadows.add(const Shadow(color: Colors.black26, offset: Offset(2, 2), blurRadius: 5));
+    }
+    if (e.isBevel) {
+       currentShadows.add(const Shadow(color: Colors.white70, offset: Offset(-2, -2), blurRadius: 2));
+       currentShadows.add(const Shadow(color: Colors.black54, offset: Offset(2, 2), blurRadius: 2));
+    }
+    if (e.isInnerShadow) {
+       currentShadows.add(const Shadow(color: Colors.black87, offset: Offset(1.5, 1.5), blurRadius: 2));
+    }
+
+    TextStyle st = TextStyle(
+      fontFamily: e.fontFamily, 
+      fontSize: e.fontSize, 
+      color: foregroundPaint == null ? finalTextColor : null,
+      foreground: foregroundPaint,
+      letterSpacing: e.letterSpacing, 
+      wordSpacing: e.wordSpacing, 
+      height: e.lineHeight, 
+      shadows: currentShadows.isNotEmpty ? currentShadows : null, 
+      fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal, 
+      fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal
+    );
+    
+    bool hasMultiStyle = textMultiStyles.containsKey(e.id) && textMultiStyles[e.id]!.isNotEmpty;
+    
+    if (e.textCurveRadius != 0) {
+      return CurvedTextWidget(text: e.content, style: st, radius: e.textCurveRadius);
+    }
+
+    if (hasMultiStyle) {
+      List<String> words = e.content.split(' ');
+      List<TextSpan> spans = [];
+      for (int i = 0; i < words.length; i++) {
+        TextStyle wordStyle = st;
+        if (textMultiStyles[e.id]!.containsKey(i)) {
+           var ms = textMultiStyles[e.id]![i]!;
+           wordStyle = st.copyWith(
+             color: foregroundPaint == null ? (ms['color'] != null ? (ms['color'] as Color) : st.color) : null,
+             fontSize: ms['fontSize'] != null ? (ms['fontSize'] as double) : st.fontSize,
+             fontFamily: ms['fontFamily'] != null ? (ms['fontFamily'] as String) : st.fontFamily,
+             foreground: foregroundPaint, 
+           );
+        }
+        spans.add(TextSpan(text: words[i] + (i < words.length - 1 ? ' ' : ''), style: wordStyle));
+      }
+      return SizedBox(
+        width: currentWidth, 
+        child: RichText(
+          textAlign: e.textAlign,
+          textDirection: _isRTLText(e.content) ? TextDirection.rtl : TextDirection.ltr,
+          text: TextSpan(children: spans),
+        )
+      );
+    } else {
+      return SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: st));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     bool hasSelection = false;
@@ -3325,8 +3635,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
       body: Column(
         children: [
-          // 🔥 BUG FIXED: Yahan se `if (!_isExporting)` hata diya gaya hai. 
-          // Ab top bar screen par humesha rahega, jisse Layout mein 1 pixel ka bhi gap/shift nahi aayega!
           Container(
             padding: const EdgeInsets.only(left: 15, top: 10, bottom: 5),
             alignment: Alignment.centerLeft,
@@ -3369,256 +3677,230 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                               decoration: const BoxDecoration(boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)]),
                               child: RepaintBoundary(
                                 key: _canvasKey,
-                                child: Container(
-                                  color: bgImageBytes != null || bgGradient != null ? null : (pageColor == Colors.transparent ? Colors.white : pageColor),
-                                  decoration: bgImageBytes != null 
-                                    ? BoxDecoration(image: DecorationImage(image: MemoryImage(bgImageBytes!), fit: BoxFit.cover))
-                                    : (bgGradient != null ? BoxDecoration(gradient: LinearGradient(colors: bgGradient!)) : null),
-                                  child: Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      if (_showGrid && !_isExporting)
-                                        Positioned.fill(
-                                          child: IgnorePointer(
-                                            child: Stack(
-                                              children: [
-                                                Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: List.generate(5, (i) => Container(height: 1, color: Colors.black12))),
-                                                Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: List.generate(5, (i) => Container(width: 1, color: Colors.black12))),
-                                                Center(child: Container(width: double.infinity, height: 1, color: Colors.blue.withOpacity(0.5))),
-                                                Center(child: Container(width: 1, height: double.infinity, color: Colors.blue.withOpacity(0.5))),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      
-                                      if (!_isExporting)
-                                        Positioned.fill(child: Container(margin: const EdgeInsets.all(15), decoration: BoxDecoration(border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1)))),
-                                      
-                                      ...elements.map((e) {
-                                        if (e.isHidden) return const SizedBox.shrink();
-                                        bool isSel = (e.id == selectedId) && !_isExporting;
-                                        
-                                        Matrix4 matrix = Matrix4.identity()
-                                          ..setEntry(3, 2, 0.002) 
-                                          ..rotateX(e.pitch)
-                                          ..rotateY(e.yaw)
-                                          ..rotateZ(e.angle);
-                                        
-                                        if (e.flipX) matrix.rotateY(pi);
-                                        if (e.flipY) matrix.rotateX(pi);
-
-                                        double currentWidth = _getElWidth(e); 
-                                        double currentHeight = _getElHeight(e);
-                                        double bp = 20.0; 
-                                        
-                                        Widget contentWidget;
-                                        if (e.isBorder) {
-                                          contentWidget = SizedBox(
-                                            width: currentWidth,
-                                            height: currentHeight,
-                                            child: CustomPaint(
-                                              painter: AdvancedBorderPainter(
-                                                color: e.elementColor,
-                                                strokeWidth: e.strokeWidth,
-                                                radius: e.cornerRadius,
-                                                styleIndex: int.tryParse(e.borderStyle) ?? 0,
-                                              ),
-                                            ),
-                                          );
-                                        } else if (e.isTable && e.tableData != null) {
-                                          contentWidget = CustomTableWidget(tableData: e.tableData!, width: currentWidth, height: currentHeight, fontFamily: e.fontFamily, textColor: e.textColor, borderColor: e.elementColor, hasBorder: true);
-                                        } else if (e.isShape) {
-                                          contentWidget = Container(width: currentWidth, height: currentHeight, decoration: BoxDecoration(color: e.elementColor, borderRadius: BorderRadius.circular(e.cornerRadius)));
-                                        } else if (e.imageBytes != null) {
-                                          Widget img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, fit: BoxFit.fill);
-                                          if (e.isTinted) img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, color: e.elementColor, fit: BoxFit.fill);
-                                          else {
-                                            if (e.imageFilter == 1) img = ColorFiltered(colorFilter: const ColorFilter.matrix([0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0, 0, 0, 1, 0]), child: img);
-                                            else if (e.imageFilter == 2) img = ColorFiltered(colorFilter: const ColorFilter.matrix([0.393, 0.769, 0.189, 0, 0, 0.349, 0.686, 0.168, 0, 0, 0.272, 0.534, 0.131, 0, 0, 0, 0, 0, 1, 0]), child: img);
-                                            else if (e.imageFilter == 3) img = ColorFiltered(colorFilter: const ColorFilter.matrix([-1, 0, 0, 0, 255, 0, -1, 0, 0, 255, 0, 0, -1, 0, 255, 0, 0, 0, 1, 0]), child: img);
-                                          }
-                                          if (e.blendModeIndex != 0) img = ColorFiltered(colorFilter: ColorFilter.mode(Colors.white.withOpacity(0.0), AppConstants.blendModes[e.blendModeIndex]), child: img);
-                                          Widget clippedImg = img;
-                                          if (e.clipShape == 1) clippedImg = Container(clipBehavior: Clip.antiAlias, decoration: const BoxDecoration(shape: BoxShape.circle), child: img);
-                                          else if (e.clipShape == 2) clippedImg = ClipPath(clipper: TriangleClipper(), child: img);
-                                          else if (e.clipShape == 3) clippedImg = ClipPath(clipper: StarClipper(), child: img);
-                                          else if (e.clipShape == 4) clippedImg = ClipPath(clipper: HexagonClipper(), child: img);
-                                          contentWidget = SizedBox(width: currentWidth, height: e.clipShape == 0 ? currentHeight : currentWidth, child: clippedImg);
-                                        } else {
-                                          Widget buildTextWidget(Color c, [List<Shadow>? shadow]) {
-                                            List<Shadow> currentShadows = shadow != null ? List.from(shadow) : [];
-                                            if (shadow == null && e.hasShadow) currentShadows.add(Shadow(color: e.shadowColor, blurRadius: e.shadowBlur, offset: Offset(e.shadowOffsetX, e.shadowOffsetY)));
-
-                                            Color finalTextColor = c;
-                                            
-                                            if (e.isGlass && e.textGradient == null && e.textTextureBytes == null) {
-                                               finalTextColor = c.withOpacity(0.35);
-                                               currentShadows.add(const Shadow(color: Colors.white, offset: Offset(0, 0), blurRadius: 15));
-                                               currentShadows.add(const Shadow(color: Colors.black26, offset: Offset(2, 2), blurRadius: 5));
-                                            }
-
-                                            if (e.isBevel) {
-                                               currentShadows.add(const Shadow(color: Colors.white70, offset: Offset(-2, -2), blurRadius: 2));
-                                               currentShadows.add(const Shadow(color: Colors.black54, offset: Offset(2, 2), blurRadius: 2));
-                                            }
-
-                                            if (e.isInnerShadow) {
-                                               currentShadows.add(const Shadow(color: Colors.black87, offset: Offset(1.5, 1.5), blurRadius: 2));
-                                            }
-
-                                            TextStyle st = TextStyle(
-                                              fontFamily: e.fontFamily, 
-                                              fontSize: e.fontSize, 
-                                              color: finalTextColor, 
-                                              letterSpacing: e.letterSpacing, 
-                                              wordSpacing: e.wordSpacing, 
-                                              height: e.lineHeight, 
-                                              shadows: currentShadows.isNotEmpty ? currentShadows : null, 
-                                              fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal, 
-                                              fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal
-                                            );
-                                            
-                                            if (e.textCurveRadius != 0) return CurvedTextWidget(text: e.content, style: st, radius: e.textCurveRadius);
-                                            return SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: st));
-                                          }
-                                          
-                                          List<Widget> blockLayers = [];
-                                          if (e.text3dDepth > 0) {
-                                            for (double i = e.text3dDepth; i > 0; i -= 1.0) blockLayers.add(Transform.translate(offset: Offset(i, i), child: buildTextWidget(e.text3dColor, [])));
-                                          }
-                                          
-                                          Widget mainTxt = buildTextWidget(e.textGradient != null ? Colors.white : e.textColor);
-                                          if (e.textGradient != null) mainTxt = ShaderMask(shaderCallback: (bounds) => LinearGradient(colors: e.textGradient!).createShader(bounds), child: mainTxt);
-                                          if (e.textTextureBytes != null) mainTxt = TextureTextWrapper(child: mainTxt, textureBytes: e.textTextureBytes!);
-                                          blockLayers.add(mainTxt);
-                                          
-                                          Widget txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: blockLayers);
-                                          
-                                          if (e.hasStroke) {
-                                            TextStyle stStroke = TextStyle(fontFamily: e.fontFamily, fontSize: e.fontSize, letterSpacing: e.letterSpacing, wordSpacing: e.wordSpacing, height: e.lineHeight, foreground: Paint()..style = PaintingStyle.stroke..strokeWidth = e.strokeWidth..color = e.strokeColor, fontWeight: e.isBold ? FontWeight.bold : FontWeight.normal, fontStyle: e.isItalic ? FontStyle.italic : FontStyle.normal);
-                                            Widget strokeTxt = e.textCurveRadius != 0 ? CurvedTextWidget(text: e.content, style: stStroke, radius: e.textCurveRadius) : SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: stStroke));
-                                            txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [strokeTxt, txt]);
-                                          }
-                                          
-                                          if (e.textBgColor != null) txt = Container(padding: const EdgeInsets.all(5), decoration: BoxDecoration(color: e.textBgColor, borderRadius: BorderRadius.circular(e.cornerRadius)), child: txt);
-                                          contentWidget = txt; 
-                                        }
-                                        
-                                        if (_isExporting) { 
-                                          // 🔥 BUG FIXED: Export mode mein bhi Opacity pass karna zaruri tha. 
-                                          return Positioned(
-                                            left: e.x, 
-                                            top: e.y, 
-                                            child: Transform(
-                                              transform: matrix, 
-                                              alignment: Alignment.center, 
-                                              child: Opacity(
-                                                opacity: e.opacity.clamp(0.0, 1.0),
-                                                child: contentWidget
-                                              )
-                                            )
-                                          );
-                                        }
-                                        
-                                        return Positioned(
-                                          left: e.x - bp, 
-                                          top: e.y - bp,
-                                          child: Transform(
-                                            transform: matrix, alignment: Alignment.center,
-                                            child: SizedBox(
-                                              width: currentWidth + (bp * 2), height: currentHeight + (bp * 2),
+                                child: ClipRect(
+                                  child: Container(
+                                    width: currentCanvasW,
+                                    height: currentCanvasH,
+                                    color: bgImageBytes != null || bgGradient != null ? null : (pageColor == Colors.transparent ? Colors.white : pageColor),
+                                    decoration: bgImageBytes != null 
+                                      ? BoxDecoration(image: DecorationImage(image: MemoryImage(bgImageBytes!), fit: BoxFit.cover))
+                                      : (bgGradient != null ? BoxDecoration(gradient: LinearGradient(colors: bgGradient!)) : null),
+                                    child: Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        if (_showGrid && !_isExporting)
+                                          Positioned.fill(
+                                            child: IgnorePointer(
                                               child: Stack(
-                                                clipBehavior: Clip.none,
                                                 children: [
-                                                  Positioned(
-                                                    left: bp, top: bp, right: bp, bottom: bp,
-                                                    child: GestureDetector(
-                                                      behavior: HitTestBehavior.opaque,
-                                                      onTap: () { 
-                                                        if (e.isLocked) {
-                                                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Layer is Locked')));
-                                                        } else {
-                                                          setState(() => selectedId = e.id);
-                                                          _triggerCanvasUpdate();
-                                                        }
-                                                      },
-                                                      onPanStart: (d) { if(!e.isLocked) saveState(); },
-                                                      onPanUpdate: (d) {
-                                                        if(!e.isLocked && selectedId == e.id) {
-                                                          e.x += d.delta.dx; 
-                                                          e.y += d.delta.dy; 
-                                                          if (e.groupId != null) {
-                                                            for (var other in elements) {
-                                                              if (other.id != e.id && other.groupId == e.groupId && !other.isLocked) {
-                                                                other.x += d.delta.dx; other.y += d.delta.dy;
-                                                              }
-                                                            }
-                                                          }
-                                                          _triggerCanvasUpdate();
-                                                        }
-                                                      },
-                                                      child: Stack(
-                                                        fit: StackFit.passthrough,
-                                                        clipBehavior: Clip.none,
-                                                        children: [
-                                                          Opacity(opacity: e.opacity.clamp(0.0, 1.0), child: contentWidget),
-                                                          if (isSel)
-                                                            Positioned.fill(
-                                                              child: IgnorePointer(
-                                                                child: Container(
-                                                                  decoration: BoxDecoration(
-                                                                    border: Border.all(color: Colors.white, width: 2.0),
-                                                                  ),
-                                                                  child: Container(
-                                                                    decoration: BoxDecoration(
-                                                                      border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5),
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ),
-                                                        ],
-                                                      ),
-                                                    )
-                                                  ),
-                                                  
-                                                  if (isSel) ...[
-                                                    Positioned(top: bp - 20, left: bp + currentWidth/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'T', e), child: _buildTouchTarget(child: _buildPill(true)))),
-                                                    Positioned(bottom: bp - 20, left: bp + currentWidth/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'B', e), child: _buildTouchTarget(child: _buildPill(true)))),
-                                                    Positioned(left: bp - 20, top: bp + currentHeight/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'L', e), child: _buildTouchTarget(child: _buildPill(false)))),
-                                                    Positioned(right: bp - 20, top: bp + currentHeight/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'R', e), child: _buildTouchTarget(child: _buildPill(false)))),
-                                                    
-                                                    Positioned(top: bp - 20, left: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TL'), child: _buildTouchTarget(child: _buildCircle()))),
-                                                    Positioned(top: bp - 20, right: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TR'), child: _buildTouchTarget(child: _buildCircle()))),
-                                                    Positioned(bottom: bp - 20, left: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BL'), child: _buildTouchTarget(child: _buildCircle()))),
-                                                    Positioned(bottom: bp - 20, right: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BR'), child: _buildTouchTarget(child: _buildCircle()))),
-                                                    
-                                                    Positioned(
-                                                      top: bp - 35, right: bp - 35, 
-                                                      child: GestureDetector(
-                                                        behavior: HitTestBehavior.opaque,
-                                                        onPanStart: (_) => saveState(),
-                                                        onPanUpdate: (d) => _rotateElement(d, e), 
-                                                        child: _buildTouchTarget(child: _buildIconCircle(Icons.rotate_right))
-                                                      )
-                                                    ),
-                                                    Positioned(
-                                                      bottom: bp - 35, left: bp - 35, 
-                                                      child: GestureDetector(
-                                                        behavior: HitTestBehavior.opaque,
-                                                        onPanStart: (_) => saveState(),
-                                                        onPanUpdate: (d) => _scaleCorner(d, e, 'BL'),
-                                                        child: _buildTouchTarget(child: _buildIconCircle(Icons.open_in_full))
-                                                      )
-                                                    ),
-                                                  ]
+                                                  Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: List.generate(5, (i) => Container(height: 1, color: Colors.black12))),
+                                                  Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: List.generate(5, (i) => Container(width: 1, color: Colors.black12))),
+                                                  Center(child: Container(width: double.infinity, height: 1, color: Colors.blue.withOpacity(0.5))),
+                                                  Center(child: Container(width: 1, height: double.infinity, color: Colors.blue.withOpacity(0.5))),
                                                 ],
                                               ),
                                             ),
                                           ),
-                                        );
-                                      }).toList(),
-                                    ],
+                                        
+                                        if (!_isExporting)
+                                          Positioned.fill(child: Container(decoration: BoxDecoration(border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1)))),
+                                        
+                                        ...elements.map((e) {
+                                          if (e.isHidden) return const SizedBox.shrink();
+                                          bool isSel = (e.id == selectedId) && !_isExporting;
+                                          
+                                          Matrix4 matrix = Matrix4.identity()
+                                            ..setEntry(3, 2, 0.002) 
+                                            ..rotateX(e.pitch)
+                                            ..rotateY(e.yaw)
+                                            ..rotateZ(e.angle);
+                                          
+                                          if (e.flipX) matrix.rotateY(pi);
+                                          if (e.flipY) matrix.rotateX(pi);
+
+                                          double currentWidth = _getElWidth(e); 
+                                          double currentHeight = _getElHeight(e);
+                                          double bp = 20.0; 
+                                          
+                                          Widget contentWidget;
+                                          if (e.isBorder) {
+                                            contentWidget = SizedBox(
+                                              width: currentWidth,
+                                              height: currentHeight,
+                                              child: CustomPaint(
+                                                painter: AdvancedBorderPainter(
+                                                  color: e.elementColor,
+                                                  strokeWidth: e.strokeWidth,
+                                                  radius: e.cornerRadius,
+                                                  styleIndex: int.tryParse(e.borderStyle) ?? 0,
+                                                ),
+                                              ),
+                                            );
+                                          } else if (e.isTable && e.tableData != null) {
+                                            contentWidget = CustomTableWidget(tableData: e.tableData!, width: currentWidth, height: currentHeight, fontFamily: e.fontFamily, textColor: e.textColor, borderColor: e.elementColor, hasBorder: true);
+                                          } else if (e.isShape) {
+                                            contentWidget = Container(width: currentWidth, height: currentHeight, decoration: BoxDecoration(color: e.elementColor, borderRadius: BorderRadius.circular(e.cornerRadius)));
+                                          } else if (e.imageBytes != null) {
+                                            Widget img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, fit: BoxFit.fill);
+                                            if (e.isTinted) img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, color: e.elementColor, fit: BoxFit.fill);
+                                            else {
+                                              if (e.imageFilter == 1) img = ColorFiltered(colorFilter: const ColorFilter.matrix([0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0, 0, 0, 1, 0]), child: img);
+                                              else if (e.imageFilter == 2) img = ColorFiltered(colorFilter: const ColorFilter.matrix([0.393, 0.769, 0.189, 0, 0, 0.349, 0.686, 0.168, 0, 0, 0.272, 0.534, 0.131, 0, 0, 0, 0, 0, 1, 0]), child: img);
+                                              else if (e.imageFilter == 3) img = ColorFiltered(colorFilter: const ColorFilter.matrix([-1, 0, 0, 0, 255, 0, -1, 0, 0, 255, 0, 0, -1, 0, 255, 0, 0, 0, 1, 0]), child: img);
+                                            }
+                                            if (e.blendModeIndex != 0) img = ColorFiltered(colorFilter: ColorFilter.mode(Colors.white.withOpacity(0.0), AppConstants.blendModes[e.blendModeIndex]), child: img);
+                                            Widget clippedImg = img;
+                                            if (e.clipShape == 1) clippedImg = Container(clipBehavior: Clip.antiAlias, decoration: const BoxDecoration(shape: BoxShape.circle), child: img);
+                                            else if (e.clipShape == 2) clippedImg = ClipPath(clipper: TriangleClipper(), child: img);
+                                            else if (e.clipShape == 3) clippedImg = ClipPath(clipper: StarClipper(), child: img);
+                                            else if (e.clipShape == 4) clippedImg = ClipPath(clipper: HexagonClipper(), child: img);
+                                            contentWidget = SizedBox(width: currentWidth, height: e.clipShape == 0 ? currentHeight : currentWidth, child: clippedImg);
+                                          } else {
+                                            List<Widget> blockLayers = [];
+                                            if (e.text3dDepth > 0) {
+                                              for (double i = e.text3dDepth; i > 0; i -= 1.0) {
+                                                blockLayers.add(Transform.translate(offset: Offset(i, i), child: _buildTextWidget(e, currentWidth, e.text3dColor, extraShadows: [])));
+                                              }
+                                            }
+                                            
+                                            Widget mainTxt = _buildTextWidget(e, currentWidth, e.textGradient != null ? Colors.white : e.textColor);
+                                            if (e.textGradient != null) mainTxt = ShaderMask(shaderCallback: (bounds) => LinearGradient(colors: e.textGradient!).createShader(bounds), child: mainTxt);
+                                            if (e.textTextureBytes != null) mainTxt = TextureTextWrapper(child: mainTxt, textureBytes: e.textTextureBytes!);
+                                            blockLayers.add(mainTxt);
+                                            
+                                            Widget txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: blockLayers);
+                                            
+                                            if (e.hasStroke) {
+                                              Paint strokePaint = Paint()
+                                                 ..style = PaintingStyle.stroke
+                                                 ..strokeWidth = e.strokeWidth
+                                                 ..color = e.strokeColor;
+                                              
+                                              Widget strokeTxt = _buildTextWidget(e, currentWidth, null, foregroundPaint: strokePaint);
+                                              txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [strokeTxt, txt]);
+                                            }
+                                            
+                                            if (e.textBgColor != null) {
+                                               txt = Container(padding: const EdgeInsets.all(5), decoration: BoxDecoration(color: e.textBgColor, borderRadius: BorderRadius.circular(e.cornerRadius)), child: txt);
+                                            }
+                                            contentWidget = txt; 
+                                          }
+                                          
+                                          if (_isExporting) { 
+                                            return Positioned(
+                                              left: e.x, 
+                                              top: e.y, 
+                                              child: Transform(
+                                                transform: matrix, 
+                                                alignment: Alignment.center, 
+                                                child: Opacity(
+                                                  opacity: e.opacity.clamp(0.0, 1.0),
+                                                  child: contentWidget
+                                                )
+                                              )
+                                            );
+                                          }
+                                          
+                                          return Positioned(
+                                            left: e.x - bp, 
+                                            top: e.y - bp,
+                                            child: Transform(
+                                              transform: matrix, alignment: Alignment.center,
+                                              child: SizedBox(
+                                                width: currentWidth + (bp * 2), height: currentHeight + (bp * 2),
+                                                child: Stack(
+                                                  clipBehavior: Clip.none,
+                                                  children: [
+                                                    Positioned(
+                                                      left: bp, top: bp, right: bp, bottom: bp,
+                                                      child: GestureDetector(
+                                                        behavior: HitTestBehavior.opaque,
+                                                        onTap: () { 
+                                                          if (e.isLocked) {
+                                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Layer is Locked')));
+                                                          } else {
+                                                            setState(() => selectedId = e.id);
+                                                            _triggerCanvasUpdate();
+                                                          }
+                                                        },
+                                                        onPanStart: (d) { if(!e.isLocked) saveState(); },
+                                                        onPanUpdate: (d) {
+                                                          if(!e.isLocked && selectedId == e.id) {
+                                                            e.x += d.delta.dx; 
+                                                            e.y += d.delta.dy; 
+                                                            if (e.groupId != null) {
+                                                              for (var other in elements) {
+                                                                if (other.id != e.id && other.groupId == e.groupId && !other.isLocked) {
+                                                                  other.x += d.delta.dx; other.y += d.delta.dy;
+                                                                }
+                                                              }
+                                                            }
+                                                            _triggerCanvasUpdate();
+                                                          }
+                                                        },
+                                                        child: Stack(
+                                                          fit: StackFit.passthrough,
+                                                          clipBehavior: Clip.none,
+                                                          children: [
+                                                            Opacity(opacity: e.opacity.clamp(0.0, 1.0), child: contentWidget),
+                                                            if (isSel)
+                                                              Positioned.fill(
+                                                                child: IgnorePointer(
+                                                                  child: Container(
+                                                                    decoration: BoxDecoration(
+                                                                      border: Border.all(color: Colors.white, width: 2.0),
+                                                                    ),
+                                                                    child: Container(
+                                                                      decoration: BoxDecoration(
+                                                                        border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5),
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                          ],
+                                                        ),
+                                                      )
+                                                    ),
+                                                    
+                                                    if (isSel) ...[
+                                                      Positioned(top: bp - 20, left: bp + currentWidth/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'T', e), child: _buildTouchTarget(child: _buildPill(true)))),
+                                                      Positioned(bottom: bp - 20, left: bp + currentWidth/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'B', e), child: _buildTouchTarget(child: _buildPill(true)))),
+                                                      Positioned(left: bp - 20, top: bp + currentHeight/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'L', e), child: _buildTouchTarget(child: _buildPill(false)))),
+                                                      Positioned(right: bp - 20, top: bp + currentHeight/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'R', e), child: _buildTouchTarget(child: _buildPill(false)))),
+                                                      
+                                                      Positioned(top: bp - 20, left: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TL'), child: _buildTouchTarget(child: _buildCircle()))),
+                                                      Positioned(top: bp - 20, right: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TR'), child: _buildTouchTarget(child: _buildCircle()))),
+                                                      Positioned(bottom: bp - 20, left: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BL'), child: _buildTouchTarget(child: _buildCircle()))),
+                                                      Positioned(bottom: bp - 20, right: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BR'), child: _buildTouchTarget(child: _buildCircle()))),
+                                                      
+                                                      Positioned(
+                                                        top: bp - 35, right: bp - 35, 
+                                                        child: GestureDetector(
+                                                          behavior: HitTestBehavior.opaque,
+                                                          onPanStart: (_) => saveState(),
+                                                          onPanUpdate: (d) => _rotateElement(d, e), 
+                                                          child: _buildTouchTarget(child: _buildIconCircle(Icons.rotate_right))
+                                                        )
+                                                      ),
+                                                      Positioned(
+                                                        bottom: bp - 35, left: bp - 35, 
+                                                        child: GestureDetector(
+                                                          behavior: HitTestBehavior.opaque,
+                                                          onPanStart: (_) => saveState(),
+                                                          onPanUpdate: (d) => _scaleCorner(d, e, 'BL'),
+                                                          child: _buildTouchTarget(child: _buildIconCircle(Icons.open_in_full))
+                                                        )
+                                                      ),
+                                                    ]
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
@@ -3637,7 +3919,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       bottomNavigationBar: SafeArea(
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          height: 140, // Permanent height for both modes to stop Canvas zooming!
+          height: 140, 
           color: Colors.white, 
           child: (hasSelection && sel != null) ? _buildSelectedToolBar(sel) : _buildDefaultBottomBar()
         )
@@ -3683,6 +3965,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     if (sel.isText) {
       topRow.add(_buildToolBtn(Icons.delete_outline_rounded, 'Delete', deleteSelected, Colors.red));
       topRow.add(_buildToolBtn(Icons.text_fields_rounded, 'Size', () => showSizeSliderModal(sel)));
+      topRow.add(_buildToolBtn(Icons.format_paint_rounded, 'Word Style', () => _showMultiStyleModal(sel), const Color(0xFF10B981)));
       topRow.add(_buildToolBtn(Icons.border_color_rounded, 'Stroke', () => _showAdvancedStrokeModal(sel)));
       topRow.add(_buildToolBtn(Icons.brightness_6_rounded, 'Shadow', () => _showAdvancedShadowModal(sel)));
       topRow.add(_buildToolBtn(Icons.copy_rounded, 'Duplicate', duplicateSelected, Colors.blue));
@@ -3940,7 +4223,7 @@ class _AdvancedColorPickerModalState extends State<AdvancedColorPickerModal> {
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         margin: const EdgeInsets.only(left: 15, right: 15, bottom: 20),
-        height: MediaQuery.of(context).size.height * 0.70, // Compact height
+        height: MediaQuery.of(context).size.height * 0.70, 
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.85),
           borderRadius: BorderRadius.circular(24),
