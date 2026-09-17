@@ -1327,7 +1327,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // 🔥 NEW: Size Control Modal Method
   void _showElementSizeModal(DesignElement sel) {
     showModalBottomSheet(
       context: context,
@@ -3326,24 +3325,25 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
       body: Column(
         children: [
-          if (!_isExporting)
-            Container(
-              padding: const EdgeInsets.only(left: 15, top: 10, bottom: 5),
-              alignment: Alignment.centerLeft,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  InkWell(
-                    onTap: () { HapticFeedback.selectionClick(); setState(() => _isCanvasLocked = !_isCanvasLocked); },
-                    child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), decoration: BoxDecoration(color: _isCanvasLocked ? Colors.red.shade50 : Colors.white, borderRadius: BorderRadius.circular(8)), child: Row(children: [Icon(_isCanvasLocked ? Icons.lock : Icons.lock_open, size: 14, color: _isCanvasLocked ? Colors.red : Colors.black), const SizedBox(width: 5), Text(_isCanvasLocked ? 'Locked' : 'Unlocked', style: TextStyle(fontSize: 12, color: _isCanvasLocked ? Colors.red : Colors.black))]))
-                  ), const SizedBox(width: 12),
-                  InkWell(
-                    onTap: () { HapticFeedback.selectionClick(); _transformController.value = Matrix4.identity(); },
-                    child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)), child: const Row(children: [Icon(Icons.fit_screen, size: 14), SizedBox(width: 5), Text('Reset View', style: TextStyle(fontSize: 12))]))
-                  ),
-                ],
-              ),
+          // 🔥 BUG FIXED: Yahan se `if (!_isExporting)` hata diya gaya hai. 
+          // Ab top bar screen par humesha rahega, jisse Layout mein 1 pixel ka bhi gap/shift nahi aayega!
+          Container(
+            padding: const EdgeInsets.only(left: 15, top: 10, bottom: 5),
+            alignment: Alignment.centerLeft,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                InkWell(
+                  onTap: () { HapticFeedback.selectionClick(); setState(() => _isCanvasLocked = !_isCanvasLocked); },
+                  child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), decoration: BoxDecoration(color: _isCanvasLocked ? Colors.red.shade50 : Colors.white, borderRadius: BorderRadius.circular(8)), child: Row(children: [Icon(_isCanvasLocked ? Icons.lock : Icons.lock_open, size: 14, color: _isCanvasLocked ? Colors.red : Colors.black), const SizedBox(width: 5), Text(_isCanvasLocked ? 'Locked' : 'Unlocked', style: TextStyle(fontSize: 12, color: _isCanvasLocked ? Colors.red : Colors.black))]))
+                ), const SizedBox(width: 12),
+                InkWell(
+                  onTap: () { HapticFeedback.selectionClick(); _transformController.value = Matrix4.identity(); },
+                  child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)), child: const Row(children: [Icon(Icons.fit_screen, size: 14), SizedBox(width: 5), Text('Reset View', style: TextStyle(fontSize: 12))]))
+                ),
+              ],
             ),
+          ),
           
           Expanded(
             child: GestureDetector(
@@ -3505,7 +3505,19 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                         }
                                         
                                         if (_isExporting) { 
-                                          return Positioned(left: e.x, top: e.y, child: Transform(transform: matrix, alignment: Alignment.center, child: contentWidget));
+                                          // 🔥 BUG FIXED: Export mode mein bhi Opacity pass karna zaruri tha. 
+                                          return Positioned(
+                                            left: e.x, 
+                                            top: e.y, 
+                                            child: Transform(
+                                              transform: matrix, 
+                                              alignment: Alignment.center, 
+                                              child: Opacity(
+                                                opacity: e.opacity.clamp(0.0, 1.0),
+                                                child: contentWidget
+                                              )
+                                            )
+                                          );
                                         }
                                         
                                         return Positioned(
@@ -3622,7 +3634,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
           ),
         ],
       ),
-      // 🔥 THE MASTER FIX: FIXED HEIGHT BOTTOM NAVIGATION BAR
       bottomNavigationBar: SafeArea(
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
@@ -3637,7 +3648,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   Widget _buildDefaultBottomBar() {
     return Container(
       height: 140,
-      alignment: Alignment.center, // Centered nicely in the tall space
+      alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         children: [
@@ -3697,7 +3708,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     else if (sel.isBorder) {
       topRow.add(_buildToolBtn(Icons.close_rounded, 'Deselect', () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, Colors.redAccent));
       topRow.add(_buildToolBtn(Icons.fullscreen_rounded, 'Fit Page', () => _fitBorderToPage(sel), const Color(0xFF10B981)));
-      // 🔥 Size Button
       topRow.add(_buildToolBtn(Icons.straighten_rounded, 'Size', () => _showElementSizeModal(sel), const Color(0xFF10B981)));
       topRow.add(_buildToolBtn(Icons.palette_rounded, 'Colour', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
       topRow.add(_buildToolBtn(Icons.line_weight_rounded, 'Setup', () => _showBorderSettingsModal(sel)));
@@ -3716,7 +3726,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       if (sel.isTable) topRow.add(_buildToolBtn(Icons.font_download_rounded, 'Font', () => showFontPickerModal(sel)));
       if (sel.isTable) topRow.add(_buildToolBtn(Icons.text_fields_rounded, 'Size', () => showSizeSliderModal(sel)));
       
-      // 🔥 Size Button
       if (!sel.isTable) topRow.add(_buildToolBtn(Icons.straighten_rounded, 'Size', () => _showElementSizeModal(sel), const Color(0xFF10B981)));
       
       topRow.add(_buildToolBtn(Icons.palette_rounded, 'Colour', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
@@ -3731,7 +3740,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     }
 
     return Container(
-      height: 140, // Fixed height
+      height: 140, 
       color: Colors.white,
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 4),
