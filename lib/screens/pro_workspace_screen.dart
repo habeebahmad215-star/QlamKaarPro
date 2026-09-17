@@ -101,9 +101,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     super.dispose();
   }
 
-  // ============================================================================
-  // 🔥 GLASSMORPHISM ENGINE FOR COMPACT MODALS 🔥
-  // ============================================================================
   Widget _buildGlassContainer(BuildContext context, {required Widget child, required double height, EdgeInsetsGeometry? padding}) {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -3245,7 +3242,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // Helper widget to keep touch targets big while visually centering handles exactly on corners
   Widget _buildTouchTarget({required Widget child}) {
     return Container(
       width: 40, height: 40, 
@@ -3574,27 +3570,17 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                     )
                                                   ),
                                                   
-                                                  // 🔥 FIXED HANDLES - Mathematical precision on corners!
                                                   if (isSel) ...[
-                                                    // Top Pill
                                                     Positioned(top: bp - 20, left: bp + currentWidth/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'T', e), child: _buildTouchTarget(child: _buildPill(true)))),
-                                                    // Bottom Pill
                                                     Positioned(bottom: bp - 20, left: bp + currentWidth/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'B', e), child: _buildTouchTarget(child: _buildPill(true)))),
-                                                    // Left Pill
                                                     Positioned(left: bp - 20, top: bp + currentHeight/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'L', e), child: _buildTouchTarget(child: _buildPill(false)))),
-                                                    // Right Pill
                                                     Positioned(right: bp - 20, top: bp + currentHeight/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'R', e), child: _buildTouchTarget(child: _buildPill(false)))),
                                                     
-                                                    // Top Left Circle
                                                     Positioned(top: bp - 20, left: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TL'), child: _buildTouchTarget(child: _buildCircle()))),
-                                                    // Top Right Circle
                                                     Positioned(top: bp - 20, right: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TR'), child: _buildTouchTarget(child: _buildCircle()))),
-                                                    // Bottom Left Circle
                                                     Positioned(bottom: bp - 20, left: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BL'), child: _buildTouchTarget(child: _buildCircle()))),
-                                                    // Bottom Right Circle
                                                     Positioned(bottom: bp - 20, right: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BR'), child: _buildTouchTarget(child: _buildCircle()))),
                                                     
-                                                    // Rotator
                                                     Positioned(
                                                       top: bp - 35, right: bp - 35, 
                                                       child: GestureDetector(
@@ -3604,7 +3590,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                         child: _buildTouchTarget(child: _buildIconCircle(Icons.rotate_right))
                                                       )
                                                     ),
-                                                    // Resizer alternative icon
                                                     Positioned(
                                                       bottom: bp - 35, left: bp - 35, 
                                                       child: GestureDetector(
@@ -3637,13 +3622,23 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: SafeArea(child: Container(color: Colors.white, child: (hasSelection && sel != null) ? _buildSelectedToolBar(sel) : _buildDefaultBottomBar())),
+      // 🔥 THE MASTER FIX: FIXED HEIGHT BOTTOM NAVIGATION BAR
+      bottomNavigationBar: SafeArea(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          height: 140, // Permanent height for both modes to stop Canvas zooming!
+          color: Colors.white, 
+          child: (hasSelection && sel != null) ? _buildSelectedToolBar(sel) : _buildDefaultBottomBar()
+        )
+      ),
     );
   }
 
   Widget _buildDefaultBottomBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+    return Container(
+      height: 140,
+      alignment: Alignment.center, // Centered nicely in the tall space
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         children: [
           InkWell(onTap: showAddNewModal, child: Container(padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10), decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.add, color: Colors.white))),
@@ -3702,7 +3697,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     else if (sel.isBorder) {
       topRow.add(_buildToolBtn(Icons.close_rounded, 'Deselect', () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, Colors.redAccent));
       topRow.add(_buildToolBtn(Icons.fullscreen_rounded, 'Fit Page', () => _fitBorderToPage(sel), const Color(0xFF10B981)));
-      // 🔥 NEW: Size Tool added for Borders
+      // 🔥 Size Button
       topRow.add(_buildToolBtn(Icons.straighten_rounded, 'Size', () => _showElementSizeModal(sel), const Color(0xFF10B981)));
       topRow.add(_buildToolBtn(Icons.palette_rounded, 'Colour', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
       topRow.add(_buildToolBtn(Icons.line_weight_rounded, 'Setup', () => _showBorderSettingsModal(sel)));
@@ -3721,7 +3716,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       if (sel.isTable) topRow.add(_buildToolBtn(Icons.font_download_rounded, 'Font', () => showFontPickerModal(sel)));
       if (sel.isTable) topRow.add(_buildToolBtn(Icons.text_fields_rounded, 'Size', () => showSizeSliderModal(sel)));
       
-      // 🔥 NEW: Size Tool added for Shapes & Images
+      // 🔥 Size Button
       if (!sel.isTable) topRow.add(_buildToolBtn(Icons.straighten_rounded, 'Size', () => _showElementSizeModal(sel), const Color(0xFF10B981)));
       
       topRow.add(_buildToolBtn(Icons.palette_rounded, 'Colour', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
@@ -3736,10 +3731,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     }
 
     return Container(
+      height: 140, // Fixed height
       color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           SingleChildScrollView(scrollDirection: Axis.horizontal, physics: const BouncingScrollPhysics(), child: Row(children: topRow)),
           const SizedBox(height: 6),
