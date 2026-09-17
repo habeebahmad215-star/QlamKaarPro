@@ -102,7 +102,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   }
 
   // ============================================================================
-  // 🔥 THE NEW GLASSMORPHISM ENGINE FOR COMPACT MODALS 🔥
+  // 🔥 GLASSMORPHISM ENGINE FOR COMPACT MODALS 🔥
   // ============================================================================
   Widget _buildGlassContainer(BuildContext context, {required Widget child, required double height, EdgeInsetsGeometry? padding}) {
     return Padding(
@@ -1327,6 +1327,83 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         content: Text('Border perfectly fitted to page!', style: TextStyle(color: Colors.white)), 
         backgroundColor: Color(0xFF10B981)
       )
+    );
+  }
+
+  // 🔥 NEW: Size Control Modal Method
+  void _showElementSizeModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context,
+      barrierColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return _buildGlassContainer(
+              context,
+              height: 250,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Custom Size', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
+                    ]
+                  ),
+                  const Divider(color: Colors.black12),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 60,
+                        child: Text('Width:\n${sel.width.toInt()} px', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF8B5CF6))),
+                      ),
+                      Expanded(
+                        child: Slider(
+                          value: sel.width.clamp(10.0, 2500.0),
+                          min: 10.0, max: 2500.0,
+                          activeColor: const Color(0xFF8B5CF6),
+                          onChangeStart: (val) => saveState(),
+                          onChanged: (val) {
+                            setState(() => sel.width = val);
+                            setModalState((){});
+                            _triggerCanvasUpdate();
+                          }
+                        )
+                      )
+                    ]
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 60,
+                        child: Text('Height:\n${sel.height.toInt()} px', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF10B981))),
+                      ),
+                      Expanded(
+                        child: Slider(
+                          value: sel.height.clamp(10.0, 2500.0),
+                          min: 10.0, max: 2500.0,
+                          activeColor: const Color(0xFF10B981),
+                          onChangeStart: (val) => saveState(),
+                          onChanged: (val) {
+                            setState(() => sel.height = val);
+                            setModalState((){});
+                            _triggerCanvasUpdate();
+                          }
+                        )
+                      )
+                    ]
+                  ),
+                ]
+              )
+            );
+          }
+        );
+      }
     );
   }
 
@@ -3168,6 +3245,16 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
+  // Helper widget to keep touch targets big while visually centering handles exactly on corners
+  Widget _buildTouchTarget({required Widget child}) {
+    return Container(
+      width: 40, height: 40, 
+      color: Colors.transparent, 
+      alignment: Alignment.center, 
+      child: child
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     bool hasSelection = false;
@@ -3487,33 +3574,44 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                                     )
                                                   ),
                                                   
+                                                  // 🔥 FIXED HANDLES - Mathematical precision on corners!
                                                   if (isSel) ...[
-                                                    Positioned(top: 0, left: bp + currentWidth/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'T', e), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildPill(true)))),
-                                                    Positioned(bottom: 0, left: bp + currentWidth/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'B', e), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildPill(true)))),
-                                                    Positioned(left: 0, top: bp + currentHeight/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'L', e), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildPill(false)))),
-                                                    Positioned(right: 0, top: bp + currentHeight/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'R', e), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildPill(false)))),
+                                                    // Top Pill
+                                                    Positioned(top: bp - 20, left: bp + currentWidth/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'T', e), child: _buildTouchTarget(child: _buildPill(true)))),
+                                                    // Bottom Pill
+                                                    Positioned(bottom: bp - 20, left: bp + currentWidth/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'B', e), child: _buildTouchTarget(child: _buildPill(true)))),
+                                                    // Left Pill
+                                                    Positioned(left: bp - 20, top: bp + currentHeight/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'L', e), child: _buildTouchTarget(child: _buildPill(false)))),
+                                                    // Right Pill
+                                                    Positioned(right: bp - 20, top: bp + currentHeight/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'R', e), child: _buildTouchTarget(child: _buildPill(false)))),
                                                     
-                                                    Positioned(top: 0, left: 0, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TL'), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildCircle()))),
-                                                    Positioned(top: 0, right: 0, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TR'), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildCircle()))),
-                                                    Positioned(bottom: 0, left: 0, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BL'), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildCircle()))),
-                                                    Positioned(bottom: 0, right: 0, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BR'), child: Container(padding: const EdgeInsets.all(10), color: Colors.transparent, child: _buildCircle()))),
+                                                    // Top Left Circle
+                                                    Positioned(top: bp - 20, left: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TL'), child: _buildTouchTarget(child: _buildCircle()))),
+                                                    // Top Right Circle
+                                                    Positioned(top: bp - 20, right: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TR'), child: _buildTouchTarget(child: _buildCircle()))),
+                                                    // Bottom Left Circle
+                                                    Positioned(bottom: bp - 20, left: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BL'), child: _buildTouchTarget(child: _buildCircle()))),
+                                                    // Bottom Right Circle
+                                                    Positioned(bottom: bp - 20, right: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BR'), child: _buildTouchTarget(child: _buildCircle()))),
                                                     
+                                                    // Rotator
                                                     Positioned(
-                                                      top: 0, right: 0, 
+                                                      top: bp - 35, right: bp - 35, 
                                                       child: GestureDetector(
                                                         behavior: HitTestBehavior.opaque,
                                                         onPanStart: (_) => saveState(),
                                                         onPanUpdate: (d) => _rotateElement(d, e), 
-                                                        child: Container(padding: const EdgeInsets.only(top: 0, right: 0, bottom: 20, left: 20), color: Colors.transparent, child: _buildIconCircle(Icons.rotate_right))
+                                                        child: _buildTouchTarget(child: _buildIconCircle(Icons.rotate_right))
                                                       )
                                                     ),
+                                                    // Resizer alternative icon
                                                     Positioned(
-                                                      bottom: 0, left: 0, 
+                                                      bottom: bp - 35, left: bp - 35, 
                                                       child: GestureDetector(
                                                         behavior: HitTestBehavior.opaque,
                                                         onPanStart: (_) => saveState(),
                                                         onPanUpdate: (d) => _scaleCorner(d, e, 'BL'),
-                                                        child: Container(padding: const EdgeInsets.only(bottom: 0, left: 0, top: 20, right: 20), color: Colors.transparent, child: _buildIconCircle(Icons.open_in_full))
+                                                        child: _buildTouchTarget(child: _buildIconCircle(Icons.open_in_full))
                                                       )
                                                     ),
                                                   ]
@@ -3604,6 +3702,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     else if (sel.isBorder) {
       topRow.add(_buildToolBtn(Icons.close_rounded, 'Deselect', () { setState(() => selectedId = null); _triggerCanvasUpdate(); }, Colors.redAccent));
       topRow.add(_buildToolBtn(Icons.fullscreen_rounded, 'Fit Page', () => _fitBorderToPage(sel), const Color(0xFF10B981)));
+      // 🔥 NEW: Size Tool added for Borders
+      topRow.add(_buildToolBtn(Icons.straighten_rounded, 'Size', () => _showElementSizeModal(sel), const Color(0xFF10B981)));
       topRow.add(_buildToolBtn(Icons.palette_rounded, 'Colour', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
       topRow.add(_buildToolBtn(Icons.line_weight_rounded, 'Setup', () => _showBorderSettingsModal(sel)));
       topRow.add(_buildToolBtn(Icons.opacity_rounded, 'Opacity', () => _showOpacityModal(sel)));
@@ -3620,6 +3720,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       if (sel.isTable) topRow.add(_buildToolBtn(Icons.table_rows_rounded, 'Edit Table', () => _showTableEditorModal(sel), const Color(0xFF10B981)));
       if (sel.isTable) topRow.add(_buildToolBtn(Icons.font_download_rounded, 'Font', () => showFontPickerModal(sel)));
       if (sel.isTable) topRow.add(_buildToolBtn(Icons.text_fields_rounded, 'Size', () => showSizeSliderModal(sel)));
+      
+      // 🔥 NEW: Size Tool added for Shapes & Images
+      if (!sel.isTable) topRow.add(_buildToolBtn(Icons.straighten_rounded, 'Size', () => _showElementSizeModal(sel), const Color(0xFF10B981)));
+      
       topRow.add(_buildToolBtn(Icons.palette_rounded, 'Colour', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
       topRow.add(_buildToolBtn(Icons.copy_rounded, 'Duplicate', duplicateSelected, Colors.blue));
       topRow.add(_buildToolBtn(Icons.delete_outline_rounded, 'Delete', deleteSelected, Colors.red));
