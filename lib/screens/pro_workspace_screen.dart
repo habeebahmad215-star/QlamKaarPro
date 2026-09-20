@@ -6,6 +6,7 @@ import 'dart:math';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:io';
+import 'dart:async'; // 🔥 Added for Advanced Move Tool Continuous Glide
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
@@ -587,7 +588,18 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                 style: const TextStyle(fontFamily: 'JameelNoori', fontSize: 16)
                               ),
                               onTap: () { 
-                                textController.text = text; 
+                                int start = textController.selection.start;
+                                int end = textController.selection.end;
+                                if (start < 0 || end < 0) {
+                                  textController.text += text;
+                                  textController.selection = TextSelection.collapsed(offset: textController.text.length);
+                                } else {
+                                  String newText = textController.text.replaceRange(start, end, text);
+                                  textController.value = TextEditingValue(
+                                    text: newText,
+                                    selection: TextSelection.collapsed(offset: start + text.length),
+                                  );
+                                }
                                 Navigator.pop(context); 
                               }
                             )
@@ -638,7 +650,19 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                   itemBuilder: (context, index) {
                     return InkWell(
                       onTap: () { 
-                        controller.text += tashkeelList[index]; 
+                        int start = controller.selection.start;
+                        int end = controller.selection.end;
+                        String char = tashkeelList[index];
+                        if (start < 0 || end < 0) {
+                          controller.text += char;
+                          controller.selection = TextSelection.collapsed(offset: controller.text.length);
+                        } else {
+                          String newText = controller.text.replaceRange(start, end, char);
+                          controller.value = TextEditingValue(
+                            text: newText,
+                            selection: TextSelection.collapsed(offset: start + char.length),
+                          );
+                        }
                         Navigator.pop(context); 
                       },
                       child: Container(
@@ -725,7 +749,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                         maxLines: null,
                         textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
                         textAlign: isRTL ? TextAlign.right : TextAlign.left,
-                        style: TextStyle(fontFamily: isRTL ? 'JameelNoori' : null, fontSize: isRTL ? 24 : 18),
+                        style: TextStyle(fontSize: isRTL ? 24 : 18),
                         decoration: InputDecoration(
                           border: InputBorder.none, 
                           hintText: isRTL ? 'یہاں لکھیں...' : 'Type here...'
@@ -739,7 +763,21 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                     children: [
                       _buildComposerTool(Icons.paste, 'Paste', () async { 
                         ClipboardData? data = await Clipboard.getData('text/plain'); 
-                        if(data != null && data.text != null) { controller.text += data.text!; } 
+                        if(data != null && data.text != null) { 
+                          int start = controller.selection.start;
+                          int end = controller.selection.end;
+                          String textToInsert = data.text!;
+                          if (start < 0 || end < 0) {
+                            controller.text += textToInsert;
+                            controller.selection = TextSelection.collapsed(offset: controller.text.length);
+                          } else {
+                            String newText = controller.text.replaceRange(start, end, textToInsert);
+                            controller.value = TextEditingValue(
+                              text: newText,
+                              selection: TextSelection.collapsed(offset: start + textToInsert.length),
+                            );
+                          }
+                        } 
                       }),
                       _buildComposerTool(Icons.delete_outline, 'Clear', () => controller.clear()),
                       _buildComposerTool(Icons.auto_stories, 'شاعری', () => _showPoetryLibrary(controller)),
@@ -2655,6 +2693,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
+  // 🔥 NEW: Advanced Pro Move Tool (Coordinates, Glide, Snapping)
   void showMoveModal(DesignElement sel) {
     showModalBottomSheet(
       context: context,
@@ -2665,6 +2704,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             double stepSize = 5.0; 
+            Timer? moveTimer;
 
             void move(double dx, double dy) {
               saveState();
@@ -2684,16 +2724,31 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
               _triggerCanvasUpdate();
             }
 
-            Widget buildDpadBtn(IconData icon, VoidCallback onTap) {
-              return InkWell(
-                onTap: onTap,
-                borderRadius: BorderRadius.circular(16),
+            void startContinuousMove(double dx, double dy) {
+              move(dx, dy); // Move once immediately
+              moveTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+                move(dx, dy);
+              });
+            }
+
+            void stopContinuousMove() {
+              moveTimer?.cancel();
+            }
+
+            Widget buildDpadBtn(IconData icon, double dx, double dy) {
+              return GestureDetector(
+                onTapDown: (_) {
+                  HapticFeedback.lightImpact();
+                  startContinuousMove(dx, dy);
+                },
+                onTapUp: (_) => stopContinuousMove(),
+                onTapCancel: () => stopContinuousMove(),
                 child: Container(
                   width: 55, height: 55,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white),
+                    color: Colors.white.withOpacity(0.8),
+                    shape: BoxShape.circle,
+                    boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5)],
                   ),
                   child: Icon(icon, size: 28, color: const Color(0xFF8B5CF6)),
                 ),
@@ -2702,17 +2757,90 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
             return _buildGlassContainer(
               context,
-              height: 280,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+              height: 380, // Taller to fit exact coordinates and snapping
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
               child: Column(
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Move Tool', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                      const Text('Pro Move Tool', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
                       IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
                     ]
                   ),
+                  const Divider(color: Colors.black12),
+                  // Exact Coordinates Inputs
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Text('X: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                            Expanded(
+                              child: Container(
+                                height: 35,
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                decoration: BoxDecoration(color: Colors.white.withOpacity(0.5), borderRadius: BorderRadius.circular(8)),
+                                child: TextField(
+                                  keyboardType: TextInputType.number,
+                                  controller: TextEditingController(text: sel.x.toStringAsFixed(0))..selection = TextSelection.collapsed(offset: sel.x.toStringAsFixed(0).length),
+                                  decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.only(top: 8)),
+                                  onSubmitted: (val) {
+                                    if(double.tryParse(val) != null) {
+                                      saveState();
+                                      setState(() => sel.x = double.parse(val));
+                                      setModalState((){});
+                                      _triggerCanvasUpdate();
+                                    }
+                                  },
+                                ),
+                              )
+                            )
+                          ],
+                        )
+                      ),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Text('Y: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                            Expanded(
+                              child: Container(
+                                height: 35,
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                decoration: BoxDecoration(color: Colors.white.withOpacity(0.5), borderRadius: BorderRadius.circular(8)),
+                                child: TextField(
+                                  keyboardType: TextInputType.number,
+                                  controller: TextEditingController(text: sel.y.toStringAsFixed(0))..selection = TextSelection.collapsed(offset: sel.y.toStringAsFixed(0).length),
+                                  decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.only(top: 8)),
+                                  onSubmitted: (val) {
+                                    if(double.tryParse(val) != null) {
+                                      saveState();
+                                      setState(() => sel.y = double.parse(val));
+                                      setModalState((){});
+                                      _triggerCanvasUpdate();
+                                    }
+                                  },
+                                ),
+                              )
+                            )
+                          ],
+                        )
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                  // Quick Snap Buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildAlignButton(Icons.align_horizontal_center, 'Center', () { saveState(); setState(() { sel.x = (currentCanvasW / 2) - (_getElWidth(sel) / 2); sel.y = (currentCanvasH / 2) - (_getElHeight(sel) / 2); }); _triggerCanvasUpdate(); setModalState((){}); }),
+                      _buildAlignButton(Icons.vertical_align_top, 'Top', () { saveState(); setState(() => sel.y = 10); _triggerCanvasUpdate(); setModalState((){}); }),
+                      _buildAlignButton(Icons.vertical_align_bottom, 'Bottom', () { saveState(); setState(() => sel.y = currentCanvasH - _getElHeight(sel) - 10); _triggerCanvasUpdate(); setModalState((){}); }),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                  // Speed Control Toggle
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(color: Colors.white.withOpacity(0.5), borderRadius: BorderRadius.circular(12)),
@@ -2724,7 +2852,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 6),
                             decoration: BoxDecoration(color: stepSize == 1.0 ? Colors.white : Colors.transparent, borderRadius: BorderRadius.circular(10), boxShadow: stepSize == 1.0 ? [const BoxShadow(color: Colors.black12, blurRadius: 4)] : []),
-                            child: Text('1 px (Slow)', style: TextStyle(fontSize: 11, fontWeight: stepSize == 1.0 ? FontWeight.bold : FontWeight.normal, color: stepSize == 1.0 ? const Color(0xFF8B5CF6) : Colors.black54)),
+                            child: Text('1 px', style: TextStyle(fontSize: 11, fontWeight: stepSize == 1.0 ? FontWeight.bold : FontWeight.normal, color: stepSize == 1.0 ? const Color(0xFF8B5CF6) : Colors.black54)),
                           ),
                         ),
                         GestureDetector(
@@ -2732,25 +2860,32 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 6),
                             decoration: BoxDecoration(color: stepSize == 5.0 ? Colors.white : Colors.transparent, borderRadius: BorderRadius.circular(10), boxShadow: stepSize == 5.0 ? [const BoxShadow(color: Colors.black12, blurRadius: 4)] : []),
-                            child: Text('5 px (Fast)', style: TextStyle(fontSize: 11, fontWeight: stepSize == 5.0 ? FontWeight.bold : FontWeight.normal, color: stepSize == 5.0 ? const Color(0xFF8B5CF6) : Colors.black54)),
+                            child: Text('5 px', style: TextStyle(fontSize: 11, fontWeight: stepSize == 5.0 ? FontWeight.bold : FontWeight.normal, color: stepSize == 5.0 ? const Color(0xFF8B5CF6) : Colors.black54)),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => setModalState(() => stepSize = 20.0),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 6),
+                            decoration: BoxDecoration(color: stepSize == 20.0 ? Colors.white : Colors.transparent, borderRadius: BorderRadius.circular(10), boxShadow: stepSize == 20.0 ? [const BoxShadow(color: Colors.black12, blurRadius: 4)] : []),
+                            child: Text('20 px', style: TextStyle(fontSize: 11, fontWeight: stepSize == 20.0 ? FontWeight.bold : FontWeight.normal, color: stepSize == 20.0 ? const Color(0xFF8B5CF6) : Colors.black54)),
                           ),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 15),
-                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [buildDpadBtn(Icons.arrow_upward_rounded, () => move(0, -stepSize))]),
-                  const SizedBox(height: 6),
+                  // Premium Gamepad Style D-PAD
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [buildDpadBtn(Icons.keyboard_arrow_up_rounded, 0, -stepSize)]),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      buildDpadBtn(Icons.arrow_back_rounded, () => move(-stepSize, 0)),
-                      const SizedBox(width: 60),
-                      buildDpadBtn(Icons.arrow_forward_rounded, () => move(stepSize, 0))
+                      buildDpadBtn(Icons.keyboard_arrow_left_rounded, -stepSize, 0),
+                      const SizedBox(width: 55),
+                      buildDpadBtn(Icons.keyboard_arrow_right_rounded, stepSize, 0)
                     ]
                   ),
-                  const SizedBox(height: 6),
-                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [buildDpadBtn(Icons.arrow_downward_rounded, () => move(0, stepSize))]),
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [buildDpadBtn(Icons.keyboard_arrow_down_rounded, 0, stepSize)]),
                 ]
               )
             );
