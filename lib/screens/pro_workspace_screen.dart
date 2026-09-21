@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'dart:math';
+import 'dart:async';
 import '../models/design_models.dart';
 import '../widgets/custom_widgets.dart';
 import '../utils/constants.dart';
@@ -23,6 +24,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   final TransformationController _transformController = TransformationController();
   late WorkspaceController ctrl;
   late WorkspaceModals modals;
+  Timer? _autoSaveTimer;
 
   @override
   void initState() {
@@ -32,6 +34,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
     ctrl.addListener(() {
       if (mounted) setState(() {});
+    });
+
+    // 🔥 Auto-Save Timer (Saves every 1 minute in background)
+    _autoSaveTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      ctrl.saveProjectLocally(context, isAutoSave: true);
     });
 
     if (widget.initialAction != null) {
@@ -46,6 +53,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
 
   @override
   void dispose() {
+    _autoSaveTimer?.cancel();
     _transformController.dispose();
     ctrl.dispose();
     super.dispose();
@@ -111,8 +119,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       return SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: st));
     }
   }
-
-  @override
+    @override
   Widget build(BuildContext context) {
     bool hasSelection = ctrl.selectedElement != null;
     DesignElement? sel = ctrl.selectedElement;
@@ -292,3 +299,4 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 }
+
