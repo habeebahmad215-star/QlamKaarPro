@@ -440,18 +440,19 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
       )
     );
   }
-    // 🔥 ADVANCED PRO MOVE TOOL - 8 Direction Joystick (Canva & Urdu Designer Style)
+    // 🔥 ADVANCED PRO MOVE TOOL - Compact Horizontal UI (1 Tap = 1 Step)
   void showMoveModal(DesignElement sel) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
       barrierColor: Colors.transparent, 
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            double stepSize = 3.0; 
-            Timer? moveTimer;
-            bool isSliderOpen = false;
-
+            double stepSize = 5.0; // Default Step Speed
+            
+            // Core Move Logic
             void move(double dx, double dy) {
               setState(() {
                 double ew = getElWidth(sel);
@@ -482,271 +483,143 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
               triggerCanvasUpdate();
             }
 
-            void rotate(double angleDelta) {
-              saveState();
-              setState(() => sel.angle += angleDelta);
-              setModalState((){});
-              triggerCanvasUpdate();
-            }
-
-            void stopContinuousMove() {
-              moveTimer?.cancel();
-              moveTimer = null;
-            }
-
-            // Beautiful Circular Joystick Button
-            Widget buildDPadButton(IconData icon, double dx, double dy, {double size = 45, bool isPrimary = false}) {
-              return Listener(
-                onPointerDown: (_) {
+            // Compact D-Pad Button (1 Tap = 1 Step)
+            Widget buildDPadBtn(IconData icon, double dxMultiplier, double dyMultiplier, {bool isPrimary = false}) {
+              return InkWell(
+                onTap: () {
                   HapticFeedback.selectionClick();
-                  saveState(); // ✅ Safe Smart Undo: Sirf touch start par save hoga
-                  move(dx, dy);
-                  // ✅ 60FPS Buttery Smooth Movement (20ms instead of 60ms)
-                  moveTimer = Timer.periodic(const Duration(milliseconds: 20), (timer) {
-                    move(dx, dy); 
-                  });
+                  saveState(); // Har tap par Undo point save hoga
+                  move(dxMultiplier * stepSize, dyMultiplier * stepSize);
                 },
-                onPointerUp: (_) => stopContinuousMove(),
-                onPointerCancel: (_) => stopContinuousMove(),
-                behavior: HitTestBehavior.opaque,
+                borderRadius: BorderRadius.circular(8),
                 child: Container(
-                  width: size,
-                  height: size,
+                  margin: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: isPrimary ? Colors.white : Colors.grey.shade50,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      if (isPrimary) const BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3))
-                      else const BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1))
-                    ],
-                    border: Border.all(color: isPrimary ? const Color(0xFF8B5CF6).withOpacity(0.5) : Colors.grey.shade200)
+                    color: isPrimary ? const Color(0xFF8B5CF6) : Colors.white.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: isPrimary ? Colors.transparent : Colors.grey.shade300)
                   ),
-                  child: Center(
-                    child: Icon(icon, size: size * 0.55, color: isPrimary ? const Color(0xFF8B5CF6) : const Color(0xFF1E293B))
-                  ),
+                  child: Center(child: Icon(icon, size: 20, color: isPrimary ? Colors.white : Colors.black87)),
                 ),
               );
             }
 
-            Widget buildAlignButton(IconData icon, String label, VoidCallback onTap) {
-                return InkWell(
-                  onTap: onTap,
-                  child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.5), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white)),
-                      child: Column(
-                      children: [
-                          Icon(icon, color: const Color(0xFF8B5CF6), size: 20),
-                          const SizedBox(height: 4),
-                          Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold))
-                      ]
+            // Compact Text Input for X & Y
+            Widget buildCompactInput(String label, double val, Function(double) onSubmit) {
+              return Container(
+                height: 28,
+                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.black12)),
+                child: Row(
+                  children: [
+                    Padding(padding: const EdgeInsets.only(left: 6), child: Text('$label:', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black54))),
+                    Expanded(
+                      child: TextField(
+                        controller: TextEditingController(text: val.toStringAsFixed(0))..selection = TextSelection.collapsed(offset: val.toStringAsFixed(0).length),
+                        keyboardType: TextInputType.number,
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                        decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.only(bottom: 12)),
+                        onSubmitted: (s) { if(double.tryParse(s) != null) onSubmit(double.parse(s)); },
                       )
-                  )
-                );
+                    )
+                  ]
+                )
+              );
             }
 
-            return Align(
-              alignment: Alignment.centerLeft,
-              child: Material(
-                color: Colors.transparent,
-                child: Container(
-                  width: 280, 
-                  margin: const EdgeInsets.only(left: 15),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 20, spreadRadius: -5)]
+            // Highly Compact Container (Height: 200) so it doesn't block canvas
+            return buildGlassContainer(
+              context,
+              height: 200,
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  // Title Bar
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Pro Nudge Tool', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF8B5CF6))),
+                      IconButton(icon: const Icon(Icons.close, size: 18), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
+                    ]
                   ),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                  const Divider(height: 10, color: Colors.black12),
+                  
+                  // Main Horizontal Layout
+                  Expanded(
+                    child: Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF1E293B),
-                            borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20))
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        // Left Column: 8-Direction D-PAD
+                        SizedBox(
+                          width: 130,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Row(
-                                children: const [
-                                  Icon(Icons.gamepad_rounded, color: Colors.white, size: 18),
-                                  SizedBox(width: 8),
-                                  Text('Pro Nudge Tool', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                                ],
-                              ),
-                              InkWell(onTap: () => Navigator.pop(context), child: const Icon(Icons.close, color: Colors.white70, size: 20))
-                            ]
-                          ),
-                        ),
-                        
-                        const SizedBox(height: 20),
-
-                        // 🔥 Advanced 8-Way Joystick UI
-                        Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                buildDPadButton(Icons.north_west, -stepSize, -stepSize),
-                                const SizedBox(width: 12),
-                                buildDPadButton(Icons.arrow_upward_rounded, 0, -stepSize, size: 55, isPrimary: true),
-                                const SizedBox(width: 12),
-                                buildDPadButton(Icons.north_east, stepSize, -stepSize),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                buildDPadButton(Icons.arrow_back_rounded, -stepSize, 0, size: 55, isPrimary: true),
-                                const SizedBox(width: 12),
-                                InkWell(
-                                  onTap: () { 
-                                    saveState(); 
-                                    setState(() { sel.x = (currentCanvasW / 2) - (getElWidth(sel) / 2); sel.y = (currentCanvasH / 2) - (getElHeight(sel) / 2); }); 
-                                    triggerCanvasUpdate(); setModalState((){}); 
-                                  },
-                                  child: Container(
-                                    width: 45, height: 45, 
-                                    decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF8B5CF6), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3))]), 
-                                    child: const Icon(Icons.center_focus_strong_rounded, color: Colors.white, size: 20)
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                buildDPadButton(Icons.arrow_forward_rounded, stepSize, 0, size: 55, isPrimary: true),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                buildDPadButton(Icons.south_west, -stepSize, stepSize),
-                                const SizedBox(width: 12),
-                                buildDPadButton(Icons.arrow_downward_rounded, 0, stepSize, size: 55, isPrimary: true),
-                                const SizedBox(width: 12),
-                                buildDPadButton(Icons.south_east, stepSize, stepSize),
-                              ],
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 20),
-                        const Divider(height: 1, color: Colors.black12),
-
-                        // X & Y Manual Input
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(15, 12, 15, 8),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Row(
-                                  children: [
-                                    const Text('X: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black54)),
-                                    Expanded(
-                                      child: Container(
-                                        height: 32,
-                                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                                        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade300)),
-                                        child: TextField(
-                                          keyboardType: TextInputType.number,
-                                          controller: TextEditingController(text: sel.x.toStringAsFixed(0))..selection = TextSelection.collapsed(offset: sel.x.toStringAsFixed(0).length),
-                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                                          decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.only(top: 8)),
-                                          onSubmitted: (val) {
-                                            if(double.tryParse(val) != null) {
-                                              saveState();
-                                              setState(() { sel.x = double.parse(val).clamp(-getElWidth(sel) + 30.0, currentCanvasW - 30.0); });
-                                              setModalState((){}); triggerCanvasUpdate();
-                                            }
-                                          },
-                                        ),
-                                      )
-                                    )
-                                  ],
-                                )
-                              ),
-                              const SizedBox(width: 15),
-                              Expanded(
-                                child: Row(
-                                  children: [
-                                    const Text('Y: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black54)),
-                                    Expanded(
-                                      child: Container(
-                                        height: 32,
-                                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                                        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade300)),
-                                        child: TextField(
-                                          keyboardType: TextInputType.number,
-                                          controller: TextEditingController(text: sel.y.toStringAsFixed(0))..selection = TextSelection.collapsed(offset: sel.y.toStringAsFixed(0).length),
-                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                                          decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.only(top: 8)),
-                                          onSubmitted: (val) {
-                                            if(double.tryParse(val) != null) {
-                                              saveState();
-                                              setState(() { sel.y = double.parse(val).clamp(-getElHeight(sel) + 30.0, currentCanvasH - 30.0); });
-                                              setModalState((){}); triggerCanvasUpdate();
-                                            }
-                                          },
-                                        ),
-                                      )
-                                    )
-                                  ],
-                                )
-                              ),
+                              Expanded(child: Row(children: [ Expanded(child: buildDPadBtn(Icons.north_west, -1, -1)), Expanded(child: buildDPadBtn(Icons.arrow_upward, 0, -1, isPrimary: true)), Expanded(child: buildDPadBtn(Icons.north_east, 1, -1)) ])),
+                              Expanded(child: Row(children: [ 
+                                Expanded(child: buildDPadBtn(Icons.arrow_back, -1, 0, isPrimary: true)), 
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () { saveState(); setState(() { sel.x = (currentCanvasW / 2) - (getElWidth(sel) / 2); sel.y = (currentCanvasH / 2) - (getElHeight(sel) / 2); }); setModalState((){}); triggerCanvasUpdate(); },
+                                    child: Container(margin: const EdgeInsets.all(2), decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.blue.shade200)), child: const Icon(Icons.center_focus_strong, size: 18, color: Colors.blue))
+                                  )
+                                ), 
+                                Expanded(child: buildDPadBtn(Icons.arrow_forward, 1, 0, isPrimary: true)) 
+                              ])),
+                              Expanded(child: Row(children: [ Expanded(child: buildDPadBtn(Icons.south_west, -1, 1)), Expanded(child: buildDPadBtn(Icons.arrow_downward, 0, 1, isPrimary: true)), Expanded(child: buildDPadBtn(Icons.south_east, 1, 1)) ])),
                             ],
                           ),
                         ),
+                        
+                        const SizedBox(width: 12),
+                        Container(width: 1, color: Colors.black12),
+                        const SizedBox(width: 12),
 
-                        // Speed Control Slider
-                        InkWell(
-                          onTap: () => setModalState(() => isSliderOpen = !isSliderOpen),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(color: isSliderOpen ? Colors.grey.shade50 : Colors.transparent),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.speed, size: 16, color: isSliderOpen ? const Color(0xFF8B5CF6) : Colors.black54),
-                                const SizedBox(width: 6),
-                                Text('Adjust Speed', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isSliderOpen ? const Color(0xFF8B5CF6) : Colors.black54)),
-                                Icon(isSliderOpen ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 18, color: isSliderOpen ? const Color(0xFF8B5CF6) : Colors.black54)
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        if (isSliderOpen)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-                            decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20))),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Step Size:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54)),
-                                    Text('${stepSize.toInt()} px', style: const TextStyle(fontSize: 13, color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                                SliderTheme(
-                                  data: SliderThemeData(trackHeight: 4, activeTrackColor: const Color(0xFF8B5CF6), thumbColor: const Color(0xFF8B5CF6), overlayColor: const Color(0xFF8B5CF6).withOpacity(0.2)),
+                        // Right Column: Speed Slider & Inputs
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Speed Indicator
+                              Row(
+                                children: [
+                                  const Icon(Icons.speed, size: 12, color: Colors.black54),
+                                  const SizedBox(width: 4),
+                                  const Text('Speed:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black54)),
+                                  const Spacer(),
+                                  Text('${stepSize.toInt()} px', style: const TextStyle(fontSize: 11, color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold)),
+                                ]
+                              ),
+                              // Slider
+                              SizedBox(
+                                height: 35,
+                                child: SliderTheme(
+                                  data: SliderThemeData(trackHeight: 3, thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7), overlayShape: const RoundSliderOverlayShape(overlayRadius: 14)),
                                   child: Slider(
                                     value: stepSize.clamp(1.0, 50.0),
                                     min: 1.0, max: 50.0,
-                                    onChanged: (val) { setModalState(() => stepSize = val); },
+                                    activeColor: const Color(0xFF8B5CF6),
+                                    onChanged: (val) => setModalState(() => stepSize = val),
                                   ),
-                                )
-                              ],
-                            ),
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              // X & Y Inputs
+                              Row(
+                                children: [
+                                  Expanded(child: buildCompactInput('X', sel.x, (val) { saveState(); setState(() => sel.x = val.clamp(-getElWidth(sel) + 30.0, currentCanvasW - 30.0)); setModalState((){}); triggerCanvasUpdate(); })),
+                                  const SizedBox(width: 6),
+                                  Expanded(child: buildCompactInput('Y', sel.y, (val) { saveState(); setState(() => sel.y = val.clamp(-getElHeight(sel) + 30.0, currentCanvasH - 30.0)); setModalState((){}); triggerCanvasUpdate(); })),
+                                ]
+                              )
+                            ],
                           )
+                        )
                       ],
-                    ),
-                  ),
-                ),
-              ),
+                    )
+                  )
+                ],
+              )
             );
           }
         );
