@@ -36,7 +36,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       if (mounted) setState(() {});
     });
 
-    // 🔥 Auto-Save Timer (Saves every 1 minute in background)
     _autoSaveTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       ctrl.saveProjectLocally(context, isAutoSave: true);
     });
@@ -119,7 +118,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       return SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: st));
     }
   }
-    @override
+
+  @override
   Widget build(BuildContext context) {
     bool hasSelection = ctrl.selectedElement != null;
     DesignElement? sel = ctrl.selectedElement;
@@ -299,4 +299,3 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 }
-
