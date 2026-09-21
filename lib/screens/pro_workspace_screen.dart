@@ -19,6 +19,7 @@ import '../widgets/custom_widgets.dart';
 import '../utils/constants.dart';
 import 'my_folder_screen.dart';
 import 'workspace_components.dart';
+import 'workspace_modals.dart';
 import 'workspace_toolbars.dart';
 
 class ProWorkspaceScreen extends StatefulWidget {
@@ -233,7 +234,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
   void redoAction() {
     if (redoStack.isNotEmpty) {
       undoStack.add(elements.map((e) => e.clone()).toList());
-      undoMultiStylesStack.add(deepCopyMultiStyles(textMultiStyles));
+      redoMultiStylesStack.add(deepCopyMultiStyles(textMultiStyles));
       setState(() { 
         elements = redoStack.removeLast(); 
         textMultiStyles = redoMultiStylesStack.removeLast();
@@ -479,7 +480,36 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       )
     );
   }
-    @override
+
+  Future<void> addImageFromGallery({bool fromModal = false}) async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        saveState();
+        setState(() { 
+          elements.add(DesignElement(
+            id: Random().nextInt(10000).toString(), 
+            x: 80, y: 80, 
+            content: 'Image', 
+            isText: false, 
+            imageBytes: bytes, 
+            width: 200, 
+            height: 200
+          )); 
+          activeToolbarMenu = 'main'; 
+        });
+        triggerCanvasUpdate();
+      }
+    } catch (e) {
+      debugPrint("Gallery Error: $e");
+    }
+    if (fromModal && Navigator.canPop(context)) { 
+      Navigator.pop(context); 
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     bool hasSelection = false;
     DesignElement? sel;
@@ -1011,7 +1041,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.font_download_rounded, 'Font', () => showFontPickerModal(sel)));
       bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.palette_rounded, 'Colour', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
       bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.gradient_rounded, 'Gradient', () => _showGradientPickerModal(sel)));
-      bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.format_bold_rounded, 'Bold', () { saveState(); setState(() => sel.isBold = !sel.isBold); triggerCanvasUpdate(); }));
+      bottomRow.add(WorkspaceToolbars.buildToolBtn(context,Icons.format_bold_rounded, 'Bold', () { saveState(); setState(() => sel.isBold = !sel.isBold); triggerCanvasUpdate(); }));
       bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.height_rounded, 'Spacing', () => showSpacingModal(sel)));
       bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.format_color_fill_rounded, 'Text BG', () => _showTextBgPickerModal(sel)));
       bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.auto_awesome_rounded, 'Effect', () => _showTextEffectsModal(sel), const Color(0xFF10B981)));
@@ -1078,4 +1108,3 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     );
   }
 }
-
