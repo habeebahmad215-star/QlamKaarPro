@@ -8,7 +8,6 @@ import '../utils/constants.dart';
 import 'workspace_components.dart';
 
 mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
-  
   List<DesignElement> get elements;
   set elements(List<DesignElement> val);
   
