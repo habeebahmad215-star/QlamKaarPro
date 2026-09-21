@@ -2694,8 +2694,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // 🔥 ADVANCED PRO MOVE TOOL (With Raw Listener & Canvas Boundary Clamp)
+  // 🔥 ULTRA-COMPACT FLOATING MOVE TOOL
   void showMoveModal(DesignElement sel) {
+    double toolX = 20.0;
+    double toolY = 100.0;
+    
     showDialog(
       context: context,
       barrierColor: Colors.transparent, 
@@ -2704,20 +2707,25 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
           builder: (context, setModalState) {
             double stepSize = 5.0; 
             Timer? moveTimer;
-            bool isSliderOpen = false;
+            bool isSettingsExpanded = false;
 
-            // 🔥 BOUNDARY CLAMPING: Prevents elements from flying off canvas
+            // Boundary Clamp Logic (Canvas se bahar nahi jayega)
             void move(double dx, double dy) {
               saveState();
               setState(() {
                 double ew = _getElWidth(sel);
                 double eh = _getElHeight(sel);
                 
-                double newX = sel.x + dx;
-                double newY = sel.y + dy;
-                
-                newX = newX.clamp(-ew + 30.0, currentCanvasW - 30.0);
-                newY = newY.clamp(-eh + 30.0, currentCanvasH - 30.0);
+                double minX = -ew + 30.0;
+                double maxX = currentCanvasW - 30.0;
+                if (minX > maxX) minX = maxX;
+
+                double minY = -eh + 30.0;
+                double maxY = currentCanvasH - 30.0;
+                if (minY > maxY) minY = maxY;
+
+                double newX = (sel.x + dx).clamp(minX, maxX);
+                double newY = (sel.y + dy).clamp(minY, maxY);
                 
                 double actualDx = newX - sel.x;
                 double actualDy = newY - sel.y;
@@ -2758,7 +2766,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
               });
             }
 
-            // 🔥 LISTENER IMPLEMENTATION: For 100% reliable release detection
+            // Raw Listener to instantly stop on finger release
             Widget buildGridBtn(IconData icon, double dx, double dy) {
               return Listener(
                 onPointerDown: (_) { HapticFeedback.lightImpact(); startContinuousMove(dx, dy); },
@@ -2766,8 +2774,14 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                 onPointerCancel: (_) => stopContinuousMove(),
                 behavior: HitTestBehavior.opaque,
                 child: Container(
-                  decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade200, width: 0.5)),
-                  child: Center(child: Icon(icon, size: 24, color: Colors.black54)),
+                  width: 35, height: 35,
+                  margin: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.8), 
+                    borderRadius: BorderRadius.circular(8), 
+                    border: Border.all(color: Colors.grey.shade300)
+                  ),
+                  child: Center(child: Icon(icon, size: 18, color: const Color(0xFF1E293B))),
                 ),
               );
             }
@@ -2776,762 +2790,220 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
               return InkWell(
                 onTap: onTap,
                 child: Container(
-                  decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade200, width: 0.5)),
-                  child: Center(child: Icon(icon, size: 22, color: color ?? Colors.black54)),
+                  width: 35, height: 35,
+                  margin: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.8), 
+                    borderRadius: BorderRadius.circular(8), 
+                    border: Border.all(color: Colors.grey.shade300)
+                  ),
+                  child: Center(child: Icon(icon, size: 18, color: color ?? const Color(0xFF1E293B))),
                 ),
               );
             }
 
-            return Align(
-              alignment: Alignment.centerLeft,
-              child: Material(
-                color: Colors.transparent,
+            Widget snapBtn(IconData icon) {
+              return InkWell(
+                onTap: () {
+                   saveState();
+                   setState(() {
+                     if(icon == Icons.vertical_align_top) sel.y = 10;
+                     if(icon == Icons.vertical_align_bottom) sel.y = currentCanvasH - _getElHeight(sel) - 10;
+                     if(icon == Icons.align_horizontal_center) {
+                       sel.x = (currentCanvasW / 2) - (_getElWidth(sel) / 2); 
+                       sel.y = (currentCanvasH / 2) - (_getElHeight(sel) / 2);
+                     }
+                   });
+                   _triggerCanvasUpdate(); setModalState((){});
+                },
                 child: Container(
-                  width: 260, 
-                  margin: const EdgeInsets.only(left: 15),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 20, spreadRadius: -5)]
-                  ),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF1E293B),
-                            borderRadius: BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16))
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: const [
-                                  Icon(Icons.open_with_rounded, color: Colors.white, size: 16),
-                                  SizedBox(width: 8),
-                                  Text('Pro Move Tool', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                                ],
-                              ),
-                              InkWell(onTap: () => Navigator.pop(context), child: const Icon(Icons.close, color: Colors.white70, size: 18))
-                            ]
-                          ),
-                        ),
-                        
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(15, 15, 15, 5),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Row(
-                                  children: [
-                                    const Text('X: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                    Expanded(
-                                      child: Container(
-                                        height: 30,
-                                        padding: const EdgeInsets.symmetric(horizontal: 5),
-                                        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(6)),
-                                        child: TextField(
-                                          keyboardType: TextInputType.number,
-                                          controller: TextEditingController(text: sel.x.toStringAsFixed(0))..selection = TextSelection.collapsed(offset: sel.x.toStringAsFixed(0).length),
-                                          style: const TextStyle(fontSize: 12),
-                                          decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.only(top: 8)),
-                                          onSubmitted: (val) {
-                                            if(double.tryParse(val) != null) {
-                                              saveState();
-                                              setState(() {
-                                                sel.x = double.parse(val).clamp(-_getElWidth(sel) + 30.0, currentCanvasW - 30.0);
-                                              });
-                                              setModalState((){});
-                                              _triggerCanvasUpdate();
-                                            }
-                                          },
-                                        ),
-                                      )
-                                    )
-                                  ],
-                                )
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Row(
-                                  children: [
-                                    const Text('Y: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                    Expanded(
-                                      child: Container(
-                                        height: 30,
-                                        padding: const EdgeInsets.symmetric(horizontal: 5),
-                                        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(6)),
-                                        child: TextField(
-                                          keyboardType: TextInputType.number,
-                                          controller: TextEditingController(text: sel.y.toStringAsFixed(0))..selection = TextSelection.collapsed(offset: sel.y.toStringAsFixed(0).length),
-                                          style: const TextStyle(fontSize: 12),
-                                          decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.only(top: 8)),
-                                          onSubmitted: (val) {
-                                            if(double.tryParse(val) != null) {
-                                              saveState();
-                                              setState(() {
-                                                sel.y = double.parse(val).clamp(-_getElHeight(sel) + 30.0, currentCanvasH - 30.0);
-                                              });
-                                              setModalState((){});
-                                              _triggerCanvasUpdate();
-                                            }
-                                          },
-                                        ),
-                                      )
-                                    )
-                                  ],
-                                )
-                              ),
-                            ],
-                          ),
-                        ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.8), borderRadius: BorderRadius.circular(5)),
+                  child: Icon(icon, size: 16, color: const Color(0xFF8B5CF6)),
+                )
+              );
+            }
 
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              _buildAlignButton(Icons.vertical_align_top, 'Top', () { saveState(); setState(() => sel.y = 10); _triggerCanvasUpdate(); setModalState((){}); }),
-                              _buildAlignButton(Icons.align_horizontal_center, 'Center', () { saveState(); setState(() { sel.x = (currentCanvasW / 2) - (_getElWidth(sel) / 2); sel.y = (currentCanvasH / 2) - (_getElHeight(sel) / 2); }); _triggerCanvasUpdate(); setModalState((){}); }),
-                              _buildAlignButton(Icons.vertical_align_bottom, 'Bottom', () { saveState(); setState(() => sel.y = currentCanvasH - _getElHeight(sel) - 10); _triggerCanvasUpdate(); setModalState((){}); }),
-                            ],
-                          ),
-                        ),
-
-                        const Divider(height: 1, color: Colors.black12),
-
-                        SizedBox(
-                          height: 180,
-                          child: GridView.count(
-                            crossAxisCount: 3,
-                            physics: const NeverScrollableScrollPhysics(),
-                            padding: EdgeInsets.zero,
-                            children: [
-                              buildGridBtn(Icons.north_west, -stepSize, -stepSize), 
-                              buildGridBtn(Icons.arrow_upward, 0, -stepSize),       
-                              buildGridBtn(Icons.north_east, stepSize, -stepSize),  
-                              
-                              buildGridBtn(Icons.arrow_back, -stepSize, 0),         
-                              buildActionBtn(Icons.zoom_out_map, () {               
-                                saveState();
-                                setState(() {
-                                  sel.x = (currentCanvasW / 2) - (_getElWidth(sel) / 2);
-                                  sel.y = (currentCanvasH / 2) - (_getElHeight(sel) / 2);
-                                });
-                                _triggerCanvasUpdate();
-                              }),
-                              buildGridBtn(Icons.arrow_forward, stepSize, 0),       
-                              
-                              buildGridBtn(Icons.south_west, -stepSize, stepSize),  
-                              buildGridBtn(Icons.arrow_downward, 0, stepSize),      
-                              buildGridBtn(Icons.south_east, stepSize, stepSize),   
-                            ],
-                          ),
-                        ),
-
-                        SizedBox(
-                          height: 50,
-                          child: Row(
-                            children: [
-                              Expanded(child: buildActionBtn(Icons.rotate_left, () => rotate(-0.05))), 
-                              Expanded(child: buildActionBtn(Icons.tune, () {
-                                setModalState(() => isSliderOpen = !isSliderOpen);
-                              }, color: isSliderOpen ? const Color(0xFF8B5CF6) : Colors.black54)),
-                              Expanded(child: buildActionBtn(Icons.rotate_right, () => rotate(0.05))),
-                            ],
-                          ),
-                        ),
-
-                        if (isSliderOpen)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
-                              borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16)),
-                              border: Border(top: BorderSide(color: Colors.grey.shade200))
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Move Speed:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54)),
-                                    Text('${stepSize.toInt()} px', style: const TextStyle(fontSize: 13, color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                                const SizedBox(height: 5),
-                                SliderTheme(
-                                  data: SliderThemeData(
-                                    trackHeight: 4, 
-                                    activeTrackColor: const Color(0xFF8B5CF6), 
-                                    thumbColor: const Color(0xFF8B5CF6), 
-                                    overlayColor: const Color(0xFF8B5CF6).withOpacity(0.2)
-                                  ),
-                                  child: Slider(
-                                    value: stepSize.clamp(1.0, 50.0),
-                                    min: 1.0, max: 50.0,
-                                    onChanged: (val) {
-                                      setModalState(() => stepSize = val);
-                                    },
-                                  ),
-                                )
-                              ],
-                            ),
-                          )
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }
-        );
-      }
-    );
-  }
-
-  Future<void> _importCustomFont() async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom, 
-        allowedExtensions: ['ttf', 'otf']
-      );
-      
-      if (result != null && result.files.single.path != null) {
-        String filePath = result.files.single.path!;
-        String fontName = result.files.single.name.replaceAll('.ttf', '').replaceAll('.otf', '');
-        var fontLoader = FontLoader(fontName);
-        fontLoader.addFont(Future.value(ByteData.view(File(filePath).readAsBytesSync().buffer)));
-        await fontLoader.load();
-        setState(() { 
-          if (!customFonts.contains(fontName)) customFonts.add(fontName); 
-        });
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Font "$fontName" import ho gaya!')));
-      }
-    } catch (e) {
-      debugPrint("Font Import Error: $e");
-    }
-  }
-
-  void showFontPickerModal(DesignElement sel) {
-    showModalBottomSheet(
-      context: context,
-      barrierColor: Colors.transparent,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return _buildGlassContainer(
-              context,
-              height: MediaQuery.of(context).size.height * 0.70,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            return SizedBox.expand(
+              child: Stack(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Select Font', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      Row(
-                        children: [
-                          ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), elevation: 0),
-                            onPressed: () async { await _importCustomFont(); setModalState(() {}); },
-                            icon: const Icon(Icons.add, color: Colors.white, size: 14),
-                            label: const Text('Add', style: TextStyle(color: Colors.white, fontSize: 11))
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
-                        ],
-                      )
-                    ]
+                  Positioned.fill(
+                    child: GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      behavior: HitTestBehavior.opaque,
+                    )
                   ),
-                  const Divider(color: Colors.black12),
-                  Expanded(
-                    child: ListView(
-                      physics: const BouncingScrollPhysics(),
-                      children: [
-                        const Padding(padding: EdgeInsets.symmetric(vertical: 8.0), child: Text('Pre-installed Fonts', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                        ...availableFontsData.map((font) {
-                          bool isSelected = sel.fontFamily == font['name'];
-                          return Card(
-                            elevation: 0,
-                            color: isSelected ? Colors.white.withOpacity(0.8) : Colors.white.withOpacity(0.4),
-                            shape: RoundedRectangleBorder(side: BorderSide(color: isSelected ? const Color(0xFF8B5CF6) : Colors.transparent), borderRadius: BorderRadius.circular(12)),
-                            margin: const EdgeInsets.only(bottom: 8),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(12),
-                              onTap: () { saveState(); setState(() => sel.fontFamily = font['name']!); _triggerCanvasUpdate(); Navigator.pop(context); },
-                              child: Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      flex: 2,
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                  Positioned(
+                    left: toolX,
+                    top: toolY,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Container(
+                        width: 140, 
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.70), 
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.white, width: 1.5),
+                          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 15, spreadRadius: -2)]
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: BackdropFilter(
+                            filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                GestureDetector(
+                                  onPanUpdate: (d) {
+                                    setModalState(() {
+                                      toolX += d.delta.dx;
+                                      toolY += d.delta.dy;
+                                    });
+                                  },
+                                  child: Container(
+                                    color: const Color(0xFF1E293B).withOpacity(0.9),
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Icon(Icons.drag_indicator, color: Colors.white54, size: 14),
+                                        const Text('Move', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                                        InkWell(onTap: () => Navigator.pop(context), child: const Icon(Icons.close, color: Colors.white, size: 14))
+                                      ]
+                                    ),
+                                  ),
+                                ),
+                                
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
-                                          Text(font['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                          Text(font['desc']!, style: const TextStyle(fontSize: 9, color: Colors.black54))
+                                          buildGridBtn(Icons.north_west, -stepSize, -stepSize),
+                                          buildGridBtn(Icons.arrow_upward, 0, -stepSize),
+                                          buildGridBtn(Icons.north_east, stepSize, -stepSize),
                                         ],
                                       ),
-                                    ),
-                                    Expanded(
-                                      flex: 3,
-                                      child: Text(font['title']!, textAlign: TextAlign.right, textDirection: TextDirection.rtl, style: TextStyle(fontFamily: font['name'], fontSize: 22, color: Colors.black))
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Icon(isSelected ? Icons.check_circle : Icons.radio_button_unchecked, color: isSelected ? const Color(0xFF8B5CF6) : Colors.black26, size: 18)
-                                  ],
-                                ),
-                              ),
-                            )
-                          );
-                        }),
-                        if (customFonts.isNotEmpty) ...[
-                          const Padding(padding: EdgeInsets.only(top: 15, bottom: 8.0), child: Text('My Custom Fonts', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12))),
-                          ...customFonts.map((fontName) {
-                            bool isSelected = sel.fontFamily == fontName;
-                            return Card(
-                              elevation: 0,
-                              color: isSelected ? Colors.white.withOpacity(0.8) : Colors.white.withOpacity(0.4),
-                              shape: RoundedRectangleBorder(side: BorderSide(color: isSelected ? const Color(0xFF8B5CF6) : Colors.transparent), borderRadius: BorderRadius.circular(12)),
-                              margin: const EdgeInsets.only(bottom: 8),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(12),
-                                onTap: () { saveState(); setState(() => sel.fontFamily = fontName); _triggerCanvasUpdate(); Navigator.pop(context); },
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(fontName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                            const Text('Imported TTF', style: TextStyle(fontSize: 9, color: Colors.black54))
-                                          ],
-                                        )
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          buildGridBtn(Icons.arrow_back, -stepSize, 0),
+                                          buildActionBtn(Icons.zoom_out_map, () {               
+                                            saveState();
+                                            setState(() {
+                                              sel.x = (currentCanvasW / 2) - (_getElWidth(sel) / 2);
+                                              sel.y = (currentCanvasH / 2) - (_getElHeight(sel) / 2);
+                                            });
+                                            _triggerCanvasUpdate();
+                                          }),
+                                          buildGridBtn(Icons.arrow_forward, stepSize, 0),
+                                        ],
                                       ),
-                                      const Text('نمونہ تحریر', textAlign: TextAlign.right, textDirection: TextDirection.rtl, style: TextStyle(fontSize: 22)),
-                                      const SizedBox(width: 10),
-                                      Icon(isSelected ? Icons.check_circle : Icons.radio_button_unchecked, color: isSelected ? const Color(0xFF8B5CF6) : Colors.black26, size: 18)
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          buildGridBtn(Icons.south_west, -stepSize, stepSize),
+                                          buildGridBtn(Icons.arrow_downward, 0, stepSize),
+                                          buildGridBtn(Icons.south_east, stepSize, stepSize),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          buildActionBtn(Icons.rotate_left, () => rotate(-0.05)),
+                                          buildActionBtn(isSettingsExpanded ? Icons.keyboard_arrow_up : Icons.settings, () {
+                                            setModalState(() => isSettingsExpanded = !isSettingsExpanded);
+                                          }, color: const Color(0xFF8B5CF6)),
+                                          buildActionBtn(Icons.rotate_right, () => rotate(0.05)),
+                                        ],
+                                      )
                                     ],
                                   ),
                                 ),
-                              )
-                            );
-                          })
-                        ]
-                      ],
-                    )
-                  )
-                ]
-              )
-            );
-          }
-        );
-      }
-    );
-  }
 
-  void _toggleAlignment(DesignElement sel) {
-    saveState();
-    setState(() {
-      if (sel.textAlign == TextAlign.right) {
-        sel.textAlign = TextAlign.center;
-      } else if (sel.textAlign == TextAlign.center) {
-        sel.textAlign = TextAlign.left;
-      } else {
-        sel.textAlign = TextAlign.right;
-      }
-    });
-    _triggerCanvasUpdate();
-  }
-
-  void _showAlignmentModal(DesignElement sel) {
-    showModalBottomSheet(
-      context: context,
-      barrierColor: Colors.transparent,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return _buildGlassContainer(
-          context,
-          height: 180,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Position on Page', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
-                ]
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildAlignButton(Icons.align_horizontal_left, 'Left', () { saveState(); setState(() => sel.x = 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                  _buildAlignButton(Icons.align_horizontal_center, 'Center', () { saveState(); setState(() => sel.x = (currentCanvasW / 2) - (_getElWidth(sel) / 2)); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                  _buildAlignButton(Icons.align_horizontal_right, 'Right', () { saveState(); setState(() => sel.x = currentCanvasW - _getElWidth(sel) - 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                ]
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildAlignButton(Icons.align_vertical_top, 'Top', () { saveState(); setState(() => sel.y = 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                  _buildAlignButton(Icons.align_vertical_center, 'Middle', () { saveState(); setState(() => sel.y = (currentCanvasH / 2) - (_getElHeight(sel) / 2)); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                  _buildAlignButton(Icons.align_vertical_bottom, 'Bottom', () { saveState(); setState(() => sel.y = currentCanvasH - _getElHeight(sel) - 10); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                ]
-              )
-            ]
-          )
-        );
-      }
-    );
-  }
-
-  Widget _buildAlignButton(IconData icon, String label, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-        decoration: BoxDecoration(color: Colors.white.withOpacity(0.5), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white)),
-        child: Column(
-          children: [
-            Icon(icon, color: const Color(0xFF8B5CF6), size: 20),
-            const SizedBox(height: 4),
-            Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold))
-          ]
-        )
-      )
-    );
-  }
-
-  void _showResizeModal() {
-    showModalBottomSheet(
-      context: context,
-      barrierColor: Colors.transparent,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return _buildGlassContainer(
-          context,
-          height: 280,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Resize Canvas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
-                ]
-              ),
-              const Divider(color: Colors.black12),
-              Expanded(
-                child: ListView(
-                  physics: const BouncingScrollPhysics(),
-                  children: [
-                    ListTile(dense: true, leading: const Icon(Icons.crop_square), title: const Text('1:1 (Square/Logo)'), onTap: () { saveState(); setState(() { canvasRatio = 1.0; _needsRescale = true; }); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                    ListTile(dense: true, leading: const Icon(Icons.crop_16_9), title: const Text('16:9 (YouTube/Post)'), onTap: () { saveState(); setState(() { canvasRatio = 16/9; _needsRescale = true; }); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                    ListTile(dense: true, leading: const Icon(Icons.crop_portrait), title: const Text('9:16 (Story/Reel)'), onTap: () { saveState(); setState(() { canvasRatio = 9/16; _needsRescale = true; }); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                    ListTile(dense: true, leading: const Icon(Icons.description), title: const Text('1:1.414 (A4 Print)'), onTap: () { saveState(); setState(() { canvasRatio = 1/1.414; _needsRescale = true; }); _triggerCanvasUpdate(); Navigator.pop(context); }),
-                  ]
-                )
-              )
-            ]
-          )
-        );
-      }
-    );
-  }
-
-  void showLayersPanel() {
-    Set<String> selectedForGroup = {};
-    showModalBottomSheet(
-      context: context,
-      barrierColor: Colors.transparent,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return _buildGlassContainer(
-              context,
-              height: 400,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Layers', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      Row(
-                        children: [
-                          if (selectedForGroup.length > 1)
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 8)), 
-                              onPressed: () { saveState(); String gId = Random().nextInt(10000).toString(); setState(() { for (var e in elements) { if (selectedForGroup.contains(e.id)) { e.groupId = gId; } } selectedForGroup.clear(); }); _triggerCanvasUpdate(); setModalState((){}); }, 
-                              icon: const Icon(Icons.group, color: Colors.white, size: 14), label: const Text('Group', style: TextStyle(color: Colors.white, fontSize: 11))
-                            ),
-                          if (selectedForGroup.isNotEmpty) ...[
-                            const SizedBox(width: 5),
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 8)), 
-                              onPressed: () { saveState(); setState(() { for (var e in elements) { if (selectedForGroup.contains(e.id)) { e.groupId = null; } } selectedForGroup.clear(); }); _triggerCanvasUpdate(); setModalState((){}); }, 
-                              icon: const Icon(Icons.link_off, color: Colors.white, size: 14), label: const Text('Ungroup', style: TextStyle(color: Colors.white, fontSize: 11))
-                            ),
-                          ],
-                          IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
-                        ]
-                      )
-                    ]
-                  ),
-                  const Divider(color: Colors.black12),
-                  Expanded(
-                    child: elements.isEmpty 
-                      ? const Center(child: Text('No elements yet.', style: TextStyle(color: Colors.black54)))
-                      : ListView.builder(
-                          physics: const BouncingScrollPhysics(),
-                          itemCount: elements.length,
-                          itemBuilder: (context, index) {
-                            int actualIndex = elements.length - 1 - index;
-                            DesignElement e = elements[actualIndex];
-                            bool isSel = selectedId == e.id;
-                            bool isGroupChecked = selectedForGroup.contains(e.id);
-                            return Card(
-                              color: isSel ? Colors.white.withOpacity(0.9) : (e.groupId != null ? Colors.blue.withOpacity(0.1) : Colors.white.withOpacity(0.4)),
-                              elevation: 0,
-                              margin: const EdgeInsets.only(bottom: 6),
-                              shape: RoundedRectangleBorder(
-                                side: BorderSide(color: isSel ? const Color(0xFF8B5CF6) : Colors.transparent), 
-                                borderRadius: BorderRadius.circular(10)
-                              ),
-                              child: ListTile(
-                                dense: true,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                                leading: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Checkbox(
-                                      value: isGroupChecked, 
-                                      activeColor: const Color(0xFF8B5CF6), 
-                                      onChanged: (val) { setModalState((){ if(val == true) selectedForGroup.add(e.id); else selectedForGroup.remove(e.id); }); }
+                                if (isSettingsExpanded)
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    color: Colors.white.withOpacity(0.6),
+                                    child: Column(
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text('Speed: ${stepSize.toInt()}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                                            Expanded(
+                                              child: SliderTheme(
+                                                data: SliderThemeData(trackHeight: 2, thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5)),
+                                                child: Slider(
+                                                  value: stepSize.clamp(1.0, 50.0), min: 1.0, max: 50.0,
+                                                  activeColor: const Color(0xFF8B5CF6),
+                                                  onChanged: (val) => setModalState(() => stepSize = val)
+                                                ),
+                                              )
+                                            )
+                                          ],
+                                        ),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Container(
+                                                height: 25,
+                                                padding: const EdgeInsets.symmetric(horizontal: 4),
+                                                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.grey.shade300)),
+                                                child: TextField(
+                                                  keyboardType: TextInputType.number,
+                                                  controller: TextEditingController(text: sel.x.toStringAsFixed(0))..selection = TextSelection.collapsed(offset: sel.x.toStringAsFixed(0).length),
+                                                  style: const TextStyle(fontSize: 11),
+                                                  decoration: const InputDecoration(border: InputBorder.none, prefixText: 'X: ', prefixStyle: TextStyle(color: Colors.black54, fontSize: 10, fontWeight: FontWeight.bold), contentPadding: EdgeInsets.only(bottom: 12)),
+                                                  onSubmitted: (val) {
+                                                    if(double.tryParse(val) != null) {
+                                                      saveState(); setState(() => sel.x = double.parse(val)); setModalState((){}); _triggerCanvasUpdate();
+                                                    }
+                                                  },
+                                                ),
+                                              )
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Expanded(
+                                              child: Container(
+                                                height: 25,
+                                                padding: const EdgeInsets.symmetric(horizontal: 4),
+                                                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.grey.shade300)),
+                                                child: TextField(
+                                                  keyboardType: TextInputType.number,
+                                                  controller: TextEditingController(text: sel.y.toStringAsFixed(0))..selection = TextSelection.collapsed(offset: sel.y.toStringAsFixed(0).length),
+                                                  style: const TextStyle(fontSize: 11),
+                                                  decoration: const InputDecoration(border: InputBorder.none, prefixText: 'Y: ', prefixStyle: TextStyle(color: Colors.black54, fontSize: 10, fontWeight: FontWeight.bold), contentPadding: EdgeInsets.only(bottom: 12)),
+                                                  onSubmitted: (val) {
+                                                    if(double.tryParse(val) != null) {
+                                                      saveState(); setState(() => sel.y = double.parse(val)); setModalState((){}); _triggerCanvasUpdate();
+                                                    }
+                                                  },
+                                                ),
+                                              )
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            snapBtn(Icons.vertical_align_top),
+                                            snapBtn(Icons.align_horizontal_center),
+                                            snapBtn(Icons.vertical_align_bottom),
+                                          ],
+                                        )
+                                      ],
                                     ),
-                                    CircleAvatar(
-                                      radius: 12, 
-                                      backgroundColor: e.isText ? e.textColor : Colors.black54, 
-                                      child: Icon(e.isText ? Icons.text_fields : (e.isShape ? Icons.category : Icons.image), size: 12, color: Colors.white)
-                                    )
-                                  ]
-                                ),
-                                title: Row(
-                                  children: [
-                                    Expanded(child: Text(e.isText ? e.content.replaceAll('\n', '') : (e.isBorder ? 'Border' : 'Image/Shape'), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: isSel ? FontWeight.bold : FontWeight.normal, fontSize: 13))),
-                                    if (e.groupId != null) const Icon(Icons.link, size: 14, color: Colors.blue)
-                                  ]
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(e.isHidden ? Icons.visibility_off : Icons.visibility, size: 18, color: Colors.black54), onPressed: () { saveState(); setState(() => e.isHidden = !e.isHidden); _triggerCanvasUpdate(); setModalState((){}); }),
-                                    const SizedBox(width: 8),
-                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(e.isLocked ? Icons.lock : Icons.lock_open, size: 18, color: e.isLocked ? Colors.red : Colors.black54), onPressed: () { saveState(); setState(() { e.isLocked = !e.isLocked; if(e.isLocked && selectedId == e.id) selectedId = null; }); _triggerCanvasUpdate(); setModalState((){}); }),
-                                    const SizedBox(width: 8),
-                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.arrow_upward, size: 18, color: Colors.black54), onPressed: () { saveState(); if (actualIndex < elements.length - 1) { setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex + 1, item); }); _triggerCanvasUpdate(); setModalState((){}); } }),
-                                    const SizedBox(width: 8),
-                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.arrow_downward, size: 18, color: Colors.black54), onPressed: () { saveState(); if (actualIndex > 0) { setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex - 1, item); }); _triggerCanvasUpdate(); setModalState((){}); } })
-                                  ]
-                                ),
-                                onTap: () { if(!e.isLocked && !e.isHidden) { setState(() => selectedId = e.id); _triggerCanvasUpdate(); setModalState((){}); } }
-                              )
-                            );
-                          }
-                        )
-                  )
-                ]
-              )
-            );
-          }
-        );
-      }
-    );
-  }
-
-  void showPagesPanel() {
-    showModalBottomSheet(
-      context: context,
-      barrierColor: Colors.transparent,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return _buildGlassContainer(
-              context,
-              height: 350,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Pages صفحات', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
-                    ]
-                  ),
-                  const Divider(color: Colors.black12),
-                  Expanded(
-                    child: ListView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: pages.length,
-                      itemBuilder: (context, index) {
-                        bool isCurrent = currentPageIndex == index;
-                        return Card(
-                          color: isCurrent ? Colors.white.withOpacity(0.9) : Colors.white.withOpacity(0.4),
-                          elevation: 0,
-                          margin: const EdgeInsets.only(bottom: 8),
-                          shape: RoundedRectangleBorder(
-                            side: BorderSide(color: isCurrent ? const Color(0xFF8B5CF6) : Colors.transparent), 
-                            borderRadius: BorderRadius.circular(10)
-                          ),
-                          child: ListTile(
-                            dense: true,
-                            leading: Icon(Icons.description, color: isCurrent ? const Color(0xFF8B5CF6) : Colors.black54),
-                            title: Text(pages[index].title, style: TextStyle(fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal, fontSize: 14)),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.copy, color: Colors.blue, size: 18), 
-                                  padding: EdgeInsets.zero, constraints: const BoxConstraints(),
-                                  onPressed: () { setState(() { pages.add(DesignPage(title: '${pages[index].title} Copy', elements: pages[index].elements.map((e) => e.clone()).toList(), pageColor: pages[index].pageColor, bgGradient: pages[index].bgGradient, bgImageBytes: pages[index].bgImageBytes, canvasRatio: pages[index].canvasRatio)); }); setModalState((){}); }
-                                ),
-                                if(pages.length > 1) ...[
-                                  const SizedBox(width: 15),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18), 
-                                    padding: EdgeInsets.zero, constraints: const BoxConstraints(),
-                                    onPressed: () { setState(() { pages.removeAt(index); if (currentPageIndex >= pages.length) currentPageIndex = pages.length - 1; }); _triggerCanvasUpdate(); setModalState((){}); }
                                   )
-                                ]
-                              ]
+                              ],
                             ),
-                            onTap: () { setState(() { currentPageIndex = index; selectedId = null; }); _triggerCanvasUpdate(); Navigator.pop(context); }
-                          )
-                        );
-                      }
-                    )
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                      onPressed: () { setState(() { pages.add(DesignPage(title: 'Page ${pages.length + 1}', elements: [], pageColor: Colors.white)); }); setModalState((){}); },
-                      child: const Text('Add New Page', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))
-                    )
-                  )
-                ]
-              )
-            );
-          }
-        );
-      }
-    );
-  }
-
-  void _showCurveModal(DesignElement sel) {
-    showModalBottomSheet(
-      context: context,
-      barrierColor: Colors.transparent,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return _buildGlassContainer(
-              context,
-              height: 200,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Curve Text گولائی', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
-                    ]
-                  ),
-                  Row(
-                    children: [
-                      const SizedBox(width: 55, child: Text('Bend:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      Expanded(child: Slider(value: sel.textCurveRadius.clamp(-150.0, 150.0), min: -150.0, max: 150.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.textCurveRadius = val); setModalState((){}); _triggerCanvasUpdate(); }))
-                    ]
-                  ),
-                  Row(
-                    children: [
-                      const SizedBox(width: 55, child: Text('Spacing:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      Expanded(child: Slider(value: sel.letterSpacing.clamp(-5.0, 20.0), min: -5.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.letterSpacing = val); setModalState((){}); _triggerCanvasUpdate(); }))
-                    ]
-                  ),
-                  ElevatedButton(
-                    onPressed: () { saveState(); setState(() => sel.textCurveRadius = 0.0); setModalState((){}); _triggerCanvasUpdate(); },
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.white.withOpacity(0.6), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                    child: const Text('Reset Curve', style: TextStyle(color: Colors.black87, fontSize: 12))
-                  )
-                ]
-              )
-            );
-          }
-        );
-      }
-    );
-  }
-
-  void _showBlendModeModal(DesignElement sel) {
-    showModalBottomSheet(
-      context: context,
-      barrierColor: Colors.transparent,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return _buildGlassContainer(
-              context,
-              height: 280,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Blend Modes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
-                    ]
-                  ),
-                  const Divider(color: Colors.black12),
-                  Expanded(
-                    child: ListView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: AppConstants.blendModes.length,
-                      itemBuilder: (context, index) {
-                        String bName = AppConstants.blendModes[index].toString().replaceAll('BlendMode.', '');
-                        bool isSel = sel.blendModeIndex == index;
-                        return ListTile(
-                          dense: true,
-                          title: Text(bName, style: TextStyle(fontWeight: isSel ? FontWeight.bold : FontWeight.normal, color: isSel ? const Color(0xFF8B5CF6) : Colors.black87)),
-                          trailing: isSel ? const Icon(Icons.check_circle, color: Color(0xFF8B5CF6), size: 18) : null,
-                          onTap: () { saveState(); setState(() => sel.blendModeIndex = index); _triggerCanvasUpdate(); Navigator.pop(context); }
-                        );
-                      }
+                          ),
+                        )
+                      )
                     )
                   )
                 ]
