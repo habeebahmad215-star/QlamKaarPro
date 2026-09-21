@@ -1041,7 +1041,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.font_download_rounded, 'Font', () => showFontPickerModal(sel)));
       bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.palette_rounded, 'Colour', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
       bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.gradient_rounded, 'Gradient', () => _showGradientPickerModal(sel)));
-      bottomRow.add(WorkspaceToolbars.buildToolBtn(context,Icons.format_bold_rounded, 'Bold', () { saveState(); setState(() => sel.isBold = !sel.isBold); triggerCanvasUpdate(); }));
+      bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.format_bold_rounded, 'Bold', () { saveState(); setState(() => sel.isBold = !sel.isBold); triggerCanvasUpdate(); }));
       bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.height_rounded, 'Spacing', () => showSpacingModal(sel)));
       bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.format_color_fill_rounded, 'Text BG', () => _showTextBgPickerModal(sel)));
       bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.auto_awesome_rounded, 'Effect', () => _showTextEffectsModal(sel), const Color(0xFF10B981)));
