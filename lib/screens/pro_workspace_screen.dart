@@ -506,36 +506,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  Widget _buildExportOption(IconData icon, String title, String subtitle, Color color, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8), 
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle), 
-              child: Icon(icon, color: Colors.white, size: 18)
-            ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start, 
-                children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)), 
-                  Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.black54))
-                ]
-              )
-            ),
-            Icon(Icons.arrow_forward_ios, color: color, size: 14)
-          ]
-        )
-      )
-    );
-  }
-
   void _showPoetryLibrary(TextEditingController textController) {
     showModalBottomSheet(
       context: context,
@@ -749,7 +719,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                         maxLines: null,
                         textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
                         textAlign: isRTL ? TextAlign.right : TextAlign.left,
-                        style: TextStyle(fontSize: isRTL ? 24 : 18),
+                        // 🔥 FIX 2: Text Size in Composer is now uniformly normal (18) for all fonts
+                        style: const TextStyle(fontSize: 18), 
                         decoration: InputDecoration(
                           border: InputBorder.none, 
                           hintText: isRTL ? 'یہاں لکھیں...' : 'Type here...'
@@ -812,7 +783,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           onPressed: () { 
                             if (controller.text.isNotEmpty) { 
                               saveState(); 
-                              double calcW = (controller.text.length * (isRTL ? 28.0 : 20.0) * 0.6) + 40;
+                              // Adjust initial width calculation
+                              double calcW = (controller.text.length * 15.0) + 40; 
                               if(calcW > MediaQuery.of(context).size.width - 60) calcW = MediaQuery.of(context).size.width - 60;
                               if(calcW < 80) calcW = 80;
                               if (existingElement != null) { 
@@ -2693,7 +2665,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
-  // 🔥 ADVANCED PRO MOVE TOOL (With Original X/Y Inputs & Snap Buttons Restored)
+  // 🔥 ADVANCED PRO MOVE TOOL (With Raw Listener & Canvas Boundary Clamp)
   void showMoveModal(DesignElement sel) {
     showDialog(
       context: context,
@@ -2705,16 +2677,31 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
             Timer? moveTimer;
             bool isSliderOpen = false;
 
+            // 🔥 FIX 1: Boundary Clamping added so element doesn't fly off
             void move(double dx, double dy) {
               saveState();
               setState(() {
-                sel.x += dx;
-                sel.y += dy;
+                double ew = _getElWidth(sel);
+                double eh = _getElHeight(sel);
+                
+                double newX = sel.x + dx;
+                double newY = sel.y + dy;
+                
+                // Clamp coordinates to keep at least 30 pixels visible within canvas
+                newX = newX.clamp(-ew + 30.0, currentCanvasW - 30.0);
+                newY = newY.clamp(-eh + 30.0, currentCanvasH - 30.0);
+                
+                double actualDx = newX - sel.x;
+                double actualDy = newY - sel.y;
+                
+                sel.x = newX;
+                sel.y = newY;
+
                 if (sel.groupId != null) {
                   for (var other in elements) {
                     if (other.id != sel.id && other.groupId == sel.groupId && !other.isLocked) {
-                      other.x += dx;
-                      other.y += dy;
+                      other.x += actualDx;
+                      other.y += actualDy;
                     }
                   }
                 }
@@ -2730,22 +2717,26 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
               _triggerCanvasUpdate();
             }
 
+            void stopContinuousMove() {
+              moveTimer?.cancel();
+              moveTimer = null;
+            }
+
             void startContinuousMove(double dx, double dy) {
+              stopContinuousMove(); // Prevent multiple timers
               move(dx, dy); 
-              moveTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+              moveTimer = Timer.periodic(const Duration(milliseconds: 60), (timer) {
                 move(dx, dy);
               });
             }
 
-            void stopContinuousMove() {
-              moveTimer?.cancel();
-            }
-
+            // 🔥 FIX 2: Replaced GestureDetector with Listener for 100% reliable release detection
             Widget buildGridBtn(IconData icon, double dx, double dy) {
-              return GestureDetector(
-                onTapDown: (_) { HapticFeedback.lightImpact(); startContinuousMove(dx, dy); },
-                onTapUp: (_) => stopContinuousMove(),
-                onTapCancel: () => stopContinuousMove(),
+              return Listener(
+                onPointerDown: (_) { HapticFeedback.lightImpact(); startContinuousMove(dx, dy); },
+                onPointerUp: (_) => stopContinuousMove(),
+                onPointerCancel: (_) => stopContinuousMove(),
+                behavior: HitTestBehavior.opaque,
                 child: Container(
                   decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade200, width: 0.5)),
                   child: Center(child: Icon(icon, size: 24, color: Colors.black54)),
@@ -2821,7 +2812,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           onSubmitted: (val) {
                                             if(double.tryParse(val) != null) {
                                               saveState();
-                                              setState(() => sel.x = double.parse(val));
+                                              setState(() {
+                                                sel.x = double.parse(val).clamp(-_getElWidth(sel) + 30.0, currentCanvasW - 30.0);
+                                              });
                                               setModalState((){});
                                               _triggerCanvasUpdate();
                                             }
@@ -2850,7 +2843,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                                           onSubmitted: (val) {
                                             if(double.tryParse(val) != null) {
                                               saveState();
-                                              setState(() => sel.y = double.parse(val));
+                                              setState(() {
+                                                sel.y = double.parse(val).clamp(-_getElHeight(sel) + 30.0, currentCanvasH - 30.0);
+                                              });
                                               setModalState((){});
                                               _triggerCanvasUpdate();
                                             }
