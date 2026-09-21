@@ -442,6 +442,8 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
   }
     // 🔥 ADVANCED PRO MOVE TOOL - Compact Horizontal UI (1 Tap = 1 Step)
   void showMoveModal(DesignElement sel) {
+    double stepSize = 5.0; // 🔥 FIX: Move speed variable bahar hai taaki reset na ho
+
     showModalBottomSheet(
       context: context,
       barrierColor: Colors.transparent, 
@@ -450,7 +452,6 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            double stepSize = 5.0; // Default Step Speed
             
             // Core Move Logic
             void move(double dx, double dy) {
