@@ -40,6 +40,17 @@ class WorkspaceController extends ChangeNotifier {
 
   final GlobalKey canvasKey = GlobalKey();
 
+  // 🔥 MISSING VARIABLES ADDED HERE
+  final List<Map<String, String>> availableFontsData = [
+    {'name': 'JameelNoori', 'title': 'جمیل نوری نستعلیق', 'desc': 'Classic Standard Urdu Font'},
+    {'name': 'AlviNastaleeq', 'title': 'علوی نستعلیق', 'desc': 'Beautiful Nasta\'liq Style'},
+    {'name': 'Mehr', 'title': 'مہر نستعلیق', 'desc': 'Modern & Elegant Font'},
+    {'name': 'BombayBlack', 'title': 'بمبئی بلیک', 'desc': 'Thick Header & Title Font'},
+    {'name': 'AlMajeed', 'title': 'المجید قرآنی فونٹ', 'desc': 'Classic Arabic/Quranic Font'},
+  ];
+
+  List<String> customFonts = [];
+
   // Constructor
   WorkspaceController({ProjectModel? project}) 
       : projectId = project?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
@@ -92,7 +103,6 @@ class WorkspaceController extends ChangeNotifier {
   }
 
   // --- Core Methods ---
-  
   void triggerUpdate() {
     notifyListeners();
   }
@@ -186,8 +196,6 @@ class WorkspaceController extends ChangeNotifier {
       }
     }
   }
-
-  // --- Element Manipulation Logic ---
 
   void resizeEdge(DragUpdateDetails d, String edge, DesignElement e) {
     double ldx = d.delta.dx;
@@ -320,7 +328,6 @@ class WorkspaceController extends ChangeNotifier {
     }
   }
 
-  // --- Export Logic ---
   Future<void> captureAndSave(BuildContext context, String format) async {
     selectedId = null; 
     isExporting = true; 
