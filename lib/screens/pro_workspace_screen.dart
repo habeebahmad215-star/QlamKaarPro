@@ -6,7 +6,7 @@ import 'dart:math';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:io';
-import 'dart:async'; // 🔥 Added for Advanced Move Tool Continuous Glide
+import 'dart:async'; 
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
@@ -506,6 +506,37 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     );
   }
 
+  // 🔥 RESTORED METHOD: _buildExportOption
+  Widget _buildExportOption(IconData icon, String title, String subtitle, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8), 
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle), 
+              child: Icon(icon, color: Colors.white, size: 18)
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start, 
+                children: [
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)), 
+                  Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.black54))
+                ]
+              )
+            ),
+            Icon(Icons.arrow_forward_ios, color: color, size: 14)
+          ]
+        )
+      )
+    );
+  }
+
   void _showPoetryLibrary(TextEditingController textController) {
     showModalBottomSheet(
       context: context,
@@ -719,7 +750,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                         maxLines: null,
                         textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
                         textAlign: isRTL ? TextAlign.right : TextAlign.left,
-                        // 🔥 FIX 2: Text Size in Composer is now uniformly normal (18) for all fonts
                         style: const TextStyle(fontSize: 18), 
                         decoration: InputDecoration(
                           border: InputBorder.none, 
@@ -783,7 +813,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                           onPressed: () { 
                             if (controller.text.isNotEmpty) { 
                               saveState(); 
-                              // Adjust initial width calculation
                               double calcW = (controller.text.length * 15.0) + 40; 
                               if(calcW > MediaQuery.of(context).size.width - 60) calcW = MediaQuery.of(context).size.width - 60;
                               if(calcW < 80) calcW = 80;
@@ -2677,7 +2706,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
             Timer? moveTimer;
             bool isSliderOpen = false;
 
-            // 🔥 FIX 1: Boundary Clamping added so element doesn't fly off
+            // 🔥 BOUNDARY CLAMPING: Prevents elements from flying off canvas
             void move(double dx, double dy) {
               saveState();
               setState(() {
@@ -2687,7 +2716,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                 double newX = sel.x + dx;
                 double newY = sel.y + dy;
                 
-                // Clamp coordinates to keep at least 30 pixels visible within canvas
                 newX = newX.clamp(-ew + 30.0, currentCanvasW - 30.0);
                 newY = newY.clamp(-eh + 30.0, currentCanvasH - 30.0);
                 
@@ -2723,14 +2751,14 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
             }
 
             void startContinuousMove(double dx, double dy) {
-              stopContinuousMove(); // Prevent multiple timers
+              stopContinuousMove(); 
               move(dx, dy); 
               moveTimer = Timer.periodic(const Duration(milliseconds: 60), (timer) {
                 move(dx, dy);
               });
             }
 
-            // 🔥 FIX 2: Replaced GestureDetector with Listener for 100% reliable release detection
+            // 🔥 LISTENER IMPLEMENTATION: For 100% reliable release detection
             Widget buildGridBtn(IconData icon, double dx, double dy) {
               return Listener(
                 onPointerDown: (_) { HapticFeedback.lightImpact(); startContinuousMove(dx, dy); },
