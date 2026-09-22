@@ -48,6 +48,7 @@ class WorkspaceToolbars {
 
   static Widget buildDefaultBottomBar(
     BuildContext context, 
+    VoidCallback showAddNewModal, // Parameter added back to match main file
     bool showGrid, 
     VoidCallback toggleGrid, 
     VoidCallback showResizeModal, 
@@ -62,6 +63,17 @@ class WorkspaceToolbars {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         children: [
+          InkWell(
+            onTap: showAddNewModal, 
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10), 
+              decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)), 
+              child: const Icon(Icons.add, color: Colors.white)
+            )
+          ),
+          const SizedBox(width: 8),
+          Container(width: 1, height: 40, color: Colors.grey.shade300),
+          const SizedBox(width: 4),
           Expanded(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal, 
