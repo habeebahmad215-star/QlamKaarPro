@@ -7,15 +7,8 @@ import 'workspace_modals.dart';
 class WorkspaceToolbars {
   static Widget buildTopToolBtn(BuildContext context, IconData icon, String label, VoidCallback? onTap, {Color color = const Color(0xFF1E293B)}) {
     return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center,
-          children: [ Icon(icon, size: 22, color: color), const SizedBox(height: 2), Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color)) ],
-        ),
-      ),
+      onTap: onTap, borderRadius: BorderRadius.circular(8),
+      child: Padding(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4), child: Column(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [ Icon(icon, size: 22, color: color), const SizedBox(height: 2), Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color)) ])),
     );
   }
 
@@ -23,47 +16,30 @@ class WorkspaceToolbars {
     Color c = color ?? Colors.black87;
     return InkWell(
       onTap: onTap, borderRadius: BorderRadius.circular(10),
-      child: Container(
-        width: 54, margin: const EdgeInsets.symmetric(horizontal: 3), padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2), 
-        decoration: BoxDecoration(color: c.withOpacity(0.06), borderRadius: BorderRadius.circular(10), border: Border.all(color: c.withOpacity(0.12), width: 0.8)), 
-        child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 20, color: c), const SizedBox(height: 4), Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 9, color: c, fontWeight: FontWeight.w800))])
-      )
+      child: Container(width: 54, margin: const EdgeInsets.symmetric(horizontal: 3), padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2), decoration: BoxDecoration(color: c.withOpacity(0.06), borderRadius: BorderRadius.circular(10), border: Border.all(color: c.withOpacity(0.12), width: 0.8)), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 20, color: c), const SizedBox(height: 4), Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 9, color: c, fontWeight: FontWeight.w800))]))
     ); 
   }
 
   static Widget buildDefaultBottomBar(BuildContext context, WorkspaceController ctrl, WorkspaceModals modals) {
     return Container(
       height: 140, alignment: Alignment.center, padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
-        children: [
-          InkWell(
-            onTap: () => modals.showAddNewModal(context), 
-            child: Container(padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10), decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.add, color: Colors.white))
-          ),
-          const SizedBox(width: 8), Container(width: 1, height: 40, color: Colors.grey.shade300), const SizedBox(width: 4),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal, physics: const BouncingScrollPhysics(),
-              child: Row(
-                children: [
-                  buildToolBtn(context, Icons.grid_on, 'Grid', () { ctrl.showGrid = !ctrl.showGrid; ctrl.triggerUpdate(); }), 
-                  buildToolBtn(context, Icons.aspect_ratio, 'Resize', () => modals.showResizeModal(context)), 
-                  buildToolBtn(context, Icons.image, 'BG Image', () => modals.setCanvasBackground(context)),
-                  buildToolBtn(context, Icons.format_color_fill, 'BG Color', () => modals.showCanvasBgColorModal(context)),
-                  buildToolBtn(context, Icons.gradient, 'BG Gradient', () => modals.showCanvasBgGradientModal(context)),
-                  buildToolBtn(context, Icons.layers_clear, 'Clear BG', () { ctrl.saveState(); ctrl.pageColor = Colors.white; ctrl.bgImageBytes = null; ctrl.bgGradient = null; ctrl.triggerUpdate(); }),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+      child: Row(children: [
+        InkWell(onTap: () => modals.showAddNewModal(context), child: Container(padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10), decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.add, color: Colors.white))),
+        const SizedBox(width: 8), Container(width: 1, height: 40, color: Colors.grey.shade300), const SizedBox(width: 4),
+        Expanded(child: SingleChildScrollView(scrollDirection: Axis.horizontal, physics: const BouncingScrollPhysics(), child: Row(children: [
+          buildToolBtn(context, Icons.grid_on, 'Grid', () { ctrl.showGrid = !ctrl.showGrid; ctrl.triggerUpdate(); }), 
+          buildToolBtn(context, Icons.aspect_ratio, 'Resize', () => modals.showResizeModal(context)), 
+          buildToolBtn(context, Icons.image, 'BG Image', () => modals.setCanvasBackground(context)),
+          buildToolBtn(context, Icons.format_color_fill, 'BG Color', () => modals.showCanvasBgColorModal(context)),
+          buildToolBtn(context, Icons.gradient, 'BG Gradient', () => modals.showCanvasBgGradientModal(context)),
+          buildToolBtn(context, Icons.layers_clear, 'Clear BG', () { ctrl.saveState(); ctrl.pageColor = Colors.white; ctrl.bgImageBytes = null; ctrl.bgGradient = null; ctrl.triggerUpdate(); }),
+        ]))),
+      ]),
     );
   }
 
   static Widget buildSelectedToolBar(BuildContext context, WorkspaceController ctrl, WorkspaceModals modals, DesignElement sel) {
-    List<Widget> topRow = [];
-    List<Widget> bottomRow = [];
+    List<Widget> topRow = []; List<Widget> bottomRow = [];
 
     if (sel.isText) {
       topRow.add(buildToolBtn(context, Icons.delete_outline_rounded, 'Delete', ctrl.deleteSelected, Colors.red));
@@ -90,8 +66,7 @@ class WorkspaceToolbars {
       bottomRow.add(buildToolBtn(context, Icons.auto_awesome_rounded, 'Effect', () => modals.showTextEffectsModal(context, sel), const Color(0xFF10B981)));
       bottomRow.add(buildToolBtn(context, Icons.format_align_center_rounded, 'Align', () => modals.toggleAlignment(context, sel)));
       bottomRow.add(buildToolBtn(context, Icons.more_horiz_rounded, 'More', () => modals.showMoreOptionsModal(context, sel), Colors.grey.shade800));
-    } 
-    else if (sel.isBorder) {
+    } else if (sel.isBorder) {
       topRow.add(buildToolBtn(context, Icons.close_rounded, 'Deselect', () { ctrl.selectedId = null; ctrl.triggerUpdate(); }, Colors.redAccent));
       topRow.add(buildToolBtn(context, Icons.fullscreen_rounded, 'Fit Page', () => modals.fitBorderToPage(context, sel), const Color(0xFF10B981)));
       topRow.add(buildToolBtn(context, Icons.straighten_rounded, 'Size', () => modals.showElementSizeModal(context, sel), const Color(0xFF10B981)));
@@ -105,13 +80,11 @@ class WorkspaceToolbars {
       bottomRow.add(buildToolBtn(context, Icons.open_with_rounded, 'Move', () => modals.showMoveModal(context, sel)));
       bottomRow.add(buildToolBtn(context, Icons.arrow_upward_rounded, 'Bring Fwd', () => ctrl.bringForward()));
       bottomRow.add(buildToolBtn(context, Icons.arrow_downward_rounded, 'Send Bwd', () => ctrl.sendBackward()));
-    } 
-    else {
+    } else {
       topRow.add(buildToolBtn(context, Icons.close_rounded, 'Deselect', () { ctrl.selectedId = null; ctrl.triggerUpdate(); }, Colors.redAccent));
       if (sel.isTable) topRow.add(buildToolBtn(context, Icons.table_rows_rounded, 'Edit Table', () => modals.showTableEditorModal(context, sel), const Color(0xFF10B981)));
       if (sel.isTable) topRow.add(buildToolBtn(context, Icons.font_download_rounded, 'Font', () => modals.showFontPickerModal(context, sel, ctrl.availableFontsData, ctrl.customFonts)));
       if (sel.isTable) topRow.add(buildToolBtn(context, Icons.text_fields_rounded, 'Size', () => modals.showSizeSliderModal(context, sel)));
-      
       if (!sel.isTable) topRow.add(buildToolBtn(context, Icons.straighten_rounded, 'Size', () => modals.showElementSizeModal(context, sel), const Color(0xFF10B981)));
       
       topRow.add(buildToolBtn(context, Icons.palette_rounded, 'Colour', () => modals.showColorPickerModal(context, sel), const Color(0xFF8B5CF6)));
