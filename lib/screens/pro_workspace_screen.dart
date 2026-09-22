@@ -32,9 +32,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     ctrl = WorkspaceController(project: widget.project);
     modals = WorkspaceModals(ctrl);
 
-    ctrl.addListener(() {
-      if (mounted) setState(() {});
-    });
+    ctrl.addListener(() { if (mounted) setState(() {}); });
 
     _autoSaveTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       ctrl.saveProjectLocally(context, isAutoSave: true);
@@ -51,33 +49,16 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
   }
 
   @override
-  void dispose() {
-    _autoSaveTimer?.cancel();
-    _transformController.dispose();
-    ctrl.dispose();
-    super.dispose();
-  }
+  void dispose() { _autoSaveTimer?.cancel(); _transformController.dispose(); ctrl.dispose(); super.dispose(); }
 
   void _addStickerLocally(String stickerStr) {
     ctrl.saveState();
     var newEl = DesignElement(id: Random().nextInt(10000).toString(), x: 80, y: 150, content: stickerStr, isText: true, width: 150, height: 150, fontSize: 80);
-    ctrl.elements.add(newEl);
-    ctrl.selectedId = newEl.id;
-    ctrl.activeToolbarMenu = 'main';
-    ctrl.triggerUpdate();
+    ctrl.elements.add(newEl); ctrl.selectedId = newEl.id; ctrl.activeToolbarMenu = 'main'; ctrl.triggerUpdate();
   }
 
   void _showExportMenu() {
-    showModalBottomSheet(
-      context: context, barrierColor: Colors.transparent, backgroundColor: Colors.transparent, isScrollControlled: true,
-      builder: (ctx) => modals.buildGlassContainer(ctx, height: 280, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Export Design', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(ctx))]),
-        const Divider(color: Colors.black12), const SizedBox(height: 5),
-        _buildExportOpt(Icons.image, 'Save as JPG', 'Solid Background', Colors.blue, () { Navigator.pop(ctx); ctrl.captureAndSave(context, 'JPG'); }), const SizedBox(height: 8),
-        _buildExportOpt(Icons.layers_clear, 'Save as PNG', 'Transparent', Colors.purple, () { Navigator.pop(ctx); ctrl.captureAndSave(context, 'PNG'); }), const SizedBox(height: 8),
-        _buildExportOpt(Icons.picture_as_pdf, 'Save as Print PDF', 'High Quality', Colors.red, () { Navigator.pop(ctx); ctrl.captureAndSave(context, 'PDF'); })
-      ]))
-    );
+    showModalBottomSheet(context: context, barrierColor: Colors.transparent, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (ctx) => modals.buildGlassContainer(ctx, height: 280, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Export Design', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(icon: const Icon(Icons.close), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(ctx))]), const Divider(color: Colors.black12), const SizedBox(height: 5), _buildExportOpt(Icons.image, 'Save as JPG', 'Solid Background', Colors.blue, () { Navigator.pop(ctx); ctrl.captureAndSave(context, 'JPG'); }), const SizedBox(height: 8), _buildExportOpt(Icons.layers_clear, 'Save as PNG', 'Transparent', Colors.purple, () { Navigator.pop(ctx); ctrl.captureAndSave(context, 'PNG'); }), const SizedBox(height: 8), _buildExportOpt(Icons.picture_as_pdf, 'Save as Print PDF', 'High Quality', Colors.red, () { Navigator.pop(ctx); ctrl.captureAndSave(context, 'PDF'); })])));
   }
 
   Widget _buildExportOpt(IconData icon, String title, String sub, Color col, VoidCallback onTap) {
@@ -93,9 +74,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     List<Shadow> currentShadows = extraShadows != null ? List.from(extraShadows) : [];
     if (extraShadows == null && e.hasShadow) currentShadows.add(Shadow(color: e.shadowColor, blurRadius: e.shadowBlur, offset: Offset(e.shadowOffsetX, e.shadowOffsetY)));
     Color? finalTextColor = baseColor;
-    if (e.isGlass && e.textGradient == null && e.textTextureBytes == null && foregroundPaint == null) {
-       finalTextColor = baseColor?.withOpacity(0.35); currentShadows.add(const Shadow(color: Colors.white, offset: Offset(0, 0), blurRadius: 15)); currentShadows.add(const Shadow(color: Colors.black26, offset: Offset(2, 2), blurRadius: 5));
-    }
+    if (e.isGlass && e.textGradient == null && e.textTextureBytes == null && foregroundPaint == null) { finalTextColor = baseColor?.withOpacity(0.35); currentShadows.add(const Shadow(color: Colors.white, offset: Offset(0, 0), blurRadius: 15)); currentShadows.add(const Shadow(color: Colors.black26, offset: Offset(2, 2), blurRadius: 5)); }
     if (e.isBevel) { currentShadows.add(const Shadow(color: Colors.white70, offset: Offset(-2, -2), blurRadius: 2)); currentShadows.add(const Shadow(color: Colors.black54, offset: Offset(2, 2), blurRadius: 2)); }
     if (e.isInnerShadow) currentShadows.add(const Shadow(color: Colors.black87, offset: Offset(1.5, 1.5), blurRadius: 2));
 
@@ -107,16 +86,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
       List<String> words = e.content.split(' '); List<TextSpan> spans = [];
       for (int i = 0; i < words.length; i++) {
         TextStyle wSt = st;
-        if (ctrl.textMultiStyles[e.id]!.containsKey(i)) {
-           var ms = ctrl.textMultiStyles[e.id]![i]!;
-           wSt = st.copyWith(color: foregroundPaint == null ? (ms['color'] != null ? (ms['color'] as Color) : st.color) : null, fontSize: ms['fontSize'] != null ? (ms['fontSize'] as double) : st.fontSize, fontFamily: ms['fontFamily'] != null ? (ms['fontFamily'] as String) : st.fontFamily, foreground: foregroundPaint);
-        }
+        if (ctrl.textMultiStyles[e.id]!.containsKey(i)) { var ms = ctrl.textMultiStyles[e.id]![i]!; wSt = st.copyWith(color: foregroundPaint == null ? (ms['color'] != null ? (ms['color'] as Color) : st.color) : null, fontSize: ms['fontSize'] != null ? (ms['fontSize'] as double) : st.fontSize, fontFamily: ms['fontFamily'] != null ? (ms['fontFamily'] as String) : st.fontFamily, foreground: foregroundPaint); }
         spans.add(TextSpan(text: words[i] + (i < words.length - 1 ? ' ' : ''), style: wSt));
       }
       return SizedBox(width: currentWidth, child: RichText(textAlign: e.textAlign, textDirection: modals.isRTLText(e.content) ? TextDirection.rtl : TextDirection.ltr, text: TextSpan(children: spans)));
-    } else {
-      return SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: st));
-    }
+    } else { return SizedBox(width: currentWidth, child: Text(e.content, textAlign: e.textAlign, style: st)); }
   }
 
   @override
@@ -127,18 +101,14 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFE5E7EB),
       appBar: AppBar(
-        backgroundColor: Colors.white, elevation: 0, shape: Border(bottom: BorderSide(color: Colors.grey.shade200, width: 1)), titleSpacing: 0, leadingWidth: 40,
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E293B), size: 20), onPressed: () => Navigator.pop(context)),
+        backgroundColor: Colors.white, elevation: 0, shape: Border(bottom: BorderSide(color: Colors.grey.shade200, width: 1)), titleSpacing: 0, leadingWidth: 40, leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E293B), size: 20), onPressed: () => Navigator.pop(context)),
         title: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
           WorkspaceToolbars.buildTopToolBtn(context, Icons.undo_rounded, 'Undo', ctrl.undoAction, color: const Color(0xFF64748B)),
           WorkspaceToolbars.buildTopToolBtn(context, Icons.redo_rounded, 'Redo', ctrl.redoAction, color: const Color(0xFF64748B)),
           WorkspaceToolbars.buildTopToolBtn(context, Icons.layers_rounded, 'Layers', () => modals.showLayersPanel(context), color: const Color(0xFF1E293B)),
           WorkspaceToolbars.buildTopToolBtn(context, Icons.auto_stories_rounded, 'Pages', () => modals.showPagesPanel(context), color: const Color(0xFF1E293B)),
         ]),
-        actions: [
-          Center(child: InkWell(onTap: _showExportMenu, borderRadius: BorderRadius.circular(20), child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)]), borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: const Color(0xFF8B5CF6).withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))]), child: Row(children: const [Icon(Icons.ios_share_rounded, color: Colors.white, size: 14), SizedBox(width: 4), Text('Export', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13))])))),
-          const SizedBox(width: 12),
-        ],
+        actions: [Center(child: InkWell(onTap: _showExportMenu, borderRadius: BorderRadius.circular(20), child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)]), borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: const Color(0xFF8B5CF6).withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))]), child: Row(children: const [Icon(Icons.ios_share_rounded, color: Colors.white, size: 14), SizedBox(width: 4), Text('Export', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13))])))), const SizedBox(width: 12)],
       ),
       body: Column(
         children: [
@@ -162,11 +132,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> {
                         double newW = constraints.maxWidth - 32; double newH = constraints.maxHeight - 32;
                         if (ctrl.needsRescale && ctrl.currentCanvasW > 50 && ctrl.currentCanvasH > 50) {
                           double scaleX = newW / ctrl.currentCanvasW; double scaleY = newH / ctrl.currentCanvasH; double scaleMin = min(scaleX, scaleY);
-                          for (var e in ctrl.elements) {
-                            e.x *= scaleX; e.y *= scaleY; e.width *= scaleX; e.height *= scaleY;
-                            if (e.isText) { e.fontSize *= scaleMin; e.textCurveRadius *= scaleMin; e.shadowOffsetX *= scaleX; e.shadowOffsetY *= scaleY; }
-                            e.strokeWidth *= scaleMin; e.cornerRadius *= scaleMin;
-                          }
+                          for (var e in ctrl.elements) { e.x *= scaleX; e.y *= scaleY; e.width *= scaleX; e.height *= scaleY; if (e.isText) { e.fontSize *= scaleMin; e.textCurveRadius *= scaleMin; e.shadowOffsetX *= scaleX; e.shadowOffsetY *= scaleY; } e.strokeWidth *= scaleMin; e.cornerRadius *= scaleMin; }
                           ctrl.needsRescale = false;
                         }
                         ctrl.currentCanvasW = newW; ctrl.currentCanvasH = newH;
