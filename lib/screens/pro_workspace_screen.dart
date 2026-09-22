@@ -1184,8 +1184,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       }
     );
   }
-  
-  void _showResizeModal() {
+    void _showResizeModal() {
     showModalBottomSheet(
       context: context,
       barrierColor: Colors.transparent,
@@ -3342,3 +3341,5 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     );
   }
 }
+
+
