@@ -31,15 +31,15 @@ class _AdvancedExportModalState extends State<AdvancedExportModal> {
     _nameController = TextEditingController(text: 'Qalamkaar_Design');
     _currentWidth = widget.currentCanvasW > 0 ? widget.currentCanvasW : 1000;
     _currentHeight = widget.currentCanvasH > 0 ? widget.currentCanvasH : 1000;
-    _applyPreset('Social'); // Default Quality
+    _applyPreset('Print'); // PDF ke liye by default High Quality (Print) set rakha hai
   }
 
-  // Preset Buttons Logic (Low, Social, Print)
+  // Preset Buttons Logic
   void _applyPreset(String preset) {
     double targetW = widget.currentCanvasW;
     if (preset == 'Low') targetW = 500;
     else if (preset == 'Social') targetW = 1080;
-    else if (preset == 'Print') targetW = 3000;
+    else if (preset == 'Print') targetW = 3000; // InPage jaisi sharp quality ke liye
 
     if (targetW > _maxWidth) targetW = _maxWidth;
 
@@ -50,7 +50,7 @@ class _AdvancedExportModalState extends State<AdvancedExportModal> {
     });
   }
 
-  // Slider Logic (Maintain Aspect Ratio)
+  // Slider Logic
   void _onSliderChanged(double val) {
     setState(() {
       _currentWidth = val;
@@ -112,7 +112,6 @@ class _AdvancedExportModalState extends State<AdvancedExportModal> {
 
   @override
   Widget build(BuildContext context) {
-    // MAGIC FORMULA: Slider width divided by original canvas width
     double currentPixelRatio = _currentWidth / widget.currentCanvasW;
 
     return Container(
@@ -123,7 +122,6 @@ class _AdvancedExportModalState extends State<AdvancedExportModal> {
       ),
       child: Column(
         children: [
-          // Header
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
@@ -141,7 +139,6 @@ class _AdvancedExportModalState extends State<AdvancedExportModal> {
               padding: const EdgeInsets.all(16.0),
               physics: const BouncingScrollPhysics(),
               children: [
-                // File Name Section
                 const Text('FILE NAME', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54)),
                 const SizedBox(height: 8),
                 TextField(
@@ -154,17 +151,15 @@ class _AdvancedExportModalState extends State<AdvancedExportModal> {
                 ),
                 const SizedBox(height: 20),
 
-                // Format Section
                 const Text('FILE TYPE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54)),
                 const SizedBox(height: 8),
                 _buildFormatOption('JPG', 'Best for sharing', 'JPG', Icons.image),
                 _buildFormatOption('PNG', 'Best for complex images', 'PNG', Icons.layers_clear),
-                _buildFormatOption('Raster PDF', 'Standard Image PDF', 'PDF', Icons.picture_as_pdf),
-                _buildFormatOption('Vector PDF (Premium)', 'True Vector - No Blur', 'VECTOR_PDF', Icons.picture_as_pdf_outlined),
+                // CRASH WALA VECTOR BUTTON HATA DIYA, AB SIRF ULTRA-HD PDF HAI
+                _buildFormatOption('Ultra HD Print PDF', 'InPage jaisi No-Blur Quality', 'PDF', Icons.picture_as_pdf),
                 
                 const SizedBox(height: 20),
 
-                // Quality Presets
                 const Text('QUALITY', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54)),
                 const SizedBox(height: 8),
                 Row(
@@ -180,7 +175,6 @@ class _AdvancedExportModalState extends State<AdvancedExportModal> {
 
                 const SizedBox(height: 20),
 
-                // Advanced Size Slider
                 const Text('CUSTOM SIZE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54)),
                 const SizedBox(height: 10),
                 Row(
@@ -216,7 +210,6 @@ class _AdvancedExportModalState extends State<AdvancedExportModal> {
             ),
           ),
 
-          // Action Buttons
           Container(
             padding: const EdgeInsets.all(16),
             decoration: const BoxDecoration(
