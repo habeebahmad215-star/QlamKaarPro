@@ -49,12 +49,12 @@ class WorkspaceToolbars {
   static Widget buildDefaultBottomBar(
     BuildContext context, 
     VoidCallback showAddNewModal, 
-    bool showGrid, 
-    VoidCallback toggleGrid, 
+    VoidCallback toggleGrid, // Fix: Changed from bool to VoidCallback
     VoidCallback showResizeModal, 
     VoidCallback setCanvasBackground, 
     VoidCallback showCanvasBgColorModal, 
-    VoidCallback showCanvasBgGradientModal
+    VoidCallback showCanvasBgGradientModal, 
+    VoidCallback clearBg
   ) {
     return Container(
       height: 140, 
@@ -84,6 +84,7 @@ class WorkspaceToolbars {
                   buildToolBtn(context, Icons.image, 'BG Image', setCanvasBackground),
                   buildToolBtn(context, Icons.format_color_fill, 'BG Color', showCanvasBgColorModal),
                   buildToolBtn(context, Icons.gradient, 'BG Gradient', showCanvasBgGradientModal),
+                  buildToolBtn(context, Icons.layers_clear, 'Clear BG', clearBg),
                 ],
               ),
             ),
