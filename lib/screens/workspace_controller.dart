@@ -14,6 +14,7 @@ import 'package:path_provider/path_provider.dart';
 import '../models/design_models.dart';
 
 class WorkspaceController extends ChangeNotifier {
+  // --- Core State Variables ---
   String projectId;
   String projectName;
   List<DesignPage> pages = [];
@@ -39,101 +40,69 @@ class WorkspaceController extends ChangeNotifier {
 
   final GlobalKey canvasKey = GlobalKey();
 
-  final List<Map<String, String>> availableFontsData = [
-    {
-      'name': 'JameelNoori', 
-      'title': 'جمیل نوری نستعلیق', 
-      'desc': 'Classic Standard Urdu Font'
-    },
-    {
-      'name': 'AlviNastaleeq', 
-      'title': 'علوی نستعلیق', 
-      'desc': 'Beautiful Nasta\'liq Style'
-    },
-    {
-      'name': 'Mehr', 
-      'title': 'مہر نستعلیق', 
-      'desc': 'Modern & Elegant Font'
-    },
-    {
-      'name': 'BombayBlack', 
-      'title': 'بمبئی بلیک', 
-      'desc': 'Thick Header & Title Font'
-    },
-    {
-      'name': 'AlMajeed', 
-      'title': 'المجید قرآنی فونٹ', 
-      'desc': 'Classic Arabic/Quranic Font'
-    },
-  ];
-
-  List<String> customFonts = [];
-
+  // Constructor
   WorkspaceController({ProjectModel? project}) 
       : projectId = project?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
         projectName = project?.name ?? 'Design_${DateTime.now().millisecondsSinceEpoch}' {
     if (project != null) {
       pages = project.pages;
     } else {
-      pages = [
-        DesignPage(
-          title: 'Page 1', 
-          elements: [], 
-          pageColor: Colors.white
-        )
-      ];
+      pages = [DesignPage(title: 'Page 1', elements: [], pageColor: Colors.white)];
     }
   }
 
+  // --- Getters & Setters ---
   List<DesignElement> get elements => pages[currentPageIndex].elements;
-  set elements(List<DesignElement> val) { 
-    pages[currentPageIndex].elements = val; 
-    notifyListeners(); 
+  set elements(List<DesignElement> val) {
+    pages[currentPageIndex].elements = val;
+    notifyListeners();
   }
 
   Color get pageColor => pages[currentPageIndex].pageColor;
-  set pageColor(Color val) { 
-    pages[currentPageIndex].pageColor = val; 
-    notifyListeners(); 
+  set pageColor(Color val) {
+    pages[currentPageIndex].pageColor = val;
+    notifyListeners();
   }
 
   List<Color>? get bgGradient => pages[currentPageIndex].bgGradient;
-  set bgGradient(List<Color>? val) { 
-    pages[currentPageIndex].bgGradient = val; 
-    notifyListeners(); 
+  set bgGradient(List<Color>? val) {
+    pages[currentPageIndex].bgGradient = val;
+    notifyListeners();
   }
 
   double get canvasRatio => pages[currentPageIndex].canvasRatio;
-  set canvasRatio(double val) { 
-    pages[currentPageIndex].canvasRatio = val; 
-    notifyListeners(); 
+  set canvasRatio(double val) {
+    pages[currentPageIndex].canvasRatio = val;
+    notifyListeners();
   }
 
   Uint8List? get bgImageBytes => pages[currentPageIndex].bgImageBytes;
-  set bgImageBytes(Uint8List? val) { 
-    pages[currentPageIndex].bgImageBytes = val; 
-    notifyListeners(); 
+  set bgImageBytes(Uint8List? val) {
+    pages[currentPageIndex].bgImageBytes = val;
+    notifyListeners();
   }
 
   DesignElement? get selectedElement {
     if (selectedId == null) return null;
-    try { 
-      return elements.firstWhere((e) => e.id == selectedId); 
-    } catch (e) { 
-      return null; 
+    try {
+      return elements.firstWhere((e) => e.id == selectedId);
+    } catch (e) {
+      return null;
     }
   }
 
-  void triggerUpdate() { 
-    notifyListeners(); 
+  // --- Core Methods ---
+  
+  void triggerUpdate() {
+    notifyListeners();
   }
 
   Map<String, Map<int, Map<String, dynamic>>> deepCopyMultiStyles(Map<String, Map<int, Map<String, dynamic>>> source) {
     Map<String, Map<int, Map<String, dynamic>>> copy = {};
     source.forEach((key, val) {
       copy[key] = {};
-      val.forEach((idx, styleMap) { 
-        copy[key]![idx] = Map<String, dynamic>.from(styleMap); 
+      val.forEach((idx, styleMap) {
+        copy[key]![idx] = Map<String, dynamic>.from(styleMap);
       });
     });
     return copy;
@@ -142,11 +111,11 @@ class WorkspaceController extends ChangeNotifier {
   void saveState() {
     undoStack.add(elements.map((e) => e.clone()).toList());
     undoMultiStylesStack.add(deepCopyMultiStyles(textMultiStyles));
-    redoStack.clear(); 
+    redoStack.clear();
     redoMultiStylesStack.clear();
-    if (undoStack.length > 10) { 
+    if (undoStack.length > 10) {
       undoStack.removeAt(0); 
-      undoMultiStylesStack.removeAt(0); 
+      undoMultiStylesStack.removeAt(0);
     }
   }
 
@@ -158,7 +127,7 @@ class WorkspaceController extends ChangeNotifier {
       textMultiStyles = undoMultiStylesStack.removeLast();
       selectedId = null; 
       activeToolbarMenu = 'main'; 
-      HapticFeedback.lightImpact(); 
+      HapticFeedback.lightImpact();
       notifyListeners();
     }
   }
@@ -171,7 +140,7 @@ class WorkspaceController extends ChangeNotifier {
       textMultiStyles = redoMultiStylesStack.removeLast();
       selectedId = null; 
       activeToolbarMenu = 'main'; 
-      HapticFeedback.lightImpact(); 
+      HapticFeedback.lightImpact();
       notifyListeners();
     }
   }
@@ -189,15 +158,19 @@ class WorkspaceController extends ChangeNotifier {
         String contents = await file.readAsString();
         jsonList = jsonDecode(contents);
       }
+      
       ProjectModel p = ProjectModel(
         id: projectId, 
         name: projectName, 
         pages: pages, 
         lastModified: DateTime.now().millisecondsSinceEpoch
       );
+      
       jsonList.removeWhere((item) => item['id'] == projectId);
       jsonList.add(p.toJson());
+      
       await file.writeAsString(jsonEncode(jsonList));
+      
       if (!isAutoSave && context.mounted) {
         HapticFeedback.lightImpact();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -206,104 +179,104 @@ class WorkspaceController extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint("Save error: $e");
+      if (!isAutoSave && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error saving project!'))
+        );
+      }
     }
   }
 
+  // --- Element Manipulation Logic ---
+
   void resizeEdge(DragUpdateDetails d, String edge, DesignElement e) {
-    double ldx = d.delta.dx; 
+    double ldx = d.delta.dx;
     double ldy = d.delta.dy;
     
     if (e.angle != 0) {
-      double cosA = cos(-e.angle); 
+      double cosA = cos(-e.angle);
       double sinA = sin(-e.angle);
-      ldx = d.delta.dx * cosA - d.delta.dy * sinA; 
+      ldx = d.delta.dx * cosA - d.delta.dy * sinA;
       ldy = d.delta.dx * sinA + d.delta.dy * cosA;
     }
     
-    if (edge == 'R') { 
-      e.width = max(50.0, e.width + ldx); 
-    } else if (edge == 'L') { 
-      double oldW = e.width; 
-      e.width = max(50.0, e.width - ldx); 
-      e.x += (oldW - e.width) * cos(e.angle); 
-      e.y += (oldW - e.width) * sin(e.angle); 
-    } else if (edge == 'B') { 
-      if (!e.isText) e.height = max(30.0, e.height + ldy); 
-    } else if (edge == 'T') { 
-      if (!e.isText) { 
-        double oldH = e.height; 
-        e.height = max(30.0, e.height - ldy); 
-        e.x -= (oldH - e.height) * sin(e.angle); 
-        e.y += (oldH - e.height) * cos(e.angle); 
-      } 
+    if (edge == 'R') {
+      e.width = max(50.0, e.width + ldx);
+    } else if (edge == 'L') {
+      double oldW = e.width;
+      e.width = max(50.0, e.width - ldx);
+      e.x += (oldW - e.width) * cos(e.angle);
+      e.y += (oldW - e.width) * sin(e.angle);
+    } else if (edge == 'B') {
+      if (!e.isText) e.height = max(30.0, e.height + ldy);
+    } else if (edge == 'T') {
+      if (!e.isText) {
+        double oldH = e.height;
+        e.height = max(30.0, e.height - ldy);
+        e.x -= (oldH - e.height) * sin(e.angle);
+        e.y += (oldH - e.height) * cos(e.angle);
+      }
     }
     notifyListeners();
   }
 
   void scaleCorner(DragUpdateDetails d, DesignElement e, String corner) {
-    double ldx = d.delta.dx; 
+    double ldx = d.delta.dx;
     double ldy = d.delta.dy;
     
     if (e.angle != 0) {
-      double cosA = cos(-e.angle); 
+      double cosA = cos(-e.angle);
       double sinA = sin(-e.angle);
-      ldx = d.delta.dx * cosA - d.delta.dy * sinA; 
+      ldx = d.delta.dx * cosA - d.delta.dy * sinA;
       ldy = d.delta.dx * sinA + d.delta.dy * cosA;
     }
-    
+
     double delta = 0;
-    if (corner == 'BR') {
-      delta = ldx;
-    } else if (corner == 'BL') {
-      delta = -ldx;
-    } else if (corner == 'TR') {
-      delta = ldx;
-    } else if (corner == 'TL') {
-      delta = -ldx;
+    if (corner == 'BR') delta = ldx;
+    else if (corner == 'BL') delta = -ldx;
+    else if (corner == 'TR') delta = ldx;
+    else if (corner == 'TL') delta = -ldx;
+
+    if (delta == 0 && ldy != 0) {
+      if (corner == 'BR' || corner == 'BL') delta = ldy;
+      else delta = -ldy;
     }
-    
-    if (delta == 0 && ldy != 0) { 
-      if (corner == 'BR' || corner == 'BL') {
-        delta = ldy; 
-      } else {
-        delta = -ldy; 
-      }
-    }
-    
+
     if (e.width + delta > 40) {
-      double oldWidth = e.width; 
+      double oldWidth = e.width;
       e.width += delta;
       
-      if (e.isText) { 
-        double scaleFactor = e.width / oldWidth; 
-        e.fontSize = max(10.0, e.fontSize * scaleFactor); 
-      } else { 
-        double ratio = oldWidth / (e.height > 0 ? e.height : 1); 
-        e.height += delta / ratio; 
+      if (e.isText) {
+        double scaleFactor = e.width / oldWidth;
+        e.fontSize = max(10.0, e.fontSize * scaleFactor);
+      } else {
+        double ratio = oldWidth / (e.height > 0 ? e.height : 1);
+        e.height += delta / ratio;
       }
       
       double wDiff = e.width - oldWidth;
-      if (corner == 'TL' || corner == 'BL') { 
-        e.x -= wDiff * cos(e.angle); 
-        e.y -= wDiff * sin(e.angle); 
+      
+      if (corner == 'TL' || corner == 'BL') {
+        e.x -= wDiff * cos(e.angle);
+        e.y -= wDiff * sin(e.angle);
       }
     }
     notifyListeners();
   }
 
-  void rotateElement(DragUpdateDetails d, DesignElement e) { 
-    e.angle += (d.delta.dx + d.delta.dy) * 0.015; 
-    notifyListeners(); 
+  void rotateElement(DragUpdateDetails d, DesignElement e) {
+    e.angle += (d.delta.dx + d.delta.dy) * 0.015;
+    notifyListeners();
   }
 
   void deleteSelected() {
-    if (selectedId != null) { 
-      saveState(); 
+    if (selectedId != null) {
+      saveState();
       elements.removeWhere((e) => e.id == selectedId); 
-      textMultiStyles.remove(selectedId); 
+      textMultiStyles.remove(selectedId);
       selectedId = null; 
       activeToolbarMenu = 'main'; 
-      notifyListeners(); 
+      notifyListeners();
     }
   }
 
@@ -311,14 +284,11 @@ class WorkspaceController extends ChangeNotifier {
     if (selectedId != null) {
       saveState();
       DesignElement sel = elements.firstWhere((e) => e.id == selectedId);
-      var newEl = sel.clone()
-        ..id = Random().nextInt(10000).toString()
-        ..x += 20
-        ..y += 20; 
+      var newEl = sel.clone()..id = Random().nextInt(10000).toString()..x += 20..y += 20; 
       if (textMultiStyles.containsKey(sel.id)) {
         textMultiStyles[newEl.id] = {};
-        textMultiStyles[sel.id]!.forEach((idx, styleMap) { 
-          textMultiStyles[newEl.id]![idx] = Map<String, dynamic>.from(styleMap); 
+        textMultiStyles[sel.id]!.forEach((idx, styleMap) {
+          textMultiStyles[newEl.id]![idx] = Map<String, dynamic>.from(styleMap);
         });
       }
       elements.add(newEl); 
@@ -330,26 +300,27 @@ class WorkspaceController extends ChangeNotifier {
 
   void bringForward() {
     if (selectedId == null) return;
-    saveState(); 
+    saveState();
     int idx = elements.indexWhere((e) => e.id == selectedId);
-    if (idx < elements.length - 1) { 
+    if (idx < elements.length - 1) {
       var item = elements.removeAt(idx); 
       elements.insert(idx + 1, item); 
-      notifyListeners(); 
+      notifyListeners();
     }
   }
 
   void sendBackward() {
     if (selectedId == null) return;
-    saveState(); 
+    saveState();
     int idx = elements.indexWhere((e) => e.id == selectedId);
-    if (idx > 0) { 
+    if (idx > 0) {
       var item = elements.removeAt(idx); 
       elements.insert(idx - 1, item); 
-      notifyListeners(); 
+      notifyListeners();
     }
   }
 
+  // --- Export Logic ---
   Future<void> captureAndSave(BuildContext context, String format) async {
     selectedId = null; 
     isExporting = true; 
@@ -364,7 +335,10 @@ class WorkspaceController extends ChangeNotifier {
       ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
       ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       
-      if (byteData == null) throw Exception("Failed to convert image to bytes");
+      if (byteData == null) {
+        throw Exception("Failed to convert image to bytes");
+      }
+      
       Uint8List pngBytes = byteData.buffer.asUint8List();
       
       if (format == 'JPG' || format == 'PNG') {
@@ -373,11 +347,11 @@ class WorkspaceController extends ChangeNotifier {
           quality: 100, 
           name: "QalamKaarPro_${DateTime.now().millisecondsSinceEpoch}"
         );
-        if (context.mounted && result != null && result['isSuccess'] == true) { 
-          _showSuccessDialog(context, 'Saved to Gallery!', 'Aapka $format design gallery mein save ho gaya hai.'); 
+        if (context.mounted && result != null && result['isSuccess'] == true) {
+          _showSuccessDialog(context, 'Saved to Gallery!', 'Aapka $format design gallery mein save ho gaya hai.');
         }
       } else if (format == 'PDF') {
-        final pdf = pw.Document(); 
+        final pdf = pw.Document();
         final imagePdf = pw.MemoryImage(pngBytes);
         pdf.addPage(
           pw.Page(
@@ -394,20 +368,20 @@ class WorkspaceController extends ChangeNotifier {
           filename: "QalamKaarPro_Print_${DateTime.now().millisecondsSinceEpoch}.pdf"
         );
       }
-    } catch (e) { 
-      debugPrint('Export Error: $e'); 
-    } finally { 
+    } catch (e) {
+      debugPrint('Export Error: $e');
+    } finally {
       isExporting = false; 
-      notifyListeners(); 
+      notifyListeners();
     }
   }
 
   void _showSuccessDialog(BuildContext context, String title, String message) {
     HapticFeedback.mediumImpact();
     showDialog(
-      context: context, 
+      context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)), 
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
