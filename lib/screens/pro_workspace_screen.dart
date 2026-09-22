@@ -21,7 +21,8 @@ import 'my_folder_screen.dart';
 import 'workspace_components.dart';
 import 'workspace_modals.dart';
 import 'workspace_toolbars.dart';
-import 'vector_pdf_service.dart'; // <-- VECTOR PDF SERVICE IMPORT ADDED HERE
+import 'vector_pdf_service.dart';
+import 'advanced_export_modal.dart'; // <-- ADVANCED MODAL IMPORTED
 
 class ProWorkspaceScreen extends StatefulWidget {
   final ProjectModel? project;
@@ -347,7 +348,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     triggerCanvasUpdate();
   }
 
-  Future<void> _captureAndSave(String format) async {
+  // UPDATED: Now accepts custom fileName and dynamic pixelRatio
+  Future<void> _captureAndSave(String format, String customFileName, double customPixelRatio) async {
     setState(() { 
       selectedId = null; 
       _isExporting = true; 
@@ -358,8 +360,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     
     try {
       RenderRepaintBoundary boundary = _canvasKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      double pixelRatio = (currentCanvasW > 1200 || currentCanvasH > 1200) ? 2.0 : 3.0;
-      ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
+      
+      // MAGIC YAHAN HAI: Ab ratio wahi hoga jo user ne slider se set kiya hai
+      ui.Image image = await boundary.toImage(pixelRatio: customPixelRatio);
       ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       
       if (byteData == null) {
@@ -372,7 +375,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
         final result = await ImageGallerySaver.saveImage(
           pngBytes, 
           quality: 100, 
-          name: "QalamKaarPro_${DateTime.now().millisecondsSinceEpoch}"
+          name: customFileName // Naya custom naam
         );
         if (mounted && result != null && result['isSuccess'] == true) {
           _showSuccessDialog('Saved to Gallery!', 'Aapka $format design gallery mein save ho gaya hai.');
@@ -392,7 +395,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
         Uint8List pdfBytes = await pdf.save();
         await Printing.sharePdf(
           bytes: pdfBytes, 
-          filename: "QalamKaarPro_Print_${DateTime.now().millisecondsSinceEpoch}.pdf"
+          filename: "$customFileName.pdf"
         );
       }
     } catch (e) {
@@ -430,87 +433,38 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     );
   }
 
+  // UPDATED: Now opens the Advanced Export Modal
   void _showExportMenu() {
     showModalBottomSheet(
       context: context,
-      barrierColor: Colors.transparent, 
+      barrierColor: Colors.black54, 
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
-        return buildGlassContainer(
-          context,
-          height: 360,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Export Design', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  IconButton(icon: const Icon(Icons.close), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
-                ]
-              ),
-              const Divider(color: Colors.black12),
-              const SizedBox(height: 5),
-              _buildExportOption(Icons.image, 'Save as JPG', 'Solid Background', Colors.blue, () { Navigator.pop(context); _captureAndSave('JPG'); }),
-              const SizedBox(height: 8),
-              _buildExportOption(Icons.layers_clear, 'Save as PNG', 'Transparent Image', Colors.purple, () { Navigator.pop(context); _captureAndSave('PNG'); }),
-              const SizedBox(height: 8),
-              _buildExportOption(Icons.picture_as_pdf, 'Save as Print PDF', 'High Quality PDF', Colors.red, () { Navigator.pop(context); _captureAndSave('PDF'); }),
-              // NEW VECTOR PDF OPTION ADDED HERE
-              const SizedBox(height: 8),
-              _buildExportOption(
-                Icons.picture_as_pdf, 
-                'Vector PDF (Beta)', 
-                'True Vector - No Blur', 
-                Colors.teal, 
-                () { 
-                  Navigator.pop(context);
-                  VectorPdfService.exportTrueVectorPdf(
-                    context: context,
-                    elements: elements,
-                    canvasWidth: currentCanvasW,
-                    canvasHeight: currentCanvasH,
-                    backgroundColor: pageColor,
-                  );
-                }
-              )
-            ]
-          )
+        return AdvancedExportModal(
+          currentCanvasW: currentCanvasW,
+          currentCanvasH: currentCanvasH,
+          onExport: (format, fileName, pixelRatio) {
+            Navigator.pop(context); // Modal band karein
+            
+            if (format == 'VECTOR_PDF') {
+              VectorPdfService.exportTrueVectorPdf(
+                context: context,
+                elements: elements,
+                canvasWidth: currentCanvasW,
+                canvasHeight: currentCanvasH,
+                backgroundColor: pageColor,
+              );
+            } else {
+              // Custom format (JPG/PNG/Raster PDF), custom name, and custom quality (slider)
+              _captureAndSave(format, fileName, pixelRatio);
+            }
+          },
         );
       }
     );
   }
 
-  Widget _buildExportOption(IconData icon, String title, String subtitle, Color color, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8), 
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle), 
-              child: Icon(icon, color: Colors.white, size: 18)
-            ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start, 
-                children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)), 
-                  Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.black54))
-                ]
-              )
-            ),
-            Icon(Icons.arrow_forward_ios, color: color, size: 14)
-          ]
-        )
-      )
-    );
-  }
     Future<void> addImageFromGallery({bool fromModal = false}) async {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
