@@ -439,7 +439,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       builder: (context) {
         return buildGlassContainer(
           context,
-          height: 280,
+          height: 360,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
