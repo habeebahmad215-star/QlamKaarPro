@@ -21,6 +21,7 @@ import 'my_folder_screen.dart';
 import 'workspace_components.dart';
 import 'workspace_modals.dart';
 import 'workspace_toolbars.dart';
+import 'vector_pdf_service.dart'; // <-- VECTOR PDF SERVICE IMPORT ADDED HERE
 
 class ProWorkspaceScreen extends StatefulWidget {
   final ProjectModel? project;
@@ -455,7 +456,25 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
               const SizedBox(height: 8),
               _buildExportOption(Icons.layers_clear, 'Save as PNG', 'Transparent Image', Colors.purple, () { Navigator.pop(context); _captureAndSave('PNG'); }),
               const SizedBox(height: 8),
-              _buildExportOption(Icons.picture_as_pdf, 'Save as Print PDF', 'High Quality PDF', Colors.red, () { Navigator.pop(context); _captureAndSave('PDF'); })
+              _buildExportOption(Icons.picture_as_pdf, 'Save as Print PDF', 'High Quality PDF', Colors.red, () { Navigator.pop(context); _captureAndSave('PDF'); }),
+              // NEW VECTOR PDF OPTION ADDED HERE
+              const SizedBox(height: 8),
+              _buildExportOption(
+                Icons.picture_as_pdf, 
+                'Vector PDF (Beta)', 
+                'True Vector - No Blur', 
+                Colors.teal, 
+                () { 
+                  Navigator.pop(context);
+                  VectorPdfService.exportTrueVectorPdf(
+                    context: context,
+                    elements: elements,
+                    canvasWidth: currentCanvasW,
+                    canvasHeight: currentCanvasH,
+                    backgroundColor: pageColor,
+                  );
+                }
+              )
             ]
           )
         );
@@ -3341,5 +3360,3 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     );
   }
 }
-
-
