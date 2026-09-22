@@ -409,7 +409,7 @@ class WorkspaceController extends ChangeNotifier {
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)), 
         content: Column(
-          mainAxisSize: MainDimensions.minIfNeeded = MainAxisSize.min,
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.check_circle, color: Colors.green, size: 60),
             const SizedBox(height: 15),
