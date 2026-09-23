@@ -46,15 +46,16 @@ class WorkspaceToolbars {
     ); 
   }
 
+  // YAHAN 8 FUNCTIONS KO NAYE PROFESSIONAL WORKFLOW KE MUTABIQ SET KIYA HAI
   static Widget buildDefaultBottomBar(
     BuildContext context, 
     VoidCallback showAddNewModal, 
-    VoidCallback toggleGrid, // Fix: Changed from bool to VoidCallback
+    VoidCallback toggleGrid, 
     VoidCallback showResizeModal, 
-    VoidCallback setCanvasBackground, 
-    VoidCallback showCanvasBgColorModal, 
-    VoidCallback showCanvasBgGradientModal, 
-    VoidCallback clearBg
+    VoidCallback showBackgroundStudio, 
+    VoidCallback addText,
+    VoidCallback addGalleryImage,
+    VoidCallback addShape,
   ) {
     return Container(
       height: 140, 
@@ -62,6 +63,7 @@ class WorkspaceToolbars {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         children: [
+          // 1-Click Master Add Button
           InkWell(
             onTap: showAddNewModal, 
             child: Container(
@@ -73,18 +75,19 @@ class WorkspaceToolbars {
           const SizedBox(width: 8),
           Container(width: 1, height: 40, color: Colors.grey.shade300),
           const SizedBox(width: 4),
+          // New Premium Direct Tools
           Expanded(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal, 
               physics: const BouncingScrollPhysics(),
               child: Row(
                 children: [
+                  buildToolBtn(context, Icons.format_paint, 'Background', showBackgroundStudio, const Color(0xFF10B981)),
+                  buildToolBtn(context, Icons.text_fields, 'Text', addText, Colors.orange),
+                  buildToolBtn(context, Icons.image, 'Gallery', addGalleryImage, Colors.blue),
+                  buildToolBtn(context, Icons.category, 'Shapes', addShape, Colors.pink),
                   buildToolBtn(context, Icons.grid_on, 'Grid', toggleGrid), 
                   buildToolBtn(context, Icons.aspect_ratio, 'Resize', showResizeModal), 
-                  buildToolBtn(context, Icons.image, 'BG Image', setCanvasBackground),
-                  buildToolBtn(context, Icons.format_color_fill, 'BG Color', showCanvasBgColorModal),
-                  buildToolBtn(context, Icons.gradient, 'BG Gradient', showCanvasBgGradientModal),
-                  buildToolBtn(context, Icons.layers_clear, 'Clear BG', clearBg),
                 ],
               ),
             ),
