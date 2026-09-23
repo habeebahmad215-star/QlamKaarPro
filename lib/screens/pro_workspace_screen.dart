@@ -22,7 +22,8 @@ import 'workspace_components.dart';
 import 'workspace_modals.dart';
 import 'workspace_toolbars.dart';
 import 'vector_pdf_service.dart';
-import 'advanced_export_modal.dart'; // <-- ADVANCED MODAL IMPORTED
+import 'advanced_export_modal.dart';
+import 'background_studio_modal.dart'; // NAYA MODAL IMPORT KIYA GAYA
 
 class ProWorkspaceScreen extends StatefulWidget {
   final ProjectModel? project;
@@ -101,7 +102,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       pages = [DesignPage(title: 'Page 1', elements: [], pageColor: Colors.white)];
     }
     
-    // Auto-Save Timer
     _autoSaveTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       _saveProjectLocally(isAutoSave: true);
     });
@@ -348,7 +348,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     triggerCanvasUpdate();
   }
 
-  // UPDATED: Now accepts custom fileName and dynamic pixelRatio
   Future<void> _captureAndSave(String format, String customFileName, double customPixelRatio) async {
     setState(() { 
       selectedId = null; 
@@ -361,7 +360,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     try {
       RenderRepaintBoundary boundary = _canvasKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
       
-      // MAGIC YAHAN HAI: Ab ratio wahi hoga jo user ne slider se set kiya hai
       ui.Image image = await boundary.toImage(pixelRatio: customPixelRatio);
       ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       
@@ -375,7 +373,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
         final result = await ImageGallerySaver.saveImage(
           pngBytes, 
           quality: 100, 
-          name: customFileName // Naya custom naam
+          name: customFileName
         );
         if (mounted && result != null && result['isSuccess'] == true) {
           _showSuccessDialog('Saved to Gallery!', 'Aapka $format design gallery mein save ho gaya hai.');
@@ -433,7 +431,33 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     );
   }
 
-  // UPDATED: Now opens the Advanced Export Modal
+  // YAHAN MAINE NAYA FUNCTION ADD KIYA HAI JO MISSING THA
+  void _showBackgroundStudioModal() {
+    showModalBottomSheet(
+      context: context,
+      barrierColor: Colors.black54,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return BackgroundStudioModal(
+          currentColor: pageColor,
+          currentGradient: bgGradient,
+          currentImageBytes: bgImageBytes,
+          onApply: (color, gradient, imageBytes) {
+            saveState();
+            setState(() {
+              pageColor = color;
+              bgGradient = gradient;
+              bgImageBytes = imageBytes;
+            });
+            triggerCanvasUpdate();
+            Navigator.pop(context);
+          },
+        );
+      }
+    );
+  }
+
   void _showExportMenu() {
     showModalBottomSheet(
       context: context,
@@ -445,7 +469,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
           currentCanvasW: currentCanvasW,
           currentCanvasH: currentCanvasH,
           onExport: (format, fileName, pixelRatio) {
-            Navigator.pop(context); // Modal band karein
+            Navigator.pop(context);
             
             if (format == 'VECTOR_PDF') {
               VectorPdfService.exportTrueVectorPdf(
@@ -456,7 +480,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
                 backgroundColor: pageColor,
               );
             } else {
-              // Custom format (JPG/PNG/Raster PDF), custom name, and custom quality (slider)
               _captureAndSave(format, fileName, pixelRatio);
             }
           },
@@ -465,7 +488,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     );
   }
 
-    Future<void> addImageFromGallery({bool fromModal = false}) async {
+  Future<void> addImageFromGallery({bool fromModal = false}) async {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
@@ -3304,10 +3327,10 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
             showAddNewModal, 
             () { setState(() => _showGrid = !_showGrid); triggerCanvasUpdate(); }, 
             _showResizeModal, 
-            _setCanvasBackground, 
-            _showCanvasBgColorModal, 
-            _showCanvasBgGradientModal, 
-            () { saveState(); setState((){ pageColor = Colors.white; bgImageBytes = null; bgGradient = null; }); triggerCanvasUpdate(); }
+            _showBackgroundStudioModal, 
+            () => showTextComposerDialog(),
+            () => addImageFromGallery(fromModal: false),
+            () => showGenericStockModal('Shapes', 'shape', Icons.category)
           )
         )
       ),
