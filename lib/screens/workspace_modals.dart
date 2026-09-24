@@ -440,9 +440,9 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
       )
     );
   }
-    // 🔥 ADVANCED PRO MOVE TOOL - Compact Horizontal UI (1 Tap = 1 Step)
+    // 🔥 ADVANCED PRO MOVE TOOL
   void showMoveModal(DesignElement sel) {
-    double stepSize = 5.0; // 🔥 FIX: Move speed variable bahar hai taaki reset na ho
+    double stepSize = 5.0; 
 
     showModalBottomSheet(
       context: context,
@@ -453,7 +453,6 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             
-            // Core Move Logic
             void move(double dx, double dy) {
               setState(() {
                 double ew = getElWidth(sel);
@@ -484,12 +483,11 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
               triggerCanvasUpdate();
             }
 
-            // Compact D-Pad Button (1 Tap = 1 Step)
             Widget buildDPadBtn(IconData icon, double dxMultiplier, double dyMultiplier, {bool isPrimary = false}) {
               return InkWell(
                 onTap: () {
                   HapticFeedback.selectionClick();
-                  saveState(); // Har tap par Undo point save hoga
+                  saveState(); 
                   move(dxMultiplier * stepSize, dyMultiplier * stepSize);
                 },
                 borderRadius: BorderRadius.circular(8),
@@ -505,7 +503,6 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
               );
             }
 
-            // Compact Text Input for X & Y
             Widget buildCompactInput(String label, double val, Function(double) onSubmit) {
               return Container(
                 height: 28,
@@ -528,14 +525,12 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
               );
             }
 
-            // Highly Compact Container (Height: 200) so it doesn't block canvas
             return buildGlassContainer(
               context,
               height: 200,
               padding: const EdgeInsets.all(12),
               child: Column(
                 children: [
-                  // Title Bar
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -545,11 +540,9 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                   ),
                   const Divider(height: 10, color: Colors.black12),
                   
-                  // Main Horizontal Layout
                   Expanded(
                     child: Row(
                       children: [
-                        // Left Column: 8-Direction D-PAD
                         SizedBox(
                           width: 130,
                           child: Column(
@@ -575,13 +568,11 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                         Container(width: 1, color: Colors.black12),
                         const SizedBox(width: 12),
 
-                        // Right Column: Speed Slider & Inputs
                         Expanded(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Speed Indicator
                               Row(
                                 children: [
                                   const Icon(Icons.speed, size: 12, color: Colors.black54),
@@ -591,7 +582,6 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                                   Text('${stepSize.toInt()} px', style: const TextStyle(fontSize: 11, color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold)),
                                 ]
                               ),
-                              // Slider
                               SizedBox(
                                 height: 35,
                                 child: SliderTheme(
@@ -605,7 +595,6 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                                 ),
                               ),
                               const SizedBox(height: 5),
-                              // X & Y Inputs
                               Row(
                                 children: [
                                   Expanded(child: buildCompactInput('X', sel.x, (val) { saveState(); setState(() => sel.x = val.clamp(-getElWidth(sel) + 30.0, currentCanvasW - 30.0)); setModalState((){}); triggerCanvasUpdate(); })),
@@ -711,8 +700,10 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
     );
   }
 
+  // 🔥 ADVANCED PRO LAYERS STUDIO (Drag & Drop + Grouping + Previews)
   void showLayersPanel() {
     Set<String> selectedForGroup = {};
+    
     showModalBottomSheet(
       context: context,
       barrierColor: Colors.transparent,
@@ -721,30 +712,60 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
       builder: (context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
+            
+            // Reverse list to match visual stacking (Top element in UI = Top element on Canvas)
+            List<DesignElement> reversedElements = elements.reversed.toList();
+
             return buildGlassContainer(
               context,
-              height: 400,
+              height: MediaQuery.of(context).size.height * 0.5,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // --- Header & Multi-Select Grouping Bar ---
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Layers', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      Row(
+                        children: [
+                          const Icon(Icons.layers, color: Color(0xFF1E293B)),
+                          const SizedBox(width: 8),
+                          const Text('Layers Studio', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                        ],
+                      ),
                       Row(
                         children: [
                           if (selectedForGroup.length > 1)
                             ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 8)), 
-                              onPressed: () { saveState(); String gId = Random().nextInt(10000).toString(); setState(() { for (var e in elements) { if (selectedForGroup.contains(e.id)) { e.groupId = gId; } } selectedForGroup.clear(); }); triggerCanvasUpdate(); setModalState((){}); }, 
-                              icon: const Icon(Icons.group, color: Colors.white, size: 14), label: const Text('Group', style: TextStyle(color: Colors.white, fontSize: 11))
+                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 10)), 
+                              onPressed: () { 
+                                saveState(); 
+                                String gId = Random().nextInt(10000).toString(); 
+                                setState(() { 
+                                  for (var e in elements) { if (selectedForGroup.contains(e.id)) e.groupId = gId; } 
+                                  selectedForGroup.clear(); 
+                                }); 
+                                triggerCanvasUpdate(); 
+                                setModalState((){}); 
+                              }, 
+                              icon: const Icon(Icons.link, color: Colors.white, size: 14), 
+                              label: const Text('Group', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))
                             ),
                           if (selectedForGroup.isNotEmpty) ...[
                             const SizedBox(width: 5),
                             ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 8)), 
-                              onPressed: () { saveState(); setState(() { for (var e in elements) { if (selectedForGroup.contains(e.id)) { e.groupId = null; } } selectedForGroup.clear(); }); triggerCanvasUpdate(); setModalState((){}); }, 
-                              icon: const Icon(Icons.link_off, color: Colors.white, size: 14), label: const Text('Ungroup', style: TextStyle(color: Colors.white, fontSize: 11))
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 10)), 
+                              onPressed: () { 
+                                saveState(); 
+                                setState(() { 
+                                  for (var e in elements) { if (selectedForGroup.contains(e.id)) e.groupId = null; } 
+                                  selectedForGroup.clear(); 
+                                }); 
+                                triggerCanvasUpdate(); 
+                                setModalState((){}); 
+                              }, 
+                              icon: const Icon(Icons.link_off, color: Colors.white, size: 14), 
+                              label: const Text('Ungroup', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))
                             ),
                           ],
                           IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
@@ -752,63 +773,126 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                       )
                     ]
                   ),
-                  const Divider(color: Colors.black12),
+                  const Divider(color: Colors.black12, height: 20),
+                  
+                  // --- Drag & Drop Reorderable List ---
                   Expanded(
-                    child: elements.isEmpty 
-                      ? const Center(child: Text('No elements yet.', style: TextStyle(color: Colors.black54)))
-                      : ListView.builder(
+                    child: reversedElements.isEmpty 
+                      ? const Center(child: Text('Canvas is empty.', style: TextStyle(color: Colors.black54)))
+                      : ReorderableListView.builder(
                           physics: const BouncingScrollPhysics(),
-                          itemCount: elements.length,
+                          proxyDecorator: (child, index, animation) {
+                            return Material(color: Colors.transparent, child: child); // Drag karte waqt background transparent
+                          },
+                          onReorder: (oldIndex, newIndex) {
+                            saveState();
+                            setState(() {
+                              if (newIndex > oldIndex) newIndex -= 1;
+                              
+                              // Convert reverse index to actual elements index
+                              int actualOldIndex = elements.length - 1 - oldIndex;
+                              int actualNewIndex = elements.length - 1 - newIndex;
+                              
+                              final DesignElement item = elements.removeAt(actualOldIndex);
+                              elements.insert(actualNewIndex, item);
+                            });
+                            triggerCanvasUpdate();
+                            setModalState((){});
+                          },
+                          itemCount: reversedElements.length,
                           itemBuilder: (context, index) {
-                            int actualIndex = elements.length - 1 - index;
-                            DesignElement e = elements[actualIndex];
+                            DesignElement e = reversedElements[index];
                             bool isSel = selectedId == e.id;
                             bool isGroupChecked = selectedForGroup.contains(e.id);
-                            return Card(
-                              color: isSel ? Colors.white.withOpacity(0.9) : (e.groupId != null ? Colors.blue.withOpacity(0.1) : Colors.white.withOpacity(0.4)),
-                              elevation: 0,
-                              margin: const EdgeInsets.only(bottom: 6),
-                              shape: RoundedRectangleBorder(
-                                side: BorderSide(color: isSel ? const Color(0xFF8B5CF6) : Colors.transparent), 
-                                borderRadius: BorderRadius.circular(10)
+                            
+                            // Visual Preview Generator
+                            Widget previewIcon;
+                            if (e.isText) {
+                               previewIcon = CircleAvatar(radius: 12, backgroundColor: e.textColor.withOpacity(0.2), child: Text("T", style: TextStyle(color: e.textColor, fontWeight: FontWeight.bold, fontSize: 12)));
+                            } else if (e.imageBytes != null) {
+                               previewIcon = ClipRRect(borderRadius: BorderRadius.circular(4), child: Image.memory(e.imageBytes!, width: 24, height: 24, fit: BoxFit.cover));
+                            } else {
+                               previewIcon = Container(width: 24, height: 24, decoration: BoxDecoration(color: e.elementColor, borderRadius: BorderRadius.circular(e.isShape ? e.cornerRadius : 4), border: Border.all(color: Colors.black12)));
+                            }
+
+                            return Container(
+                              key: ValueKey(e.id),
+                              margin: const EdgeInsets.only(bottom: 8),
+                              decoration: BoxDecoration(
+                                color: isSel ? const Color(0xFF8B5CF6).withOpacity(0.1) : (e.groupId != null ? Colors.blue.withOpacity(0.05) : Colors.white),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: isSel ? const Color(0xFF8B5CF6) : Colors.grey.shade200, width: isSel ? 1.5 : 1),
+                                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1))]
                               ),
                               child: ListTile(
                                 dense: true,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                                
+                                // Drag Handle (Left Side)
                                 leading: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
+                                    const Icon(Icons.drag_indicator, color: Colors.black26, size: 20),
                                     Checkbox(
                                       value: isGroupChecked, 
                                       activeColor: const Color(0xFF8B5CF6), 
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                                       onChanged: (val) { setModalState((){ if(val == true) selectedForGroup.add(e.id); else selectedForGroup.remove(e.id); }); }
                                     ),
-                                    CircleAvatar(
-                                      radius: 12, 
-                                      backgroundColor: e.isText ? e.textColor : Colors.black54, 
-                                      child: Icon(e.isText ? Icons.text_fields : (e.isShape ? Icons.category : Icons.image), size: 12, color: Colors.white)
-                                    )
+                                    previewIcon,
                                   ]
                                 ),
+                                
+                                // Layer Title
                                 title: Row(
                                   children: [
-                                    Expanded(child: Text(e.isText ? e.content.replaceAll('\n', '') : (e.isBorder ? 'Border' : 'Image/Shape'), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: isSel ? FontWeight.bold : FontWeight.normal, fontSize: 13))),
+                                    Expanded(
+                                      child: Text(
+                                        e.isText ? e.content.replaceAll('\n', ' ') : (e.isBorder ? 'Border Element' : 'Graphic Element'), 
+                                        maxLines: 1, overflow: TextOverflow.ellipsis, 
+                                        style: TextStyle(fontWeight: isSel ? FontWeight.bold : FontWeight.w500, fontSize: 13, color: isSel ? const Color(0xFF8B5CF6) : Colors.black87)
+                                      )
+                                    ),
                                     if (e.groupId != null) const Icon(Icons.link, size: 14, color: Colors.blue)
                                   ]
                                 ),
+                                
+                                // One-Click Quick Actions (Right Side)
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(e.isHidden ? Icons.visibility_off : Icons.visibility, size: 18, color: Colors.black54), onPressed: () { saveState(); setState(() => e.isHidden = !e.isHidden); triggerCanvasUpdate(); setModalState((){}); }),
-                                    const SizedBox(width: 8),
-                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(e.isLocked ? Icons.lock : Icons.lock_open, size: 18, color: e.isLocked ? Colors.red : Colors.black54), onPressed: () { saveState(); setState(() { e.isLocked = !e.isLocked; if(e.isLocked && selectedId == e.id) selectedId = null; }); triggerCanvasUpdate(); setModalState((){}); }),
-                                    const SizedBox(width: 8),
-                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.arrow_upward, size: 18, color: Colors.black54), onPressed: () { saveState(); if (actualIndex < elements.length - 1) { setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex + 1, item); }); triggerCanvasUpdate(); setModalState((){}); } }),
-                                    const SizedBox(width: 8),
-                                    IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.arrow_downward, size: 18, color: Colors.black54), onPressed: () { saveState(); if (actualIndex > 0) { setState(() { var item = elements.removeAt(actualIndex); elements.insert(actualIndex - 1, item); }); triggerCanvasUpdate(); setModalState((){}); } })
+                                    IconButton(
+                                      padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 30), 
+                                      icon: Icon(e.isHidden ? Icons.visibility_off : Icons.visibility, size: 18, color: e.isHidden ? Colors.red : Colors.black45), 
+                                      onPressed: () { saveState(); setState(() => e.isHidden = !e.isHidden); triggerCanvasUpdate(); setModalState((){}); }
+                                    ),
+                                    IconButton(
+                                      padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 30), 
+                                      icon: Icon(e.isLocked ? Icons.lock : Icons.lock_open, size: 18, color: e.isLocked ? Colors.orange : Colors.black45), 
+                                      onPressed: () { saveState(); setState(() { e.isLocked = !e.isLocked; if(e.isLocked && selectedId == e.id) selectedId = null; }); triggerCanvasUpdate(); setModalState((){}); }
+                                    ),
+                                    IconButton(
+                                      padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 30), 
+                                      icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent), 
+                                      onPressed: () { 
+                                        saveState(); 
+                                        setState(() { 
+                                          elements.removeWhere((item) => item.id == e.id); 
+                                          if (selectedId == e.id) selectedId = null;
+                                        }); 
+                                        triggerCanvasUpdate(); 
+                                        setModalState((){}); 
+                                      }
+                                    ),
                                   ]
                                 ),
-                                onTap: () { if(!e.isLocked && !e.isHidden) { setState(() => selectedId = e.id); triggerCanvasUpdate(); setModalState((){}); } }
+                                onTap: () { 
+                                  if(!e.isLocked && !e.isHidden) { 
+                                    setState(() => selectedId = e.id); 
+                                    triggerCanvasUpdate(); 
+                                    setModalState((){}); 
+                                  } 
+                                }
                               )
                             );
                           }
@@ -823,4 +907,3 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
     );
   }
 }
-
