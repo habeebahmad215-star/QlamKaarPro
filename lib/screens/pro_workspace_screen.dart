@@ -23,7 +23,7 @@ import 'workspace_modals.dart';
 import 'workspace_toolbars.dart';
 import 'vector_pdf_service.dart';
 import 'advanced_export_modal.dart';
-import 'background_studio_modal.dart'; // NAYA MODAL IMPORT KIYA GAYA
+import 'background_studio_modal.dart'; 
 
 class ProWorkspaceScreen extends StatefulWidget {
   final ProjectModel? project;
@@ -431,7 +431,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     );
   }
 
-  // YAHAN MAINE NAYA FUNCTION ADD KIYA HAI JO MISSING THA
   void _showBackgroundStudioModal() {
     showModalBottomSheet(
       context: context,
@@ -2865,84 +2864,59 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     }
   }
 
+  // 🔥 ZERO-CRASH ARCHITECTURE: Yahan purane kachre ko hatakar Smart Map laga diya gaya hai
   Widget _buildSelectedToolBar(DesignElement sel) {
-    List<Widget> topRow = [];
-    List<Widget> bottomRow = [];
-
-    if (sel.isText) {
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.delete_outline_rounded, 'Delete', deleteSelected, Colors.red));
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.text_fields_rounded, 'Size', () => showSizeSliderModal(sel)));
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.format_paint_rounded, 'Word Style', () => _showMultiStyleModal(sel), const Color(0xFF10B981)));
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.border_color_rounded, 'Stroke', () => _showAdvancedStrokeModal(sel)));
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.brightness_6_rounded, 'Shadow', () => _showAdvancedShadowModal(sel)));
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.copy_rounded, 'Duplicate', duplicateSelected, Colors.blue));
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.opacity_rounded, 'Opacity', () => _showOpacityModal(sel)));
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.content_copy_rounded, 'Copy', () { Clipboard.setData(ClipboardData(text: sel.content)); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Text Copied!'))); }));
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.flip_rounded, 'Flip H', () { saveState(); setState(() => sel.flipX = !sel.flipX); triggerCanvasUpdate(); }));
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.flip_camera_android_rounded, 'Flip V', () { saveState(); setState(() => sel.flipY = !sel.flipY); triggerCanvasUpdate(); }));
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.open_with_rounded, 'Move', () => showMoveModal(sel)));
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.lock_outline_rounded, 'Lock', () { saveState(); setState(() { sel.isLocked = true; selectedId = null; }); triggerCanvasUpdate(); }, Colors.orange));
-
-      bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.close_rounded, 'Deselect', () { setState(() => selectedId = null); triggerCanvasUpdate(); }, Colors.redAccent));
-      bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.edit_rounded, 'Edit', () => showTextComposerDialog(existingElement: sel)));
-      bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.font_download_rounded, 'Font', () => showFontPickerModal(sel)));
-      bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.palette_rounded, 'Colour', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
-      bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.gradient_rounded, 'Gradient', () => _showGradientPickerModal(sel)));
-      bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.format_bold_rounded, 'Bold', () { saveState(); setState(() => sel.isBold = !sel.isBold); triggerCanvasUpdate(); }));
-      bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.height_rounded, 'Spacing', () => showSpacingModal(sel)));
-      bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.format_color_fill_rounded, 'Text BG', () => _showTextBgPickerModal(sel)));
-      bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.auto_awesome_rounded, 'Effect', () => _showTextEffectsModal(sel), const Color(0xFF10B981)));
-      bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.format_align_center_rounded, 'Align', () => _toggleAlignment(sel)));
-      bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.more_horiz_rounded, 'More', () => _showMoreOptionsModal(sel), Colors.grey.shade800));
-    } 
-    else if (sel.isBorder) {
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.close_rounded, 'Deselect', () { setState(() => selectedId = null); triggerCanvasUpdate(); }, Colors.redAccent));
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.fullscreen_rounded, 'Fit Page', () => _fitBorderToPage(sel), const Color(0xFF10B981)));
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.straighten_rounded, 'Size', () => _showElementSizeModal(sel), const Color(0xFF10B981)));
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.palette_rounded, 'Colour', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.line_weight_rounded, 'Setup', () => _showBorderSettingsModal(sel)));
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.opacity_rounded, 'Opacity', () => _showOpacityModal(sel)));
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.copy_rounded, 'Duplicate', duplicateSelected, Colors.blue));
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.delete_outline_rounded, 'Delete', deleteSelected, Colors.red));
-
-      bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.center_focus_strong_rounded, 'Position', () => _showAlignmentModal(sel)));
-      bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.open_with_rounded, 'Move', () => showMoveModal(sel)));
-      bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.arrow_upward_rounded, 'Bring Fwd', () => bringForward()));
-      bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.arrow_downward_rounded, 'Send Bwd', () => sendBackward()));
-    } 
-    else {
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.close_rounded, 'Deselect', () { setState(() => selectedId = null); triggerCanvasUpdate(); }, Colors.redAccent));
-      if (sel.isTable) topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.table_rows_rounded, 'Edit Table', () => _showTableEditorModal(sel), const Color(0xFF10B981)));
-      if (sel.isTable) topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.font_download_rounded, 'Font', () => showFontPickerModal(sel)));
-      if (sel.isTable) topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.text_fields_rounded, 'Size', () => showSizeSliderModal(sel)));
+    Map<String, VoidCallback> actions = {
+      'deselect': () { setState(() => selectedId = null); triggerCanvasUpdate(); },
+      'delete': deleteSelected,
+      'duplicate': duplicateSelected,
+      'lock': () { saveState(); setState(() { sel.isLocked = true; selectedId = null; }); triggerCanvasUpdate(); },
+      'more': () => _showMoreOptionsModal(sel),
+      'position': () => _showAlignmentModal(sel),
+      'move': () => showMoveModal(sel),
+      'bringFwd': bringForward,
+      'sendBwd': sendBackward,
+      'size': () => _showElementSizeModal(sel),
+      'color': () => _showColorPickerModal(sel),
+      'opacity': () => _showOpacityModal(sel),
+      'stroke': () => _showAdvancedStrokeModal(sel),
+      'shadow': () => _showAdvancedShadowModal(sel),
+      'flipH': () { saveState(); setState(() => sel.flipX = !sel.flipX); triggerCanvasUpdate(); },
+      'flipV': () { saveState(); setState(() => sel.flipY = !sel.flipY); triggerCanvasUpdate(); },
       
-      if (!sel.isTable) topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.straighten_rounded, 'Size', () => _showElementSizeModal(sel), const Color(0xFF10B981)));
+      // Text Specific
+      'edit': () => showTextComposerDialog(existingElement: sel),
+      'font': () => showFontPickerModal(sel),
+      'wordStyle': () => _showMultiStyleModal(sel),
+      'gradient': () => _showGradientPickerModal(sel),
+      'textBg': () => _showTextBgPickerModal(sel),
+      'spacing': () => showSpacingModal(sel),
+      'align': () => _toggleAlignment(sel),
+      'bold': () { saveState(); setState(() => sel.isBold = !sel.isBold); triggerCanvasUpdate(); },
       
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.palette_rounded, 'Colour', () => _showColorPickerModal(sel), const Color(0xFF8B5CF6)));
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.copy_rounded, 'Duplicate', duplicateSelected, Colors.blue));
-      topRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.delete_outline_rounded, 'Delete', deleteSelected, Colors.red));
+      // Image Specific
+      'filters': () => _showImageFiltersModal(sel),
+      'crop': () => _showShapeClipModal(sel),
+      'tint': () { _openProColorPicker(title: 'Color', currentColor: sel.elementColor, onColorChanged: (c) { setState(()=> sel.elementColor = c); }); },
+      'blend': () => _showBlendModeModal(sel),
+      
+      // Border & Shape Specific
+      'fitPage': () => _fitBorderToPage(sel),
+      'setup': () => _showBorderSettingsModal(sel),
+      'radius': () => _showRadiusModal(sel),
+      
+      // Table Specific
+      'editTable': () => _showTableEditorModal(sel),
+    };
 
-      if (!sel.isTable) bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.border_color_rounded, 'Stroke', () => _showAdvancedStrokeModal(sel)));
-      if (!sel.isTable) bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.brightness_6_rounded, 'Shadow', () => _showAdvancedShadowModal(sel)));
-      if (sel.imageBytes != null && !sel.isTinted) bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.photo_filter_rounded, 'Filters', () => _showImageFiltersModal(sel)));
-      if (sel.imageBytes != null) bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.crop_rounded, 'Crop', () => _showShapeClipModal(sel)));
-      bottomRow.add(WorkspaceToolbars.buildToolBtn(context, Icons.more_horiz_rounded, 'More', () => _showMoreOptionsModal(sel), Colors.grey.shade800));
+    if (sel.isText || sel.isTable) {
+      actions['size'] = () => showSizeSliderModal(sel);
     }
 
-    return Container(
-      height: 140, 
-      color: Colors.white,
-      alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SingleChildScrollView(scrollDirection: Axis.horizontal, physics: const BouncingScrollPhysics(), child: Row(children: topRow)),
-          const SizedBox(height: 6),
-          SingleChildScrollView(scrollDirection: Axis.horizontal, physics: const BouncingScrollPhysics(), child: Row(children: bottomRow)),
-        ],
-      ),
+    return WorkspaceToolbars.buildAdvancedSelectedBar(
+      context: context,
+      sel: sel,
+      actions: actions,
     );
   }
 
