@@ -440,7 +440,7 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
       )
     );
   }
-    // 🔥 ADVANCED PRO MOVE TOOL
+
   void showMoveModal(DesignElement sel) {
     double stepSize = 5.0; 
 
@@ -700,10 +700,27 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
     );
   }
 
-  // 🔥 ADVANCED PRO LAYERS STUDIO (Drag & Drop + Grouping + Previews)
+  // 🔥 ADVANCED PRO LAYERS STUDIO (Auto-Tick + Live Canvas Sync)
   void showLayersPanel() {
     Set<String> selectedForGroup = {};
     
+    // 💡 AUTO-TICK LOGIC: Modal khulte hi active items aur groups ko auto-tick karo
+    if (selectedId != null) {
+      selectedForGroup.add(selectedId!);
+      try {
+        DesignElement activeEl = elements.firstWhere((e) => e.id == selectedId);
+        if (activeEl.groupId != null) {
+          for (var e in elements) {
+            if (e.groupId == activeEl.groupId) {
+              selectedForGroup.add(e.id);
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Active element not found');
+      }
+    }
+
     showModalBottomSheet(
       context: context,
       barrierColor: Colors.transparent,
@@ -713,7 +730,6 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             
-            // Reverse list to match visual stacking (Top element in UI = Top element on Canvas)
             List<DesignElement> reversedElements = elements.reversed.toList();
 
             return buildGlassContainer(
@@ -722,7 +738,6 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // --- Header & Multi-Select Grouping Bar ---
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -775,21 +790,18 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                   ),
                   const Divider(color: Colors.black12, height: 20),
                   
-                  // --- Drag & Drop Reorderable List ---
                   Expanded(
                     child: reversedElements.isEmpty 
                       ? const Center(child: Text('Canvas is empty.', style: TextStyle(color: Colors.black54)))
                       : ReorderableListView.builder(
                           physics: const BouncingScrollPhysics(),
                           proxyDecorator: (child, index, animation) {
-                            return Material(color: Colors.transparent, child: child); // Drag karte waqt background transparent
+                            return Material(color: Colors.transparent, child: child);
                           },
                           onReorder: (oldIndex, newIndex) {
                             saveState();
                             setState(() {
                               if (newIndex > oldIndex) newIndex -= 1;
-                              
-                              // Convert reverse index to actual elements index
                               int actualOldIndex = elements.length - 1 - oldIndex;
                               int actualNewIndex = elements.length - 1 - newIndex;
                               
@@ -805,7 +817,6 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                             bool isSel = selectedId == e.id;
                             bool isGroupChecked = selectedForGroup.contains(e.id);
                             
-                            // Visual Preview Generator
                             Widget previewIcon;
                             if (e.isText) {
                                previewIcon = CircleAvatar(radius: 12, backgroundColor: e.textColor.withOpacity(0.2), child: Text("T", style: TextStyle(color: e.textColor, fontWeight: FontWeight.bold, fontSize: 12)));
@@ -828,7 +839,6 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                                 dense: true,
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
                                 
-                                // Drag Handle (Left Side)
                                 leading: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -837,13 +847,25 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                                       value: isGroupChecked, 
                                       activeColor: const Color(0xFF8B5CF6), 
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                                      onChanged: (val) { setModalState((){ if(val == true) selectedForGroup.add(e.id); else selectedForGroup.remove(e.id); }); }
+                                      onChanged: (val) { 
+                                        setModalState((){ 
+                                          if(val == true) {
+                                            selectedForGroup.add(e.id); 
+                                            // 💡 LIVE SYNC MAGIC: Tick lagate hi canvas box bhi wahan jump karega
+                                            if(!e.isLocked && !e.isHidden) {
+                                              setState(() => selectedId = e.id);
+                                              triggerCanvasUpdate();
+                                            }
+                                          } else {
+                                            selectedForGroup.remove(e.id); 
+                                          }
+                                        }); 
+                                      }
                                     ),
                                     previewIcon,
                                   ]
                                 ),
                                 
-                                // Layer Title
                                 title: Row(
                                   children: [
                                     Expanded(
@@ -857,7 +879,6 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                                   ]
                                 ),
                                 
-                                // One-Click Quick Actions (Right Side)
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
