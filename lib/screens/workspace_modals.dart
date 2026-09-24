@@ -700,7 +700,6 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
     );
   }
 
-  // 🔥 ADVANCED PRO LAYERS STUDIO (Fix: Untick now correctly deselects canvas element)
   void showLayersPanel() {
     Set<String> selectedForGroup = {};
     
@@ -856,7 +855,6 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                                             }
                                           } else {
                                             selectedForGroup.remove(e.id); 
-                                            // 🔥 FIX APPLIED HERE: Agar ye layer canvas par select hai toh usko deselect karo
                                             if (selectedId == e.id) {
                                               setState(() => selectedId = null);
                                               triggerCanvasUpdate();
@@ -930,4 +928,133 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
       }
     );
   }
+
+  // 🔥 ADVANCED PRO ALIGNMENT STUDIO (Compact & Sharp Icons) 🔥
+  void _showAlignmentModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context,
+      barrierColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        
+        // 💡 Smart Helper for Compact Icons
+        Widget buildCompactIcon(IconData icon, VoidCallback onTap) {
+          return Expanded(
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Icon(icon, color: Colors.black87, size: 24),
+              ),
+            ),
+          );
+        }
+
+        return buildGlassContainer(
+          context,
+          height: 200, 
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Align to Page (صفحہ پر سیٹ کریں)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
+                ]
+              ),
+              const Divider(color: Colors.black12, height: 10),
+              
+              // 1-Click Absolute Center Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF8B5CF6).withOpacity(0.1),
+                    foregroundColor: const Color(0xFF8B5CF6),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10), side: const BorderSide(color: Color(0xFF8B5CF6)))
+                  ),
+                  icon: const Icon(Icons.center_focus_strong, size: 20),
+                  label: const Text('Center to Page (بالکل درمیان)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  onPressed: () {
+                    saveState();
+                    setState(() {
+                      sel.x = (currentCanvasW / 2) - (getElWidth(sel) / 2);
+                      sel.y = (currentCanvasH / 2) - (getElHeight(sel) / 2);
+                    });
+                    triggerCanvasUpdate();
+                  },
+                ),
+              ),
+              const SizedBox(height: 15),
+
+              // 🔥 PRO COMPACT ICONS ROW (Side by Side) 🔥
+              Row(
+                children: [
+                  // Horizontal Group
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Horizontal (دائیں بائیں)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black54)),
+                        const SizedBox(height: 6),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.black12),
+                          ),
+                          child: Row(
+                            children: [
+                              buildCompactIcon(Icons.align_horizontal_left, () { saveState(); setState(() => sel.x = 0); triggerCanvasUpdate(); }),
+                              Container(width: 1, height: 24, color: Colors.black12), 
+                              buildCompactIcon(Icons.align_horizontal_center, () { saveState(); setState(() => sel.x = (currentCanvasW / 2) - (getElWidth(sel) / 2)); triggerCanvasUpdate(); }),
+                              Container(width: 1, height: 24, color: Colors.black12),
+                              buildCompactIcon(Icons.align_horizontal_right, () { saveState(); setState(() => sel.x = currentCanvasW - getElWidth(sel)); triggerCanvasUpdate(); }),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Vertical Group
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Vertical (اوپر نیچے)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black54)),
+                        const SizedBox(height: 6),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.black12),
+                          ),
+                          child: Row(
+                            children: [
+                              buildCompactIcon(Icons.align_vertical_top, () { saveState(); setState(() => sel.y = 0); triggerCanvasUpdate(); }),
+                              Container(width: 1, height: 24, color: Colors.black12), 
+                              buildCompactIcon(Icons.align_vertical_center, () { saveState(); setState(() => sel.y = (currentCanvasH / 2) - (getElHeight(sel) / 2)); triggerCanvasUpdate(); }),
+                              Container(width: 1, height: 24, color: Colors.black12),
+                              buildCompactIcon(Icons.align_vertical_bottom, () { saveState(); setState(() => sel.y = currentCanvasH - getElHeight(sel)); triggerCanvasUpdate(); }),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              )
+            ]
+          )
+        );
+      }
+    );
+  }
+
 }
