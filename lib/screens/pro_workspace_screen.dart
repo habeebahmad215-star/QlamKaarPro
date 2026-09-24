@@ -23,7 +23,7 @@ import 'workspace_modals.dart';
 import 'workspace_toolbars.dart';
 import 'vector_pdf_service.dart';
 import 'advanced_export_modal.dart';
-import 'background_studio_modal.dart'; 
+import 'background_studio_modal.dart';
 
 class ProWorkspaceScreen extends StatefulWidget {
   final ProjectModel? project;
@@ -47,7 +47,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
   final ValueNotifier<int> _canvasNotifier = ValueNotifier<int>(0);
 
   bool _isCanvasLocked = false;
-  bool _showGrid = false;
+  
+  // 🔥 ADVANCED GRID STATE VARIABLES 🔥
+  int _gridMode = 0; // 0: Hidden, 1: Mesh, 2: Rule of Thirds
+  double _gridSpacing = 50.0;
+  bool _snapToGrid = false; // User ko pareshan na karne ke liye by default OFF
+  Color _gridColor = Colors.black26;
+
   @override
   double currentCanvasW = 1000;
   @override
@@ -2864,7 +2870,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     }
   }
 
-  // 🔥 ZERO-CRASH ARCHITECTURE: Yahan purane kachre ko hatakar Smart Map laga diya gaya hai
   Widget _buildSelectedToolBar(DesignElement sel) {
     Map<String, VoidCallback> actions = {
       'deselect': () { setState(() => selectedId = null); triggerCanvasUpdate(); },
@@ -2884,7 +2889,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       'flipH': () { saveState(); setState(() => sel.flipX = !sel.flipX); triggerCanvasUpdate(); },
       'flipV': () { saveState(); setState(() => sel.flipY = !sel.flipY); triggerCanvasUpdate(); },
       
-      // Text Specific
       'edit': () => showTextComposerDialog(existingElement: sel),
       'font': () => showFontPickerModal(sel),
       'wordStyle': () => _showMultiStyleModal(sel),
@@ -2894,18 +2898,15 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       'align': () => _toggleAlignment(sel),
       'bold': () { saveState(); setState(() => sel.isBold = !sel.isBold); triggerCanvasUpdate(); },
       
-      // Image Specific
       'filters': () => _showImageFiltersModal(sel),
       'crop': () => _showShapeClipModal(sel),
       'tint': () { _openProColorPicker(title: 'Color', currentColor: sel.elementColor, onColorChanged: (c) { setState(()=> sel.elementColor = c); }); },
       'blend': () => _showBlendModeModal(sel),
       
-      // Border & Shape Specific
       'fitPage': () => _fitBorderToPage(sel),
       'setup': () => _showBorderSettingsModal(sel),
       'radius': () => _showRadiusModal(sel),
       
-      // Table Specific
       'editTable': () => _showTableEditorModal(sel),
     };
 
@@ -3063,16 +3064,16 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
                                     child: Stack(
                                       clipBehavior: Clip.none,
                                       children: [
-                                        if (_showGrid && !_isExporting)
+                                        // 🔥 THE NEW PRO GRID ENGINE 🔥
+                                        if (_gridMode > 0 && !_isExporting)
                                           Positioned.fill(
                                             child: IgnorePointer(
-                                              child: Stack(
-                                                children: [
-                                                  Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: List.generate(5, (i) => Container(height: 1, color: Colors.black12))),
-                                                  Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: List.generate(5, (i) => Container(width: 1, color: Colors.black12))),
-                                                  Center(child: Container(width: double.infinity, height: 1, color: Colors.blue.withOpacity(0.5))),
-                                                  Center(child: Container(width: 1, height: double.infinity, color: Colors.blue.withOpacity(0.5))),
-                                                ],
+                                              child: CustomPaint(
+                                                painter: AdvancedGridPainter(
+                                                  mode: _gridMode, 
+                                                  spacing: _gridSpacing, 
+                                                  color: _gridColor
+                                                ),
                                               ),
                                             ),
                                           ),
@@ -3201,12 +3202,30 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
                                                         onPanStart: (d) { if(!e.isLocked) saveState(); },
                                                         onPanUpdate: (d) {
                                                           if(!e.isLocked && selectedId == e.id) {
-                                                            e.x += d.delta.dx; 
-                                                            e.y += d.delta.dy; 
+                                                            double newX = e.x + d.delta.dx; 
+                                                            double newY = e.y + d.delta.dy; 
+
+                                                            // 🔥 THE SMART WEAK MAGNET (8px Threshold) 🔥
+                                                            if (_snapToGrid && _gridMode == 1) {
+                                                              double snapThreshold = 8.0; 
+                                                              double snappedX = (newX / _gridSpacing).round() * _gridSpacing;
+                                                              double snappedY = (newY / _gridSpacing).round() * _gridSpacing;
+
+                                                              if ((newX - snappedX).abs() < snapThreshold) newX = snappedX;
+                                                              if ((newY - snappedY).abs() < snapThreshold) newY = snappedY;
+                                                            }
+
+                                                            double actualDx = newX - e.x;
+                                                            double actualDy = newY - e.y;
+
+                                                            e.x = newX;
+                                                            e.y = newY;
+
                                                             if (e.groupId != null) {
                                                               for (var other in elements) {
                                                                 if (other.id != e.id && other.groupId == e.groupId && !other.isLocked) {
-                                                                  other.x += d.delta.dx; other.y += d.delta.dy;
+                                                                  other.x += actualDx; 
+                                                                  other.y += actualDy;
                                                                 }
                                                               }
                                                             }
@@ -3299,7 +3318,18 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
           child: (hasSelection && sel != null) ? _buildSelectedToolBar(sel) : WorkspaceToolbars.buildDefaultBottomBar(
             context, 
             showAddNewModal, 
-            () { setState(() => _showGrid = !_showGrid); triggerCanvasUpdate(); }, 
+            () { 
+              // 🔥 NEW GRID TOGGLE LOGIC 🔥
+              setState(() { _gridMode = (_gridMode + 1) % 3; }); 
+              if (_gridMode == 1) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Grid Mode: Standard Mesh', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF8B5CF6), duration: Duration(milliseconds: 1000)));
+              } else if (_gridMode == 2) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Grid Mode: Rule of Thirds (3x3)', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF10B981), duration: Duration(milliseconds: 1000)));
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Grid Hidden', style: TextStyle(color: Colors.white)), backgroundColor: Colors.black54, duration: Duration(milliseconds: 1000)));
+              }
+              triggerCanvasUpdate(); 
+            }, 
             _showResizeModal, 
             _showBackgroundStudioModal, 
             () => showTextComposerDialog(),
@@ -3309,5 +3339,52 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
         )
       ),
     );
+  }
+}
+
+// 🔥 HIGH PERFORMANCE CUSTOM GRID PAINTER 🔥
+class AdvancedGridPainter extends CustomPainter {
+  final int mode; 
+  final double spacing;
+  final Color color;
+
+  AdvancedGridPainter({required this.mode, required this.spacing, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (mode == 0) return;
+
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.0;
+
+    if (mode == 1) {
+      // Standard Mesh (Pro Style)
+      for (double x = 0; x <= size.width; x += spacing) {
+        canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+      }
+      for (double y = 0; y <= size.height; y += spacing) {
+        canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+      }
+      // Center Glowing Red Guides
+      final centerPaint = Paint()..color = Colors.red.withOpacity(0.5)..strokeWidth = 1.5;
+      canvas.drawLine(Offset(size.width / 2, 0), Offset(size.width / 2, size.height), centerPaint);
+      canvas.drawLine(Offset(0, size.height / 2), Offset(size.width, size.height / 2), centerPaint);
+    } 
+    else if (mode == 2) {
+      // Rule of Thirds (3x3 Photography Grid)
+      double thirdW = size.width / 3;
+      double thirdH = size.height / 3;
+      
+      canvas.drawLine(Offset(thirdW, 0), Offset(thirdW, size.height), paint);
+      canvas.drawLine(Offset(thirdW * 2, 0), Offset(thirdW * 2, size.height), paint);
+      canvas.drawLine(Offset(0, thirdH), Offset(size.width, thirdH), paint);
+      canvas.drawLine(Offset(0, thirdH * 2), Offset(size.width, thirdH * 2), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant AdvancedGridPainter oldDelegate) {
+    return oldDelegate.mode != mode || oldDelegate.spacing != spacing || oldDelegate.color != color;
   }
 }
