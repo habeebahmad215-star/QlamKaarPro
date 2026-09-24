@@ -700,11 +700,10 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
     );
   }
 
-  // 🔥 ADVANCED PRO LAYERS STUDIO (Auto-Tick + Live Canvas Sync)
+  // 🔥 ADVANCED PRO LAYERS STUDIO (Fix: Untick now correctly deselects canvas element)
   void showLayersPanel() {
     Set<String> selectedForGroup = {};
     
-    // 💡 AUTO-TICK LOGIC: Modal khulte hi active items aur groups ko auto-tick karo
     if (selectedId != null) {
       selectedForGroup.add(selectedId!);
       try {
@@ -851,13 +850,17 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                                         setModalState((){ 
                                           if(val == true) {
                                             selectedForGroup.add(e.id); 
-                                            // 💡 LIVE SYNC MAGIC: Tick lagate hi canvas box bhi wahan jump karega
                                             if(!e.isLocked && !e.isHidden) {
                                               setState(() => selectedId = e.id);
                                               triggerCanvasUpdate();
                                             }
                                           } else {
                                             selectedForGroup.remove(e.id); 
+                                            // 🔥 FIX APPLIED HERE: Agar ye layer canvas par select hai toh usko deselect karo
+                                            if (selectedId == e.id) {
+                                              setState(() => selectedId = null);
+                                              triggerCanvasUpdate();
+                                            }
                                           }
                                         }); 
                                       }
