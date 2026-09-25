@@ -10,11 +10,11 @@ import 'package:http/http.dart' as http;
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 
 // ============================================================================
-// 🔥 AAPKI API KEYS 🔥
+// 🔥 AAPKI VALID API KEYS 🔥
 // ============================================================================
-// Apni AQ. wali Gemini Key yahan daalein
-const String GEMINI_API_KEY = "AQ.Ab8RN6LxtAlG37bgq7S5-fsshOtpxF0cIiTALWNnGL-EQkUv-g"; 
-const String REMOVE_BG_API_KEY = "ViZorV1xopiwHEdvEiERE2XN";
+// Aapki active HuggingFace key use kar rahe hain duniya ke best models ke liye
+const String HUGGING_FACE_API_KEY = "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";
+const String REMOVE_BG_API_KEY = "ViZorV1xopiwHEdvEiERE2XN"; 
 // ============================================================================
 
 class AiDesignScreen extends StatefulWidget {
@@ -58,29 +58,44 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
   }
 
   // ==========================================
-  // REAL API INTEGRATIONS (STRICT & FIXED)
+  // REAL API INTEGRATIONS (HUGGING FACE FLUX & QWEN)
   // ==========================================
   
-  // 1. Pollinations AI Image (FIXED: Auto-Enhance OFF)
+  // 1. AI Image - Using FLUX.1-schnell (Best for Text & Logos)
   Future<void> _generateAIImage() async {
     if (_promptController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isGeneratingImage = true; _generatedImageBytes = null; });
     
     try {
-      String safePrompt = Uri.encodeComponent(_promptController.text.trim());
-      int randomSeed = DateTime.now().millisecondsSinceEpoch % 100000;
-      
-      // 🔥 FIX: enhance=false zaroori hai, taaki AI aapke prompt ko apni marzi se change na kare
-      String imageUrl = 'https://image.pollinations.ai/prompt/$safePrompt?width=1024&height=1024&nologo=true&enhance=false&seed=$randomSeed';
-
-      final response = await http.get(Uri.parse(imageUrl)).timeout(const Duration(seconds: 45)); 
+      final response = await http.post(
+        Uri.parse('https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell'),
+        headers: {
+          'Authorization': 'Bearer $HUGGING_FACE_API_KEY',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'inputs': _promptController.text.trim(),
+        }),
+      ).timeout(const Duration(seconds: 60)); 
 
       if (response.statusCode == 200) {
+        if (response.headers['content-type']?.contains('application/json') == true) {
+          var data = jsonDecode(response.body);
+          if (data['error'] != null && data['error'].toString().contains('loading')) {
+             throw Exception('High-Quality AI Model load ho raha hai. Kripya 20 second baad dobara dabayen.');
+          }
+          throw Exception(data['error'] ?? 'API returned JSON instead of Image');
+        }
         setState(() { _generatedImageBytes = response.bodyBytes; });
         HapticFeedback.heavyImpact();
       } else {
-        throw Exception('Server ne image generate nahi ki. Error Code: ${response.statusCode}');
+        String errorMsg = 'Server Error ${response.statusCode}';
+        try {
+          var data = jsonDecode(response.body);
+          if (data['error'] != null) errorMsg = data['error'].toString();
+        } catch (_) {}
+        throw Exception(errorMsg);
       }
     } on SocketException {
       _showErrorSnackBar('Network Error: Internet connect nahi hai.');
@@ -93,7 +108,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     }
   }
 
-  // 2. Remove.BG API (Working perfectly)
+  // 2. Remove.BG API
   Future<void> _pickAndRemoveBg() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
@@ -116,18 +131,12 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
           setState(() { _bgRemovedBytes = responseData; });
           HapticFeedback.heavyImpact();
         } else {
-          String err = 'Error ${response.statusCode}';
-          var respString = await response.stream.bytesToString();
-          try {
-            var data = jsonDecode(respString);
-            if (data['errors'] != null) err = data['errors'][0]['title'];
-          } catch (_) {}
-          throw Exception(err);
+          throw Exception('Background Remover Error (Code: ${response.statusCode})');
         }
       } on SocketException {
          _showErrorSnackBar('Network Error: Internet connect nahi hai.');
       } on TimeoutException {
-         _showErrorSnackBar('Internet slow hai ya server reply nahi kar raha (Timeout).');
+         _showErrorSnackBar('Internet slow hai (Timeout).');
       } catch (e) {
          _showErrorSnackBar('BG Error: ${e.toString().replaceAll('Exception: ', '')}');
       } finally {
@@ -136,56 +145,55 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     }
   }
 
-  // 3. Google Gemini API (FIXED: Standard URL format for AQ. keys)
+  // 3. AI Writer - Using Qwen2.5-7B (The best model for pure Urdu)
   Future<void> _writeAIContent() async {
     if (_topicController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isWritingContent = true; _generatedContent = ''; });
     
     try {
-      // 🔥 FIX: Key sirf URL mein hai, Headers se hata di gayi hai taaki OAuth error na aaye.
-      final String geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$GEMINI_API_KEY';
-      
       final response = await http.post(
-        Uri.parse(geminiUrl),
+        Uri.parse('https://api-inference.huggingface.co/models/Qwen/Qwen2.5-7B-Instruct'),
         headers: {
+          'Authorization': 'Bearer $HUGGING_FACE_API_KEY',
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          "contents": [
-            {
-              "parts": [
-                {"text": "Write a highly professional, beautiful, and meaningful essay in PERFECT, pure Urdu language about: '${_topicController.text.trim()}'. Use rich vocabulary, correct Urdu grammar, and proper formatting. Do NOT use any English words. Write like a professional Urdu scholar."}
-              ]
-            }
-          ]
+          "inputs": "You are a professional Urdu scholar. Write a highly professional, beautiful, and meaningful essay in PERFECT, pure Urdu language about: '${_topicController.text.trim()}'. Do NOT use any English words. Write ONLY the Urdu text.",
+          "parameters": {
+            "max_new_tokens": 800,
+            "return_full_text": false
+          }
         })
-      ).timeout(const Duration(seconds: 25)); 
+      ).timeout(const Duration(seconds: 40)); 
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        var candidates = data['candidates'];
-        if (candidates != null && candidates.isNotEmpty) {
-           String aiText = candidates[0]['content']['parts'][0]['text'];
-           setState(() { _generatedContent = aiText.trim(); });
+        final List<dynamic> data = jsonDecode(response.body);
+        if (data.isNotEmpty && data[0]['generated_text'] != null) {
+           String aiText = data[0]['generated_text'].toString().trim();
+           setState(() { _generatedContent = aiText; });
            HapticFeedback.heavyImpact();
         } else {
            throw Exception('AI ne koi text generate nahi kiya.');
         }
       } else {
-        String errorMsg = 'Error ${response.statusCode}';
+        String errorMsg = 'Server Error ${response.statusCode}';
         try {
           var data = jsonDecode(response.body);
           if (data['error'] != null) {
-            errorMsg = data['error']['message'].toString();
+             if(data['error'].toString().contains('loading')) {
+               errorMsg = 'Urdu AI Model load ho raha hai. Kripya 20 sec baad dobara dabayen.';
+             } else {
+               errorMsg = data['error'].toString();
+             }
           }
         } catch (_) {}
         throw Exception(errorMsg);
       }
     } on SocketException {
-      _showErrorSnackBar('Network Error: Gemini server connect nahi ho raha.');
+      _showErrorSnackBar('Network Error: Server connect nahi ho raha.');
     } on TimeoutException {
-      _showErrorSnackBar('Gemini API timeout! Internet check karein.');
+      _showErrorSnackBar('API timeout! Internet check karein.');
     } catch (e) {
       _showErrorSnackBar(e.toString().replaceAll('Exception: ', ''));
     } finally {
@@ -311,7 +319,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
               children: [
                 const Text('Describe Your Imagination', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
                 const SizedBox(height: 4),
-                const Text('ChatGPT ka koi bhi English prompt yahan paste karein...', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueAccent)),
+                const Text('Type your prompt in English...', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueAccent)),
                 const SizedBox(height: 15),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -320,7 +328,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
                     controller: _promptController,
                     maxLines: 4,
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'Type or Paste your detailed ChatGPT prompt here...', hintStyle: TextStyle(color: Colors.black26)),
+                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'Type or Paste your detailed prompt here...', hintStyle: TextStyle(color: Colors.black26)),
                   ),
                 ),
                 const SizedBox(height: 20),
