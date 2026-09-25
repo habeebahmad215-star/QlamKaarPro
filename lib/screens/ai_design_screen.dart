@@ -11,9 +11,8 @@ import 'package:image_gallery_saver/image_gallery_saver.dart';
 
 // ============================================================================
 // 🔥 API KEYS 🔥
+// Text aur Image ke liye koi key nahi chahiye. Yeh OpenAI/Flux par direct chalenge.
 // ============================================================================
-// Yahan apni Groq ki key (gsk_...) daalein. Yeh perfect Urdu likhega!
-const String GROQ_API_KEY = "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"; 
 const String REMOVE_BG_API_KEY = "ViZorV1xopiwHEdvEiERE2XN"; 
 // ============================================================================
 
@@ -58,10 +57,10 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
   }
 
   // ==========================================
-  // REAL API INTEGRATIONS
+  // REAL API INTEGRATIONS (STRICT & FIXED)
   // ==========================================
   
-  // 1. Pollinations AI Image (100% Free - FLUX Model for best quality)
+  // 1. Pollinations AI Image (100% Free - FLUX Model)
   Future<void> _generateAIImage() async {
     if (_promptController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
@@ -71,6 +70,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
       String safePrompt = Uri.encodeComponent(_promptController.text.trim());
       int randomSeed = DateTime.now().millisecondsSinceEpoch % 100000;
       
+      // enhance=false ensures AI doesn't hallucinate your prompt
       String imageUrl = 'https://image.pollinations.ai/prompt/$safePrompt?width=1024&height=1024&nologo=true&enhance=false&model=flux&seed=$randomSeed';
 
       final response = await http.get(Uri.parse(imageUrl)).timeout(const Duration(seconds: 45)); 
@@ -129,52 +129,44 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     }
   }
 
-  // 3. GROQ AI (THE ULTIMATE FIX FOR PERFECT URDU)
+  // 3. AI Writer (Pollinations POST Method - CHATGPT-4o Backend - PERFECT URDU)
   Future<void> _writeAIContent() async {
     if (_topicController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isWritingContent = true; _generatedContent = ''; });
     
     try {
+      // Using POST request to securely hit OpenAI (GPT-4o) model for perfect Urdu grammar
       final response = await http.post(
-        Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
+        Uri.parse('https://text.pollinations.ai/'),
         headers: {
-          'Authorization': 'Bearer $GROQ_API_KEY',
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          "model": "llama3-70b-8192", // Powerful model for excellent Urdu
           "messages": [
             {
-              "role": "system",
-              "content": "You are a highly professional Urdu scholar. Write beautiful, grammatically perfect, and meaningful content in pure Urdu language using Nastaliq script. Never use English words. Never hallucinate or write nonsensical phrases. Write exactly what the user requests, but in top-tier Urdu."
+              "role": "system", 
+              "content": "You are a professional Urdu scholar and writer. Write a beautiful, highly professional essay or content in PERFECT, pure Urdu language. Use rich vocabulary and grammatically correct Urdu. Do NOT use any English words. Never use fabricated or nonsensical words."
             },
             {
-              "role": "user",
+              "role": "user", 
               "content": _topicController.text.trim()
             }
-          ]
+          ],
+          "model": "openai" // Locks the engine to ChatGPT-4o (No Llama/Groq garbage)
         })
       ).timeout(const Duration(seconds: 35)); 
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['choices'] != null && data['choices'].isNotEmpty) {
-           String aiText = data['choices'][0]['message']['content'].toString().trim();
+        String aiText = response.body.trim();
+        if (aiText.isNotEmpty && !aiText.toLowerCase().contains('error')) {
            setState(() { _generatedContent = aiText; });
            HapticFeedback.heavyImpact();
         } else {
            throw Exception('AI ne koi text generate nahi kiya.');
         }
       } else {
-        String errorMsg = 'Server Error ${response.statusCode}';
-        try {
-          var data = jsonDecode(response.body);
-          if (data['error'] != null) {
-            errorMsg = data['error']['message'].toString();
-          }
-        } catch (_) {}
-        throw Exception(errorMsg);
+        throw Exception('Writer Server Error: ${response.statusCode}');
       }
     } on SocketException {
       _showErrorSnackBar('Network Error: Server connect nahi ho raha.');
