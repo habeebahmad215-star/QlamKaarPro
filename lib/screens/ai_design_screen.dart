@@ -5,16 +5,17 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
-import 'dart:async'; // 🔥 YEH LINE MISSING THI JISKI WAJAH SE ERROR AAYA 🔥
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 
 // ============================================================================
 // 🔥 AAPKI API KEYS 🔥
 // ============================================================================
-const String GEMINI_API_KEY = "AQ.Ab8RN6KR7Ko-mPJ6bW0qkojCJvZ91zd3RfeQE8cLo-KknbD2lA"; 
+// Apni nayi AQ. wali key yahan dalein
+const String GEMINI_API_KEY = "AQ.Ab8RN6LxtAlG37bgq7S5-fsshOtpxF0cIiTALWNnGL-EQkUv-g"; 
 const String REMOVE_BG_API_KEY = "ViZorV1xopiwHEdvEiERE2XN";
-const String HUGGING_FACE_API_KEY = "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";
+// HuggingFace API key deleted! Pollinations AI requires NO API KEY ✨
 // ============================================================================
 
 class AiDesignScreen extends StatefulWidget {
@@ -58,45 +59,35 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
   }
 
   // ==========================================
-  // REAL API INTEGRATIONS (PRO ERROR HANDLING & TIMEOUTS)
+  // REAL API INTEGRATIONS (PRO ERROR HANDLING)
   // ==========================================
   
-  // 1. Hugging Face Image Generation API
+  // 1. Pollinations AI Image Generation API (NO API KEY REQUIRED & VERY FAST)
   Future<void> _generateAIImage() async {
     if (_promptController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isGeneratingImage = true; _generatedImageBytes = null; });
     
     try {
-      final response = await http.post(
-        Uri.parse('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0'),
-        headers: {
-          'Authorization': 'Bearer $HUGGING_FACE_API_KEY',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'inputs': _promptController.text,
-          'options': {'wait_for_model': true} 
-        }),
-      ).timeout(const Duration(seconds: 40)); 
+      // Prompt ko URL safe format mein convert karna
+      String safePrompt = Uri.encodeComponent(_promptController.text.trim());
+      // Har baar nayi image generate karne ke liye ek random seed add karna
+      int randomSeed = DateTime.now().millisecondsSinceEpoch % 100000;
+      
+      // Pollinations.ai URL (nologo=true se watermark nahi aayega)
+      String imageUrl = 'https://image.pollinations.ai/prompt/$safePrompt?width=1024&height=1024&nologo=true&seed=$randomSeed';
+
+      // Direct GET request, No Authorization Header needed!
+      final response = await http.get(Uri.parse(imageUrl)).timeout(const Duration(seconds: 40)); 
 
       if (response.statusCode == 200) {
-        if (response.headers['content-type']?.contains('application/json') == true) {
-          var data = jsonDecode(response.body);
-          throw Exception(data['error'] ?? 'API returned JSON instead of Image');
-        }
         setState(() { _generatedImageBytes = response.bodyBytes; });
         HapticFeedback.heavyImpact();
-      } else if (response.statusCode == 503) {
-        throw Exception('AI Model load ho raha hai. Kripya 15-20 second baad dobara try karein.');
       } else {
-        String errorMsg = 'Server Error ${response.statusCode}';
-        try {
-          var data = jsonDecode(response.body);
-          if (data['error'] != null) errorMsg = data['error'].toString();
-        } catch (_) {}
-        throw Exception(errorMsg);
+        throw Exception('Server ne image generate nahi ki. Error Code: ${response.statusCode}');
       }
+    } on SocketException {
+      _showErrorSnackBar('Network Error: Internet connect nahi hai.');
     } on TimeoutException {
       _showErrorSnackBar('Server bohot busy hai (Timeout). Thodi der baad try karein.');
     } catch (e) {
@@ -137,6 +128,8 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
           } catch (_) {}
           throw Exception(err);
         }
+      } on SocketException {
+         _showErrorSnackBar('Network Error: Internet connect nahi hai.');
       } on TimeoutException {
          _showErrorSnackBar('Internet slow hai ya server reply nahi kar raha (Timeout).');
       } catch (e) {
@@ -158,6 +151,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
         Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$GEMINI_API_KEY'),
         headers: {
           'Content-Type': 'application/json',
+          'x-goog-api-key': GEMINI_API_KEY, // AQ. keys ke liye ye zaroori hai
         },
         body: jsonEncode({
           "contents": [
@@ -190,6 +184,8 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
         } catch (_) {}
         throw Exception(errorMsg);
       }
+    } on SocketException {
+      _showErrorSnackBar('Network Error: Gemini server connect nahi ho raha.');
     } on TimeoutException {
       _showErrorSnackBar('Gemini API timeout! Internet check karein.');
     } catch (e) {
