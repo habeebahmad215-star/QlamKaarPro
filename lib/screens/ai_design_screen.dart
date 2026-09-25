@@ -11,11 +11,9 @@ import 'package:image_gallery_saver/image_gallery_saver.dart';
 
 // ============================================================================
 // 🔥 AAPKI API KEYS 🔥
+// Ab Gemini aur HuggingFace ki keys ki zaroorat nahi! Dono 100% Free ho gaye.
 // ============================================================================
-// Apni nayi AQ. wali key yahan dalein
-const String GEMINI_API_KEY = "AQ.Ab8RN6LxtAlG37bgq7S5-fsshOtpxF0cIiTALWNnGL-EQkUv-g"; 
-const String REMOVE_BG_API_KEY = "ViZorV1xopiwHEdvEiERE2XN";
-// HuggingFace API key deleted! Pollinations AI requires NO API KEY ✨
+const String REMOVE_BG_API_KEY = "ViZorV1xopiwHEdvEiERE2XN"; // Sirf BG Remover ke liye
 // ============================================================================
 
 class AiDesignScreen extends StatefulWidget {
@@ -59,26 +57,24 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
   }
 
   // ==========================================
-  // REAL API INTEGRATIONS (PRO ERROR HANDLING)
+  // REAL API INTEGRATIONS (100% FREE & SMART)
   // ==========================================
   
-  // 1. Pollinations AI Image Generation API (NO API KEY REQUIRED & VERY FAST)
+  // 1. Pollinations AI Image (Using FLUX Model for ChatGPT Prompts)
   Future<void> _generateAIImage() async {
     if (_promptController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isGeneratingImage = true; _generatedImageBytes = null; });
     
     try {
-      // Prompt ko URL safe format mein convert karna
+      // Prompt ko safe banaya
       String safePrompt = Uri.encodeComponent(_promptController.text.trim());
-      // Har baar nayi image generate karne ke liye ek random seed add karna
       int randomSeed = DateTime.now().millisecondsSinceEpoch % 100000;
       
-      // Pollinations.ai URL (nologo=true se watermark nahi aayega)
-      String imageUrl = 'https://image.pollinations.ai/prompt/$safePrompt?width=1024&height=1024&nologo=true&seed=$randomSeed';
+      // 🔥 FIX: Added model=flux ! Ye ChatGPT ke complex prompts ko exactly samajhta hai
+      String imageUrl = 'https://image.pollinations.ai/prompt/$safePrompt?width=1024&height=1024&nologo=true&model=flux&seed=$randomSeed';
 
-      // Direct GET request, No Authorization Header needed!
-      final response = await http.get(Uri.parse(imageUrl)).timeout(const Duration(seconds: 40)); 
+      final response = await http.get(Uri.parse(imageUrl)).timeout(const Duration(seconds: 45)); 
 
       if (response.statusCode == 200) {
         setState(() { _generatedImageBytes = response.bodyBytes; });
@@ -140,54 +136,37 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     }
   }
 
-  // 3. Google Gemini API (Text Generation)
+  // 3. Pollinations Text AI (NO API KEY REQUIRED, REPLACED GEMINI)
   Future<void> _writeAIContent() async {
     if (_topicController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isWritingContent = true; _generatedContent = ''; });
     
     try {
-      final response = await http.post(
-        Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$GEMINI_API_KEY'),
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': GEMINI_API_KEY, // AQ. keys ke liye ye zaroori hai
-        },
-        body: jsonEncode({
-          "contents": [
-            {
-              "parts": [
-                {"text": "Write a beautiful, professional, and engaging text in pure Urdu language about: '${_topicController.text}'. The text should be ready to be used in a graphic design poster. Do not use English words. Keep it structured."}
-              ]
-            }
-          ]
-        })
-      ).timeout(const Duration(seconds: 25)); 
+      // Smart prompt to force pure Urdu response
+      String aiPrompt = "Write a beautiful, professional, and engaging text in pure Urdu language using Nastaliq script about: '${_topicController.text.trim()}'. The text should be ready to be used in a graphic design poster. Do not use English words. Keep it short and structured.";
+      String safePrompt = Uri.encodeComponent(aiPrompt);
+      
+      // Direct GET request for text generation
+      final response = await http.get(
+        Uri.parse('https://text.pollinations.ai/$safePrompt')
+      ).timeout(const Duration(seconds: 30)); 
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        var candidates = data['candidates'];
-        if (candidates != null && candidates.isNotEmpty) {
-           String aiText = candidates[0]['content']['parts'][0]['text'];
-           setState(() { _generatedContent = aiText.trim(); });
+        String aiText = response.body.trim();
+        if (aiText.isNotEmpty) {
+           setState(() { _generatedContent = aiText; });
            HapticFeedback.heavyImpact();
         } else {
-           throw Exception('AI ne koi text generate nahi kiya (Shayad safety filter ki wajah se).');
+           throw Exception('AI ne koi text generate nahi kiya.');
         }
       } else {
-        String errorMsg = 'Error ${response.statusCode}';
-        try {
-          var data = jsonDecode(response.body);
-          if (data['error'] != null) {
-            errorMsg = data['error']['message'].toString();
-          }
-        } catch (_) {}
-        throw Exception(errorMsg);
+        throw Exception('Server Error: ${response.statusCode}');
       }
     } on SocketException {
-      _showErrorSnackBar('Network Error: Gemini server connect nahi ho raha.');
+      _showErrorSnackBar('Network Error: Server connect nahi ho raha.');
     } on TimeoutException {
-      _showErrorSnackBar('Gemini API timeout! Internet check karein.');
+      _showErrorSnackBar('API timeout! Internet check karein.');
     } catch (e) {
       _showErrorSnackBar(e.toString().replaceAll('Exception: ', ''));
     } finally {
@@ -313,7 +292,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
               children: [
                 const Text('Describe Your Imagination', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
                 const SizedBox(height: 4),
-                const Text('English ya Roman Urdu mein likhein...', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                const Text('ChatGPT ka koi bhi English prompt yahan paste karein...', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueAccent)),
                 const SizedBox(height: 15),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -322,7 +301,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
                     controller: _promptController,
                     maxLines: 4,
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'E.g. A beautiful golden 3D Islamic logo with dark background...', hintStyle: TextStyle(color: Colors.black26)),
+                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'Type or Paste your detailed ChatGPT prompt here...', hintStyle: TextStyle(color: Colors.black26)),
                   ),
                 ),
                 const SizedBox(height: 20),
