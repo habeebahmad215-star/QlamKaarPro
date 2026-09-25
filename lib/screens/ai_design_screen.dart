@@ -9,9 +9,11 @@ import 'package:http/http.dart' as http;
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 
 // ============================================================================
-// 🔥 AAPKI ASLI API KEYS YAHAN SET KAREIN 🔥
+// 🔥 AAPKI API KEYS 🔥
+// NOTE: Apni Gemini ki key change karein, ye 'AQ.Ab8...' wali galat hai.
+// Google API Key hamesha 'AIzaSy...' se shuru hoti hai. (Get from: aistudio.google.com)
 // ============================================================================
-const String GEMINI_API_KEY = "AQ.Ab8RN6KR7Ko-mPJ6bW0qkojCJvZ91zd3RfeQE8cLo-KknbD2lA";
+const String GEMINI_API_KEY = "AQ.Ab8RN6LxtAlG37bgq7S5-fsshOtpxF0cIiTALWNnGL-EQkUv-g"; // ⚠️ Replace this with a valid 'AIza...' key
 const String REMOVE_BG_API_KEY = "ViZorV1xopiwHEdvEiERE2XN";
 const String HUGGING_FACE_API_KEY = "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";
 // ============================================================================
@@ -57,7 +59,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
   }
 
   // ==========================================
-  // REAL API INTEGRATIONS (WITH SMART ERROR HANDLING)
+  // REAL API INTEGRATIONS (PRO ERROR HANDLING & TIMEOUTS)
   // ==========================================
   
   // 1. Hugging Face Image Generation API
@@ -67,25 +69,30 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     setState(() { _isGeneratingImage = true; _generatedImageBytes = null; });
     
     try {
+      // Using SDXL which is better and more reliable on HF Free tier
       final response = await http.post(
-        // Lighter and faster model for free API
-        Uri.parse('https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5'),
+        Uri.parse('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0'),
         headers: {
           'Authorization': 'Bearer $HUGGING_FACE_API_KEY',
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
           'inputs': _promptController.text,
-          // Ye option API ko batata hai ki jab tak model load na ho, wait karo, error mat do
           'options': {'wait_for_model': true} 
         }),
-      );
+      ).timeout(const Duration(seconds: 40)); // ⏳ 40 sec timeout added to prevent hang
 
       if (response.statusCode == 200) {
+        // Checking if HF returned JSON (Error) instead of Image bytes
+        if (response.headers['content-type']?.contains('application/json') == true) {
+          var data = jsonDecode(response.body);
+          throw Exception(data['error'] ?? 'API returned JSON instead of Image');
+        }
         setState(() { _generatedImageBytes = response.bodyBytes; });
         HapticFeedback.heavyImpact();
+      } else if (response.statusCode == 503) {
+        throw Exception('AI Model load ho raha hai. Kripya 15-20 second baad dobara try karein.');
       } else {
-        // Asal error server se nikal kar dikhayega
         String errorMsg = 'Server Error ${response.statusCode}';
         try {
           var data = jsonDecode(response.body);
@@ -93,12 +100,10 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
         } catch (_) {}
         throw Exception(errorMsg);
       }
+    } on TimeoutException {
+      _showErrorSnackBar('Server bohot busy hai (Timeout). Thodi der baad try karein.');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Fail: ${e.toString().replaceAll('Exception: ', '')}'),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 4),
-      ));
+      _showErrorSnackBar(e.toString().replaceAll('Exception: ', ''));
     } finally {
       setState(() { _isGeneratingImage = false; });
     }
@@ -117,9 +122,12 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
       try {
         var request = http.MultipartRequest('POST', Uri.parse('https://api.remove.bg/v1.0/removebg'));
         request.headers['X-Api-Key'] = REMOVE_BG_API_KEY;
+        request.fields['size'] = 'auto'; // Force auto sizing
         request.files.add(await http.MultipartFile.fromPath('image_file', _selectedImageForBg!.path));
         
-        var response = await request.send();
+        // ⏳ 30 sec timeout added to prevent hang
+        var response = await request.send().timeout(const Duration(seconds: 30));
+        
         if (response.statusCode == 200) {
           var responseData = await response.stream.toBytes();
           setState(() { _bgRemovedBytes = responseData; });
@@ -133,11 +141,10 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
           } catch (_) {}
           throw Exception(err);
         }
+      } on TimeoutException {
+         _showErrorSnackBar('Internet slow hai ya server reply nahi kar raha (Timeout).');
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('BG Error: ${e.toString().replaceAll('Exception: ', '')}'),
-          backgroundColor: Colors.red,
-        ));
+         _showErrorSnackBar('BG Error: ${e.toString().replaceAll('Exception: ', '')}');
       } finally {
         setState(() { _isRemovingBg = false; });
       }
@@ -151,7 +158,6 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     setState(() { _isWritingContent = true; _generatedContent = ''; });
     
     try {
-      // MASLA YAHAN FIX KIYA HAI: Direct URL ke andar ?key= lagakar bhej diya
       final response = await http.post(
         Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$GEMINI_API_KEY'),
         headers: {
@@ -166,29 +172,51 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
             }
           ]
         })
-      );
+      ).timeout(const Duration(seconds: 25)); // ⏳ 25 sec timeout added
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        String aiText = data['candidates'][0]['content']['parts'][0]['text'];
-        setState(() { _generatedContent = aiText.trim(); });
-        HapticFeedback.heavyImpact();
+        
+        // Safely parse Gemini response to avoid null crash
+        var candidates = data['candidates'];
+        if (candidates != null && candidates.isNotEmpty) {
+           String aiText = candidates[0]['content']['parts'][0]['text'];
+           setState(() { _generatedContent = aiText.trim(); });
+           HapticFeedback.heavyImpact();
+        } else {
+           throw Exception('AI ne koi text generate nahi kiya (Shayad safety filter ki wajah se).');
+        }
       } else {
         String errorMsg = 'Error ${response.statusCode}';
         try {
           var data = jsonDecode(response.body);
-          if (data['error'] != null) errorMsg = data['error']['message'].toString();
+          if (data['error'] != null) {
+            errorMsg = data['error']['message'].toString();
+            // Specific check for invalid API key format
+            if(errorMsg.contains('API key not valid') || errorMsg.contains('API_KEY_INVALID')) {
+              errorMsg = "Aapki Gemini API Key galat hai! Kripya 'AIzaSy...' wali asil key daalein.";
+            }
+          }
         } catch (_) {}
         throw Exception(errorMsg);
       }
+    } on TimeoutException {
+      _showErrorSnackBar('Gemini API timeout! Internet check karein.');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Gemini Error: ${e.toString().replaceAll('Exception: ', '')}'),
-        backgroundColor: Colors.red,
-      ));
+      _showErrorSnackBar(e.toString().replaceAll('Exception: ', ''));
     } finally {
       setState(() { _isWritingContent = false; });
     }
+  }
+
+  // UI Helper for Errors
+  void _showErrorSnackBar(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      backgroundColor: Colors.redAccent,
+      duration: const Duration(seconds: 4),
+      behavior: SnackBarBehavior.floating,
+    ));
   }
 
   // Save Image Function
