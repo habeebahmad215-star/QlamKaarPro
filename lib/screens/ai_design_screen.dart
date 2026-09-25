@@ -12,8 +12,8 @@ import 'package:image_gallery_saver/image_gallery_saver.dart';
 // ============================================================================
 // 🔥 API KEYS 🔥
 // ============================================================================
-// Yahan apne kisi NORMAL @gmail.com se banayi hui AIzaSy... wali key daalein
-const String GEMINI_API_KEY = "AQ.Ab8RN6IO3VD5tL0o8f8q93Jv0yIqe-PDnXcVz5fEOKQBA2ZBGQ"; 
+// Yahan apni nayi Gemini API key daalein jo aapne abhi generate ki hai
+const String GEMINI_API_KEY = "AQ.Ab8RN6LHMtFpNX0TINZHYP8uXc8XgqKsGEwAJdcx-PgedZkjrg"; 
 const String REMOVE_BG_API_KEY = "ViZorV1xopiwHEdvEiERE2XN"; 
 // ============================================================================
 
@@ -58,10 +58,10 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
   }
 
   // ==========================================
-  // REAL API INTEGRATIONS (GEMINI FOR PERFECT URDU)
+  // REAL API INTEGRATIONS (STRICT & FIXED)
   // ==========================================
   
-  // 1. AI Image Generator (Flux Model - Working Good for Icons)
+  // 1. AI Image Generator (Flux Model)
   Future<void> _generateAIImage() async {
     if (_promptController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
@@ -129,19 +129,24 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     }
   }
 
-  // 3. AI Writer (Gemini 1.5 Flash - FOR 100% PURE URDU)
+  // 3. AI Writer (Gemini 1.5 Flash - FIXED HEADERS FOR NEW KEYS)
   Future<void> _writeAIContent() async {
     if (_topicController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isWritingContent = true; _generatedContent = ''; });
     
     try {
-      final String geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$GEMINI_API_KEY';
+      // Key safai (extra spaces ya quotes hatane ke liye)
+      String cleanKey = GEMINI_API_KEY.trim().replaceAll('"', '').replaceAll("'", "");
+      
+      // URL se ?key= hata diya, ab direct headers mein jayegi key
+      final String geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
       
       final response = await http.post(
         Uri.parse(geminiUrl),
         headers: {
           'Content-Type': 'application/json',
+          'x-goog-api-key': cleanKey, // Nayi keys yahan header mein lagti hain
         },
         body: jsonEncode({
           "contents": [
