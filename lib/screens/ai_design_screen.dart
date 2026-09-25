@@ -60,18 +60,18 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
   // REAL API INTEGRATIONS (100% FREE & SMART)
   // ==========================================
   
-  // 1. Pollinations AI Image (Using FLUX Model for ChatGPT Prompts)
+  // 1. Pollinations AI Image (Using FLUX Model for Perfect Results)
   Future<void> _generateAIImage() async {
     if (_promptController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isGeneratingImage = true; _generatedImageBytes = null; });
     
     try {
-      // Prompt ko safe banaya
+      // Prompt bilkul waisa hi jayega jaisa aap likhenge
       String safePrompt = Uri.encodeComponent(_promptController.text.trim());
       int randomSeed = DateTime.now().millisecondsSinceEpoch % 100000;
       
-      // 🔥 FIX: Added model=flux ! Ye ChatGPT ke complex prompts ko exactly samajhta hai
+      // model=flux add kiya gaya hai taaki logo aur complex designs perfect banen
       String imageUrl = 'https://image.pollinations.ai/prompt/$safePrompt?width=1024&height=1024&nologo=true&model=flux&seed=$randomSeed';
 
       final response = await http.get(Uri.parse(imageUrl)).timeout(const Duration(seconds: 45)); 
@@ -93,7 +93,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     }
   }
 
-  // 2. Remove.BG API
+  // 2. Remove.BG API (Pehle se best kaam kar raha hai)
   Future<void> _pickAndRemoveBg() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
@@ -136,25 +136,25 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     }
   }
 
-  // 3. Pollinations Text AI (NO API KEY REQUIRED, REPLACED GEMINI)
+  // 3. Pollinations Text AI (Using OPENAI/GPT-4o Model for PERFECT Urdu)
   Future<void> _writeAIContent() async {
     if (_topicController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isWritingContent = true; _generatedContent = ''; });
     
     try {
-      // Smart prompt to force pure Urdu response
-      String aiPrompt = "Write a beautiful, professional, and engaging text in pure Urdu language using Nastaliq script about: '${_topicController.text.trim()}'. The text should be ready to be used in a graphic design poster. Do not use English words. Keep it short and structured.";
+      // Strict prompt to force pure, correct and professional Urdu grammar
+      String aiPrompt = "Write a highly professional, beautiful, and meaningful essay in PERFECT, pure Urdu language about: '${_topicController.text.trim()}'. Use rich vocabulary, correct Urdu grammar, and proper formatting. Do NOT use any English words. Do NOT generate random or nonsensical phrases. Write like a professional Urdu scholar/author.";
       String safePrompt = Uri.encodeComponent(aiPrompt);
       
-      // Direct GET request for text generation
+      // model=openai add kiya gaya hai taaki GPT-4 jaisi khalis Urdu mile
       final response = await http.get(
-        Uri.parse('https://text.pollinations.ai/$safePrompt')
+        Uri.parse('https://text.pollinations.ai/$safePrompt?model=openai')
       ).timeout(const Duration(seconds: 30)); 
 
       if (response.statusCode == 200) {
         String aiText = response.body.trim();
-        if (aiText.isNotEmpty) {
+        if (aiText.isNotEmpty && !aiText.toLowerCase().contains('error')) {
            setState(() { _generatedContent = aiText; });
            HapticFeedback.heavyImpact();
         } else {
