@@ -95,7 +95,7 @@ class WorkspaceToolbars {
     );
   }
 
-  // 🔥 THE NEW SMART DOUBLE-ROW LOGIC 🔥
+  // 🔥 REMOVED POSITION BUTTON & MADE 'ALIGN' THE MASTER BUTTON 🔥
   static Widget buildAdvancedSelectedBar({
     required BuildContext context,
     required DesignElement sel,
@@ -127,18 +127,18 @@ class WorkspaceToolbars {
         btn(Icons.gradient_rounded, 'Gradient', 'gradient'),
         btn(Icons.format_color_fill_rounded, 'Text BG', 'textBg'),
         btn(Icons.height_rounded, 'Spacing', 'spacing'),
-        btn(Icons.format_align_center_rounded, 'Align', 'align'),
+        btn(Icons.format_align_center_rounded, 'Align', 'align'), // Master Button
         btn(Icons.format_bold_rounded, 'Bold', 'bold'),
         btn(Icons.open_with_rounded, 'Move', 'move'),
-        btn(Icons.center_focus_strong_rounded, 'Position', 'position'),
         btn(Icons.more_horiz_rounded, 'More', 'more', Colors.grey.shade800),
       ]);
-    } else if (sel.isBorder) {
+    } else if (sel.isBorder || sel.isTable) {
       topRow.addAll([
         btn(Icons.close_rounded, 'Deselect', 'deselect', Colors.redAccent),
         btn(Icons.fullscreen_rounded, 'Fit Page', 'fitPage', const Color(0xFF10B981)),
         btn(Icons.straighten_rounded, 'Size', 'size'),
-        btn(Icons.line_weight_rounded, 'Setup', 'setup'),
+        if(sel.isBorder) btn(Icons.line_weight_rounded, 'Setup', 'setup'),
+        if(sel.isTable) btn(Icons.table_rows_rounded, 'Edit Table', 'editTable', const Color(0xFF10B981)),
         btn(Icons.palette_rounded, 'Color', 'color', const Color(0xFF8B5CF6)),
         btn(Icons.opacity_rounded, 'Opacity', 'opacity'),
         btn(Icons.lock_outline_rounded, 'Lock', 'lock', Colors.orange),
@@ -146,25 +146,7 @@ class WorkspaceToolbars {
       bottomRow.addAll([
         btn(Icons.delete_outline_rounded, 'Delete', 'delete', Colors.red),
         btn(Icons.copy_rounded, 'Duplicate', 'duplicate', Colors.blue),
-        btn(Icons.center_focus_strong_rounded, 'Position', 'position'),
-        btn(Icons.open_with_rounded, 'Move', 'move'),
-        btn(Icons.arrow_upward_rounded, 'Bring Fwd', 'bringFwd'),
-        btn(Icons.arrow_downward_rounded, 'Send Bwd', 'sendBwd'),
-        btn(Icons.more_horiz_rounded, 'More', 'more', Colors.grey.shade800),
-      ]);
-    } else if (sel.isTable) {
-      topRow.addAll([
-        btn(Icons.close_rounded, 'Deselect', 'deselect', Colors.redAccent),
-        btn(Icons.table_rows_rounded, 'Edit Table', 'editTable', const Color(0xFF10B981)),
-        btn(Icons.text_fields_rounded, 'Size', 'size'),
-        btn(Icons.font_download_rounded, 'Font', 'font'),
-        btn(Icons.palette_rounded, 'Color', 'color', const Color(0xFF8B5CF6)),
-        btn(Icons.lock_outline_rounded, 'Lock', 'lock', Colors.orange),
-      ]);
-      bottomRow.addAll([
-        btn(Icons.delete_outline_rounded, 'Delete', 'delete', Colors.red),
-        btn(Icons.copy_rounded, 'Duplicate', 'duplicate', Colors.blue),
-        btn(Icons.center_focus_strong_rounded, 'Position', 'position'),
+        btn(Icons.format_align_center_rounded, 'Align', 'align'), // Master Button
         btn(Icons.open_with_rounded, 'Move', 'move'),
         btn(Icons.arrow_upward_rounded, 'Bring Fwd', 'bringFwd'),
         btn(Icons.arrow_downward_rounded, 'Send Bwd', 'sendBwd'),
@@ -187,7 +169,7 @@ class WorkspaceToolbars {
         btn(Icons.copy_rounded, 'Duplicate', 'duplicate', Colors.blue),
         btn(Icons.brightness_6_rounded, 'Shadow', 'shadow'),
         btn(Icons.auto_awesome_motion_rounded, 'Blend', 'blend'),
-        btn(Icons.center_focus_strong_rounded, 'Position', 'position'),
+        btn(Icons.format_align_center_rounded, 'Align', 'align'), // Master Button
         btn(Icons.open_with_rounded, 'Move', 'move'),
         btn(Icons.arrow_upward_rounded, 'Bring Fwd', 'bringFwd'),
         btn(Icons.arrow_downward_rounded, 'Send Bwd', 'sendBwd'),
@@ -208,7 +190,7 @@ class WorkspaceToolbars {
       bottomRow.addAll([
         btn(Icons.delete_outline_rounded, 'Delete', 'delete', Colors.red),
         btn(Icons.copy_rounded, 'Duplicate', 'duplicate', Colors.blue),
-        btn(Icons.center_focus_strong_rounded, 'Position', 'position'),
+        btn(Icons.format_align_center_rounded, 'Align', 'align'), // Master Button
         btn(Icons.open_with_rounded, 'Move', 'move'),
         btn(Icons.arrow_upward_rounded, 'Bring Fwd', 'bringFwd'),
         btn(Icons.arrow_downward_rounded, 'Send Bwd', 'sendBwd'),
