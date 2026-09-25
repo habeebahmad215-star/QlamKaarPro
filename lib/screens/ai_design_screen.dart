@@ -12,8 +12,8 @@ import 'package:image_gallery_saver/image_gallery_saver.dart';
 // ============================================================================
 // 🔥 API KEYS 🔥
 // ============================================================================
-// Yahan apni nayi Gemini API key daalein jo aapne abhi generate ki hai
-const String GEMINI_API_KEY = "AQ.Ab8RN6LHMtFpNX0TINZHYP8uXc8XgqKsGEwAJdcx-PgedZkjrg"; 
+// ⚠️ یہاں اپنی OpenAI کی نئی کی (Key) ڈالیں جو sk-... سے شروع ہوتی ہے
+const String OPENAI_API_KEY = "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"; 
 const String REMOVE_BG_API_KEY = "ViZorV1xopiwHEdvEiERE2XN"; 
 // ============================================================================
 
@@ -58,10 +58,10 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
   }
 
   // ==========================================
-  // REAL API INTEGRATIONS (STRICT & FIXED)
+  // REAL API INTEGRATIONS
   // ==========================================
   
-  // 1. AI Image Generator (Flux Model)
+  // 1. AI Image Generator (Working Good)
   Future<void> _generateAIImage() async {
     if (_promptController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
@@ -92,7 +92,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     }
   }
 
-  // 2. Remove.BG API
+  // 2. Remove.BG API (Working Perfectly)
   Future<void> _pickAndRemoveBg() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
@@ -129,42 +129,41 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     }
   }
 
-  // 3. AI Writer (Gemini 1.5 Flash - FIXED HEADERS FOR NEW KEYS)
+  // 3. AI Writer (OPENAI GPT-4o - FOR 100% PERFECT URDU)
   Future<void> _writeAIContent() async {
     if (_topicController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isWritingContent = true; _generatedContent = ''; });
     
     try {
-      // Key safai (extra spaces ya quotes hatane ke liye)
-      String cleanKey = GEMINI_API_KEY.trim().replaceAll('"', '').replaceAll("'", "");
-      
-      // URL se ?key= hata diya, ab direct headers mein jayegi key
-      final String geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+      String cleanKey = OPENAI_API_KEY.trim().replaceAll('"', '').replaceAll("'", "");
       
       final response = await http.post(
-        Uri.parse(geminiUrl),
+        Uri.parse('https://api.openai.com/v1/chat/completions'),
         headers: {
           'Content-Type': 'application/json',
-          'x-goog-api-key': cleanKey, // Nayi keys yahan header mein lagti hain
+          'Authorization': 'Bearer $cleanKey',
         },
         body: jsonEncode({
-          "contents": [
+          "model": "gpt-4o", // Duniya ka sabse behtareen AI model
+          "messages": [
             {
-              "parts": [
-                {"text": "Write a highly professional, beautiful, and meaningful essay in PERFECT, pure Urdu language about: '${_topicController.text.trim()}'. Use rich vocabulary, correct Urdu grammar, and proper formatting. Do NOT use any English words. Write like a professional Urdu scholar."}
-              ]
+              "role": "system",
+              "content": "You are a professional Urdu scholar and writer. Write a highly professional, beautiful, and meaningful essay or text in PERFECT, pure Urdu language. Use rich vocabulary, correct Urdu grammar, and proper formatting. Do NOT use any English words. Write ONLY the Urdu text."
+            },
+            {
+              "role": "user",
+              "content": _topicController.text.trim()
             }
           ]
         })
-      ).timeout(const Duration(seconds: 25)); 
+      ).timeout(const Duration(seconds: 35)); 
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        var candidates = data['candidates'];
-        if (candidates != null && candidates.isNotEmpty) {
-           String aiText = candidates[0]['content']['parts'][0]['text'];
-           setState(() { _generatedContent = aiText.trim(); });
+        final data = jsonDecode(utf8.decode(response.bodyBytes)); // UTF-8 for perfect Urdu text rendering
+        if (data['choices'] != null && data['choices'].isNotEmpty) {
+           String aiText = data['choices'][0]['message']['content'].toString().trim();
+           setState(() { _generatedContent = aiText; });
            HapticFeedback.heavyImpact();
         } else {
            throw Exception('AI ne koi text generate nahi kiya.');
@@ -173,16 +172,22 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
         String errorMsg = 'Error ${response.statusCode}';
         try {
           var data = jsonDecode(response.body);
-          if (data['error'] != null) {
+          if (data['error'] != null && data['error']['message'] != null) {
             errorMsg = data['error']['message'].toString();
           }
         } catch (_) {}
+        
+        // Custom error for billing issues
+        if (response.statusCode == 429 && errorMsg.contains('quota')) {
+          errorMsg = 'OpenAI Billing Error: Aapke account mein credits khatam ho gaye hain.';
+        }
+        
         throw Exception(errorMsg);
       }
     } on SocketException {
-      _showErrorSnackBar('Network Error: Gemini server connect nahi ho raha.');
+      _showErrorSnackBar('Network Error: OpenAI server connect nahi ho raha.');
     } on TimeoutException {
-      _showErrorSnackBar('Gemini API timeout! Internet check karein.');
+      _showErrorSnackBar('API timeout! Internet check karein.');
     } catch (e) {
       _showErrorSnackBar(e.toString().replaceAll('Exception: ', ''));
     } finally {
