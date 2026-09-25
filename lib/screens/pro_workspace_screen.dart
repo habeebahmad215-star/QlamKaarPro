@@ -1979,30 +1979,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     );
   }
 
-  Future<void> _importCustomFont() async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom, 
-        allowedExtensions: ['ttf', 'otf']
-      );
-      
-      if (result != null && result.files.single.path != null) {
-        String filePath = result.files.single.path!;
-        String fontName = result.files.single.name.replaceAll('.ttf', '').replaceAll('.otf', '');
-        var fontLoader = FontLoader(fontName);
-        fontLoader.addFont(Future.value(ByteData.view(File(filePath).readAsBytesSync().buffer)));
-        await fontLoader.load();
-        setState(() { 
-          if (!customFonts.contains(fontName)) customFonts.add(fontName); 
-        });
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Font "$fontName" import ho gaya!')));
-      }
-    } catch (e) {
-      debugPrint("Font Import Error: $e");
-    }
-  }
-
-  void showFontPickerModal(DesignElement sel) {
+  void _showCurveModal(DesignElement sel) {
     showModalBottomSheet(
       context: context,
       barrierColor: Colors.transparent,
@@ -2013,106 +1990,80 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
           builder: (context, setModalState) {
             return buildGlassContainer(
               context,
-              height: MediaQuery.of(context).size.height * 0.70,
+              height: 200,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Curve Text گولائی', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
+                    ]
+                  ),
+                  Row(
+                    children: [
+                      const SizedBox(width: 55, child: Text('Bend:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                      Expanded(child: Slider(value: sel.textCurveRadius.clamp(-150.0, 150.0), min: -150.0, max: 150.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.textCurveRadius = val); setModalState((){}); triggerCanvasUpdate(); }))
+                    ]
+                  ),
+                  Row(
+                    children: [
+                      const SizedBox(width: 55, child: Text('Spacing:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                      Expanded(child: Slider(value: sel.letterSpacing.clamp(-5.0, 20.0), min: -5.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.letterSpacing = val); setModalState((){}); triggerCanvasUpdate(); }))
+                    ]
+                  ),
+                  ElevatedButton(
+                    onPressed: () { saveState(); setState(() => sel.textCurveRadius = 0.0); setModalState((){}); triggerCanvasUpdate(); },
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.white.withOpacity(0.6), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                    child: const Text('Reset Curve', style: TextStyle(color: Colors.black87, fontSize: 12))
+                  )
+                ]
+              )
+            );
+          }
+        );
+      }
+    );
+  }
+
+  void _showBlendModeModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context,
+      barrierColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return buildGlassContainer(
+              context,
+              height: 280,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Select Font', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      Row(
-                        children: [
-                          ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), elevation: 0),
-                            onPressed: () async { await _importCustomFont(); setModalState(() {}); },
-                            icon: const Icon(Icons.add, color: Colors.white, size: 14),
-                            label: const Text('Add', style: TextStyle(color: Colors.white, fontSize: 11))
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
-                        ],
-                      )
+                      const Text('Blend Modes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
                     ]
                   ),
                   const Divider(color: Colors.black12),
                   Expanded(
-                    child: ListView(
+                    child: ListView.builder(
                       physics: const BouncingScrollPhysics(),
-                      children: [
-                        const Padding(padding: EdgeInsets.symmetric(vertical: 8.0), child: Text('Pre-installed Fonts', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                        ...availableFontsData.map((font) {
-                          bool isSelected = sel.fontFamily == font['name'];
-                          return Card(
-                            elevation: 0,
-                            color: isSelected ? Colors.white.withOpacity(0.8) : Colors.white.withOpacity(0.4),
-                            shape: RoundedRectangleBorder(side: BorderSide(color: isSelected ? const Color(0xFF8B5CF6) : Colors.transparent), borderRadius: BorderRadius.circular(12)),
-                            margin: const EdgeInsets.only(bottom: 8),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(12),
-                              onTap: () { saveState(); setState(() => sel.fontFamily = font['name']!); triggerCanvasUpdate(); Navigator.pop(context); },
-                              child: Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      flex: 2,
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(font['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                          Text(font['desc']!, style: const TextStyle(fontSize: 9, color: Colors.black54))
-                                        ],
-                                      ),
-                                    ),
-                                    Expanded(
-                                      flex: 3,
-                                      child: Text(font['title']!, textAlign: TextAlign.right, textDirection: TextDirection.rtl, style: TextStyle(fontFamily: font['name'], fontSize: 22, color: Colors.black))
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Icon(isSelected ? Icons.check_circle : Icons.radio_button_unchecked, color: isSelected ? const Color(0xFF8B5CF6) : Colors.black26, size: 18)
-                                  ],
-                                ),
-                              ),
-                            )
-                          );
-                        }),
-                        if (customFonts.isNotEmpty) ...[
-                          const Padding(padding: EdgeInsets.only(top: 15, bottom: 8.0), child: Text('My Custom Fonts', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12))),
-                          ...customFonts.map((fontName) {
-                            bool isSelected = sel.fontFamily == fontName;
-                            return Card(
-                              elevation: 0,
-                              color: isSelected ? Colors.white.withOpacity(0.8) : Colors.white.withOpacity(0.4),
-                              shape: RoundedRectangleBorder(side: BorderSide(color: isSelected ? const Color(0xFF8B5CF6) : Colors.transparent), borderRadius: BorderRadius.circular(12)),
-                              margin: const EdgeInsets.only(bottom: 8),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(12),
-                                onTap: () { saveState(); setState(() => sel.fontFamily = fontName); triggerCanvasUpdate(); Navigator.pop(context); },
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(fontName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                            const Text('Imported TTF', style: TextStyle(fontSize: 9, color: Colors.black54))
-                                          ],
-                                        )
-                                      ),
-                                      const Text('نمونہ تحریر', textAlign: TextAlign.right, textDirection: TextDirection.rtl, style: TextStyle(fontSize: 22)),
-                                      const SizedBox(width: 10),
-                                      Icon(isSelected ? Icons.check_circle : Icons.radio_button_unchecked, color: isSelected ? const Color(0xFF8B5CF6) : Colors.black26, size: 18)
-                                    ],
-                                  ),
-                                ),
-                              )
-                            );
-                          })
-                        ]
-                      ],
+                      itemCount: AppConstants.blendModes.length,
+                      itemBuilder: (context, index) {
+                        String bName = AppConstants.blendModes[index].toString().replaceAll('BlendMode.', '');
+                        bool isSel = sel.blendModeIndex == index;
+                        return ListTile(
+                          dense: true,
+                          title: Text(bName, style: TextStyle(fontWeight: isSel ? FontWeight.bold : FontWeight.normal, color: isSel ? const Color(0xFF8B5CF6) : Colors.black87)),
+                          trailing: isSel ? const Icon(Icons.check_circle, color: Color(0xFF8B5CF6), size: 18) : null,
+                          onTap: () { saveState(); setState(() => sel.blendModeIndex = index); triggerCanvasUpdate(); Navigator.pop(context); }
+                        );
+                      }
                     )
                   )
                 ]
@@ -2124,389 +2075,62 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     );
   }
 
-  void _showMultiStyleModal(DesignElement sel) {
-    Set<int> selectedIndices = {};
-    List<String> words = sel.content.split(' ');
-    
-    if (!textMultiStyles.containsKey(sel.id)) {
-      textMultiStyles[sel.id] = {};
-    }
-
+  void _showMoreOptionsModal(DesignElement sel) {
     showModalBottomSheet(
       context: context,
       barrierColor: Colors.transparent,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return buildGlassContainer(
-              context,
-              height: 380,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        List<Widget> moreTools = [];
+
+        if (sel.isText) {
+           moreTools.add(_buildGridToolBtn(Icons.rotate_right_rounded, 'Rotate', () { Navigator.pop(context); showRotationModal(sel); }));
+           moreTools.add(_buildGridToolBtn(Icons.view_in_ar_outlined, '3D Block', () { Navigator.pop(context); _show3DBlockModal(sel); }));
+           moreTools.add(_buildGridToolBtn(Icons.data_usage_rounded, 'Curve', () { Navigator.pop(context); _showCurveModal(sel); }));
+           moreTools.add(_buildGridToolBtn(Icons.view_in_ar_rounded, 'Perspective', () { Navigator.pop(context); show3DModal(sel); }));
+        } else {
+           if (sel.imageBytes != null || sel.isShape) moreTools.add(_buildGridToolBtn(Icons.format_paint_rounded, 'Tint', () { Navigator.pop(context); _openProColorPicker(title: 'Color', currentColor: sel.elementColor, onColorChanged: (c) { setState(()=> sel.elementColor = c); }); }));
+           if (sel.imageBytes != null) moreTools.add(_buildGridToolBtn(Icons.auto_awesome_motion_rounded, 'Blend', () { Navigator.pop(context); _showBlendModeModal(sel); }));
+           moreTools.add(_buildGridToolBtn(Icons.center_focus_strong_rounded, 'Align', () { Navigator.pop(context); showAlignAndArrangeModal(sel); }));
+           moreTools.add(_buildGridToolBtn(Icons.open_with_rounded, 'Move', () { Navigator.pop(context); showMoveModal(sel); }));
+           moreTools.add(_buildGridToolBtn(Icons.rotate_right_rounded, 'Rotate', () { Navigator.pop(context); showRotationModal(sel); }));
+           moreTools.add(_buildGridToolBtn(Icons.view_in_ar_rounded, 'Perspective', () { Navigator.pop(context); show3DModal(sel); }));
+           moreTools.add(_buildGridToolBtn(Icons.opacity_rounded, 'Opacity', () { Navigator.pop(context); _showOpacityModal(sel); }));
+           if (!sel.isBorder && !sel.isTable) moreTools.add(_buildGridToolBtn(Icons.rounded_corner_rounded, 'Radius', () { Navigator.pop(context); _showRadiusModal(sel); }));
+        }
+
+        return buildGlassContainer(
+          context,
+          height: 300,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Word Style (الفاظ کے انداز)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      Row(
-                        children: [
-                          if (textMultiStyles[sel.id]!.isNotEmpty)
-                            TextButton.icon(
-                              onPressed: () {
-                                saveState();
-                                setState(() {
-                                  textMultiStyles[sel.id]!.clear();
-                                  selectedIndices.clear();
-                                });
-                                setModalState((){});
-                                triggerCanvasUpdate();
-                              }, 
-                              icon: const Icon(Icons.clear_all, size: 14, color: Colors.red), 
-                              label: const Text('Reset', style: TextStyle(color: Colors.red, fontSize: 12))
-                            ),
-                          IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context)),
-                        ],
-                      )
-                    ]
-                  ),
-                  const Divider(color: Colors.black12),
-                  const Text('Select words below to style them individually:', style: TextStyle(fontSize: 11, color: Colors.black54)),
-                  const SizedBox(height: 10),
-                  
-                  Expanded(
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        alignment: isRTLText(sel.content) ? WrapAlignment.end : WrapAlignment.start,
-                        textDirection: isRTLText(sel.content) ? TextDirection.rtl : TextDirection.ltr,
-                        children: List.generate(words.length, (i) {
-                          bool isSel = selectedIndices.contains(i);
-                          bool hasStyle = textMultiStyles[sel.id]!.containsKey(i);
-                          return FilterChip(
-                            label: Text(words[i], style: TextStyle(fontFamily: hasStyle ? textMultiStyles[sel.id]![i]!['fontFamily'] ?? sel.fontFamily : sel.fontFamily, fontSize: 16, color: hasStyle ? (textMultiStyles[sel.id]![i]!['color'] ?? (isSel ? Colors.white : Colors.black)) : (isSel ? Colors.white : Colors.black))),
-                            selected: isSel,
-                            selectedColor: const Color(0xFF8B5CF6),
-                            backgroundColor: Colors.white.withOpacity(0.5),
-                            checkmarkColor: Colors.white,
-                            onSelected: (val) {
-                              setModalState(() {
-                                if (val) selectedIndices.add(i);
-                                else selectedIndices.remove(i);
-                              });
-                            },
-                          );
-                        }),
-                      ),
-                    ),
-                  ),
-                  
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(border: Border(top: BorderSide(color: Colors.grey.shade200))),
-                    child: Opacity(
-                      opacity: selectedIndices.isEmpty ? 0.3 : 1.0,
-                      child: IgnorePointer(
-                        ignoring: selectedIndices.isEmpty,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), elevation: 0),
-                              icon: const Icon(Icons.color_lens, size: 16, color: Colors.white),
-                              label: const Text('Color', style: TextStyle(color: Colors.white, fontSize: 12)),
-                              onPressed: () {
-                                _openProColorPicker(
-                                  title: 'Word Color', 
-                                  currentColor: Colors.black, 
-                                  onColorChanged: (c) {
-                                    saveState();
-                                    setState(() {
-                                      for (int idx in selectedIndices) {
-                                        textMultiStyles[sel.id]![idx] ??= {};
-                                        textMultiStyles[sel.id]![idx]!['color'] = c;
-                                      }
-                                    });
-                                    setModalState((){});
-                                    triggerCanvasUpdate();
-                                  }
-                                );
-                              }
-                            ),
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.white, elevation: 0, side: BorderSide(color: Colors.grey.shade300)),
-                              icon: const Icon(Icons.font_download, size: 16, color: Colors.black87),
-                              label: const Text('Font', style: TextStyle(color: Colors.black87, fontSize: 12)),
-                              onPressed: () {
-                                showModalBottomSheet(context: context, backgroundColor: Colors.white, builder: (ctx) {
-                                  return ListView(
-                                    children: availableFontsData.map((f) => ListTile(
-                                      title: Text(f['name']!, style: TextStyle(fontFamily: f['name'])),
-                                      onTap: () {
-                                        saveState();
-                                        setState(() {
-                                          for (int idx in selectedIndices) {
-                                            textMultiStyles[sel.id]![idx] ??= {};
-                                            textMultiStyles[sel.id]![idx]!['fontFamily'] = f['name'];
-                                          }
-                                        });
-                                        triggerCanvasUpdate();
-                                        Navigator.pop(ctx);
-                                      },
-                                    )).toList(),
-                                  );
-                                });
-                              }
-                            ),
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.white, elevation: 0, side: BorderSide(color: Colors.grey.shade300)),
-                              icon: const Icon(Icons.text_increase, size: 16, color: Colors.black87),
-                              label: const Text('Size', style: TextStyle(color: Colors.black87, fontSize: 12)),
-                              onPressed: () {
-                                double currentSize = sel.fontSize;
-                                if (selectedIndices.isNotEmpty && textMultiStyles[sel.id]!.containsKey(selectedIndices.first)) {
-                                  currentSize = textMultiStyles[sel.id]![selectedIndices.first]!['fontSize'] ?? sel.fontSize;
-                                }
-                                showModalBottomSheet(context: context, backgroundColor: Colors.white, builder: (ctx) {
-                                  return StatefulBuilder(builder: (ctx, setSizeState) {
-                                    return SizedBox(
-                                      height: 150,
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Text('Size: ${currentSize.toInt()}'),
-                                          Slider(
-                                            value: currentSize.clamp(10.0, 150.0), min: 10.0, max: 150.0,
-                                            activeColor: const Color(0xFF8B5CF6),
-                                            onChanged: (val) {
-                                              setSizeState(() => currentSize = val);
-                                              saveState();
-                                              setState(() {
-                                                for (int idx in selectedIndices) {
-                                                  textMultiStyles[sel.id]![idx] ??= {};
-                                                  textMultiStyles[sel.id]![idx]!['fontSize'] = val;
-                                                }
-                                              });
-                                              setModalState((){});
-                                              triggerCanvasUpdate();
-                                            }
-                                          )
-                                        ]
-                                      )
-                                    );
-                                  });
-                                });
-                              }
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  )
+                  const Text('More Options', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context)),
                 ]
+              ),
+              const Divider(color: Colors.black12),
+              Expanded(
+                child: GridView.count(
+                  crossAxisCount: 4,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  physics: const BouncingScrollPhysics(),
+                  children: moreTools,
+                )
               )
-            );
-          }
+            ]
+          )
         );
       }
     );
   }
 
-  void _showTableEditorModal(DesignElement sel) {
-    if (sel.tableData == null) return;
-    List<List<String>> tempTable = [];
-    for (var row in sel.tableData!) { 
-      tempTable.add(List.from(row)); 
-    }
-
-    int activeR = 0;
-    int activeC = 0;
-
-    showModalBottomSheet(
-      context: context,
-      barrierColor: Colors.transparent,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-
-            void addRowBelow() {
-              setModalState(() {
-                tempTable.insert(activeR + 1, List.generate(tempTable[0].length, (index) => ''));
-                activeR++;
-              });
-            }
-            void addColRight() {
-              setModalState(() {
-                for (var row in tempTable) { row.insert(activeC, ''); }
-              });
-            }
-            void addColLeft() {
-              setModalState(() {
-                for (var row in tempTable) { row.insert(activeC + 1, ''); }
-                activeC++;
-              });
-            }
-            void deleteRow() {
-              if (tempTable.length > 1) {
-                setModalState(() { 
-                  tempTable.removeAt(activeR); 
-                  if (activeR >= tempTable.length) activeR = tempTable.length - 1; 
-                });
-              }
-            }
-            void deleteCol() {
-              if (tempTable[0].length > 1) {
-                setModalState(() {
-                  for (var row in tempTable) { row.removeAt(activeC); }
-                  if (activeC >= tempTable[0].length) activeC = tempTable[0].length - 1;
-                });
-              }
-            }
-
-            return buildGlassContainer(
-              context,
-              height: MediaQuery.of(context).size.height * 0.85,
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Advance Table Editor', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      IconButton(icon: const Icon(Icons.close), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
-                    ]
-                  ),
-                  const Text('خانے پر کلک کریں اور قطار/کالم شامل کریں', style: TextStyle(fontSize: 12, color: Colors.black54, fontFamily: 'JameelNoori'), textDirection: TextDirection.rtl),
-                  const Divider(color: Colors.black12),
-                  
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildTableToolbarBtn(Icons.table_rows, '+ Row', addRowBelow, Colors.blue),
-                        _buildTableToolbarBtn(Icons.view_column, '+ Col Right', addColRight, Colors.blue),
-                        _buildTableToolbarBtn(Icons.view_column, '+ Col Left', addColLeft, Colors.blue),
-                        _buildTableToolbarBtn(Icons.delete_sweep, 'Del Row', deleteRow, Colors.red),
-                        _buildTableToolbarBtn(Icons.delete_forever, 'Del Col', deleteCol, Colors.red),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(border: Border.all(color: Colors.white), color: Colors.white.withOpacity(0.5)),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: SingleChildScrollView(
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: tempTable.asMap().entries.map((rowEntry) {
-                                int r = rowEntry.key;
-                                return Row(
-                                  textDirection: TextDirection.rtl,
-                                  children: rowEntry.value.asMap().entries.map((colEntry) {
-                                    int c = colEntry.key;
-                                    bool isActive = (r == activeR && c == activeC);
-                                    return GestureDetector(
-                                      onTap: () { setModalState(() { activeR = r; activeC = c; }); },
-                                      child: Container(
-                                        width: 100, 
-                                        margin: const EdgeInsets.all(2),
-                                        decoration: BoxDecoration(
-                                          border: Border.all(color: isActive ? const Color(0xFF8B5CF6) : Colors.black26, width: isActive ? 2.0 : 1),
-                                          color: isActive ? const Color(0xFF8B5CF6).withOpacity(0.1) : (r == 0 ? Colors.white.withOpacity(0.8) : Colors.transparent),
-                                        ),
-                                        child: TextField(
-                                          controller: TextEditingController(text: tempTable[r][c])..selection = TextSelection.collapsed(offset: tempTable[r][c].length),
-                                          textDirection: TextDirection.rtl,
-                                          textAlign: TextAlign.center,
-                                          maxLines: null,
-                                          style: TextStyle(fontFamily: 'JameelNoori', fontSize: r == 0 ? 18 : 16, fontWeight: r == 0 ? FontWeight.bold : FontWeight.normal),
-                                          decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.all(6), isDense: true),
-                                          onChanged: (val) { tempTable[r][c] = val; },
-                                          onTap: () { setModalState(() { activeR = r; activeC = c; }); },
-                                        )
-                                      ),
-                                    );
-                                  }).toList(),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        )
-                      )
-                    )
-                  ),
-                  const SizedBox(height: 10),
-                  
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.5), borderRadius: BorderRadius.circular(10)),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            const Text('Width: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            Expanded(child: Slider(value: sel.width.clamp(100.0, 1500.0), min: 100.0, max: 1500.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setModalState((){ sel.width = val; }); }))
-                          ]
-                        ),
-                        Row(
-                          children: [
-                            const Text('Height: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            Expanded(child: Slider(value: sel.height.clamp(50.0, 1500.0), min: 50.0, max: 1500.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setModalState((){ sel.height = val; }); }))
-                          ]
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), padding: const EdgeInsets.symmetric(vertical: 12), elevation: 0),
-                      onPressed: () { 
-                        saveState(); 
-                        setState(() { sel.tableData = tempTable; }); 
-                        triggerCanvasUpdate(); 
-                        Navigator.pop(context); 
-                      },
-                      child: const Text('Save Table Data', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14))
-                    )
-                  )
-                ],
-              )
-            );
-          }
-        );
-      }
-    );
-  }
-
-  Widget _buildTableToolbarBtn(IconData icon, String label, VoidCallback onTap, Color color) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2.0),
-      child: ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color.withOpacity(0.15), 
-          foregroundColor: color, 
-          elevation: 0, 
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6)
-        ),
-        onPressed: onTap,
-        icon: Icon(icon, size: 14),
-        label: Text(label, style: const TextStyle(fontSize: 10)),
-      ),
-    );
-  }
-
-  // 🔥 THE NEW MEGA STUDIO: Align & Arrange (All tools in one popup) 🔥
+  // 🔥 NEW MEGA STUDIO: showAlignAndArrangeModal 🔥
   void showAlignAndArrangeModal(DesignElement sel) {
     showModalBottomSheet(
       context: context,
@@ -2646,61 +2270,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
               )
             );
           }
-        );
-      }
-    );
-  }
-
-  void _showMoreOptionsModal(DesignElement sel) {
-    showModalBottomSheet(
-      context: context,
-      barrierColor: Colors.transparent,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        List<Widget> moreTools = [];
-
-        if (sel.isText) {
-           moreTools.add(_buildGridToolBtn(Icons.rotate_right_rounded, 'Rotate', () { Navigator.pop(context); showRotationModal(sel); }));
-           moreTools.add(_buildGridToolBtn(Icons.view_in_ar_outlined, '3D Block', () { Navigator.pop(context); _show3DBlockModal(sel); }));
-           moreTools.add(_buildGridToolBtn(Icons.data_usage_rounded, 'Curve', () { Navigator.pop(context); _showCurveModal(sel); }));
-           moreTools.add(_buildGridToolBtn(Icons.view_in_ar_rounded, 'Perspective', () { Navigator.pop(context); show3DModal(sel); }));
-        } else {
-           if (sel.imageBytes != null || sel.isShape) moreTools.add(_buildGridToolBtn(Icons.format_paint_rounded, 'Tint', () { Navigator.pop(context); _openProColorPicker(title: 'Color', currentColor: sel.elementColor, onColorChanged: (c) { setState(()=> sel.elementColor = c); }); }));
-           if (sel.imageBytes != null) moreTools.add(_buildGridToolBtn(Icons.auto_awesome_motion_rounded, 'Blend', () { Navigator.pop(context); _showBlendModeModal(sel); }));
-           moreTools.add(_buildGridToolBtn(Icons.center_focus_strong_rounded, 'Align', () { Navigator.pop(context); showAlignAndArrangeModal(sel); }));
-           moreTools.add(_buildGridToolBtn(Icons.open_with_rounded, 'Move', () { Navigator.pop(context); showMoveModal(sel); }));
-           moreTools.add(_buildGridToolBtn(Icons.rotate_right_rounded, 'Rotate', () { Navigator.pop(context); showRotationModal(sel); }));
-           moreTools.add(_buildGridToolBtn(Icons.view_in_ar_rounded, 'Perspective', () { Navigator.pop(context); show3DModal(sel); }));
-           moreTools.add(_buildGridToolBtn(Icons.opacity_rounded, 'Opacity', () { Navigator.pop(context); _showOpacityModal(sel); }));
-           if (!sel.isBorder && !sel.isTable) moreTools.add(_buildGridToolBtn(Icons.rounded_corner_rounded, 'Radius', () { Navigator.pop(context); _showRadiusModal(sel); }));
-        }
-
-        return buildGlassContainer(
-          context,
-          height: 300,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('More Options', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context)),
-                ]
-              ),
-              const Divider(color: Colors.black12),
-              Expanded(
-                child: GridView.count(
-                  crossAxisCount: 4,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  physics: const BouncingScrollPhysics(),
-                  children: moreTools,
-                )
-              )
-            ]
-          )
         );
       }
     );
