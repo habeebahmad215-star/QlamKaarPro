@@ -11,9 +11,10 @@ import 'package:image_gallery_saver/image_gallery_saver.dart';
 
 // ============================================================================
 // 🔥 AAPKI API KEYS 🔥
-// Ab Gemini aur HuggingFace ki keys ki zaroorat nahi! Dono 100% Free ho gaye.
 // ============================================================================
-const String REMOVE_BG_API_KEY = "ViZorV1xopiwHEdvEiERE2XN"; // Sirf BG Remover ke liye
+// Apni AQ. wali Gemini Key yahan daalein
+const String GEMINI_API_KEY = "AQ.Ab8RN6LxtAlG37bgq7S5-fsshOtpxF0cIiTALWNnGL-EQkUv-g"; 
+const String REMOVE_BG_API_KEY = "ViZorV1xopiwHEdvEiERE2XN";
 // ============================================================================
 
 class AiDesignScreen extends StatefulWidget {
@@ -57,22 +58,21 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
   }
 
   // ==========================================
-  // REAL API INTEGRATIONS (100% FREE & SMART)
+  // REAL API INTEGRATIONS (STRICT & FIXED)
   // ==========================================
   
-  // 1. Pollinations AI Image (Using FLUX Model for Perfect Results)
+  // 1. Pollinations AI Image (FIXED: Auto-Enhance OFF)
   Future<void> _generateAIImage() async {
     if (_promptController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isGeneratingImage = true; _generatedImageBytes = null; });
     
     try {
-      // Prompt bilkul waisa hi jayega jaisa aap likhenge
       String safePrompt = Uri.encodeComponent(_promptController.text.trim());
       int randomSeed = DateTime.now().millisecondsSinceEpoch % 100000;
       
-      // model=flux add kiya gaya hai taaki logo aur complex designs perfect banen
-      String imageUrl = 'https://image.pollinations.ai/prompt/$safePrompt?width=1024&height=1024&nologo=true&model=flux&seed=$randomSeed';
+      // 🔥 FIX: enhance=false zaroori hai, taaki AI aapke prompt ko apni marzi se change na kare
+      String imageUrl = 'https://image.pollinations.ai/prompt/$safePrompt?width=1024&height=1024&nologo=true&enhance=false&seed=$randomSeed';
 
       final response = await http.get(Uri.parse(imageUrl)).timeout(const Duration(seconds: 45)); 
 
@@ -93,7 +93,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     }
   }
 
-  // 2. Remove.BG API (Pehle se best kaam kar raha hai)
+  // 2. Remove.BG API (Working perfectly)
   Future<void> _pickAndRemoveBg() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
@@ -136,37 +136,56 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     }
   }
 
-  // 3. Pollinations Text AI (Using OPENAI/GPT-4o Model for PERFECT Urdu)
+  // 3. Google Gemini API (FIXED: Standard URL format for AQ. keys)
   Future<void> _writeAIContent() async {
     if (_topicController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isWritingContent = true; _generatedContent = ''; });
     
     try {
-      // Strict prompt to force pure, correct and professional Urdu grammar
-      String aiPrompt = "Write a highly professional, beautiful, and meaningful essay in PERFECT, pure Urdu language about: '${_topicController.text.trim()}'. Use rich vocabulary, correct Urdu grammar, and proper formatting. Do NOT use any English words. Do NOT generate random or nonsensical phrases. Write like a professional Urdu scholar/author.";
-      String safePrompt = Uri.encodeComponent(aiPrompt);
+      // 🔥 FIX: Key sirf URL mein hai, Headers se hata di gayi hai taaki OAuth error na aaye.
+      final String geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$GEMINI_API_KEY';
       
-      // model=openai add kiya gaya hai taaki GPT-4 jaisi khalis Urdu mile
-      final response = await http.get(
-        Uri.parse('https://text.pollinations.ai/$safePrompt?model=openai')
-      ).timeout(const Duration(seconds: 30)); 
+      final response = await http.post(
+        Uri.parse(geminiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          "contents": [
+            {
+              "parts": [
+                {"text": "Write a highly professional, beautiful, and meaningful essay in PERFECT, pure Urdu language about: '${_topicController.text.trim()}'. Use rich vocabulary, correct Urdu grammar, and proper formatting. Do NOT use any English words. Write like a professional Urdu scholar."}
+              ]
+            }
+          ]
+        })
+      ).timeout(const Duration(seconds: 25)); 
 
       if (response.statusCode == 200) {
-        String aiText = response.body.trim();
-        if (aiText.isNotEmpty && !aiText.toLowerCase().contains('error')) {
-           setState(() { _generatedContent = aiText; });
+        final data = jsonDecode(response.body);
+        var candidates = data['candidates'];
+        if (candidates != null && candidates.isNotEmpty) {
+           String aiText = candidates[0]['content']['parts'][0]['text'];
+           setState(() { _generatedContent = aiText.trim(); });
            HapticFeedback.heavyImpact();
         } else {
            throw Exception('AI ne koi text generate nahi kiya.');
         }
       } else {
-        throw Exception('Server Error: ${response.statusCode}');
+        String errorMsg = 'Error ${response.statusCode}';
+        try {
+          var data = jsonDecode(response.body);
+          if (data['error'] != null) {
+            errorMsg = data['error']['message'].toString();
+          }
+        } catch (_) {}
+        throw Exception(errorMsg);
       }
     } on SocketException {
-      _showErrorSnackBar('Network Error: Server connect nahi ho raha.');
+      _showErrorSnackBar('Network Error: Gemini server connect nahi ho raha.');
     } on TimeoutException {
-      _showErrorSnackBar('API timeout! Internet check karein.');
+      _showErrorSnackBar('Gemini API timeout! Internet check karein.');
     } catch (e) {
       _showErrorSnackBar(e.toString().replaceAll('Exception: ', ''));
     } finally {
@@ -347,7 +366,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
                       border: Border.all(color: Colors.grey.shade200),
                       image: DecorationImage(
                         image: MemoryImage(_generatedImageBytes!), 
-                        fit: BoxFit.cover
+                        fit: BoxFit.contain
                       )
                     ),
                   ),
