@@ -5,15 +5,14 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:async'; // 🔥 YEH LINE MISSING THI JISKI WAJAH SE ERROR AAYA 🔥
 import 'package:http/http.dart' as http;
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 
 // ============================================================================
 // 🔥 AAPKI API KEYS 🔥
-// NOTE: Apni Gemini ki key change karein, ye 'AQ.Ab8...' wali galat hai.
-// Google API Key hamesha 'AIzaSy...' se shuru hoti hai. (Get from: aistudio.google.com)
 // ============================================================================
-const String GEMINI_API_KEY = "AQ.Ab8RN6LxtAlG37bgq7S5-fsshOtpxF0cIiTALWNnGL-EQkUv-g"; // ⚠️ Replace this with a valid 'AIza...' key
+const String GEMINI_API_KEY = "AQ.Ab8RN6KR7Ko-mPJ6bW0qkojCJvZ91zd3RfeQE8cLo-KknbD2lA"; 
 const String REMOVE_BG_API_KEY = "ViZorV1xopiwHEdvEiERE2XN";
 const String HUGGING_FACE_API_KEY = "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";
 // ============================================================================
@@ -69,7 +68,6 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     setState(() { _isGeneratingImage = true; _generatedImageBytes = null; });
     
     try {
-      // Using SDXL which is better and more reliable on HF Free tier
       final response = await http.post(
         Uri.parse('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0'),
         headers: {
@@ -80,10 +78,9 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
           'inputs': _promptController.text,
           'options': {'wait_for_model': true} 
         }),
-      ).timeout(const Duration(seconds: 40)); // ⏳ 40 sec timeout added to prevent hang
+      ).timeout(const Duration(seconds: 40)); 
 
       if (response.statusCode == 200) {
-        // Checking if HF returned JSON (Error) instead of Image bytes
         if (response.headers['content-type']?.contains('application/json') == true) {
           var data = jsonDecode(response.body);
           throw Exception(data['error'] ?? 'API returned JSON instead of Image');
@@ -122,10 +119,9 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
       try {
         var request = http.MultipartRequest('POST', Uri.parse('https://api.remove.bg/v1.0/removebg'));
         request.headers['X-Api-Key'] = REMOVE_BG_API_KEY;
-        request.fields['size'] = 'auto'; // Force auto sizing
+        request.fields['size'] = 'auto'; 
         request.files.add(await http.MultipartFile.fromPath('image_file', _selectedImageForBg!.path));
         
-        // ⏳ 30 sec timeout added to prevent hang
         var response = await request.send().timeout(const Duration(seconds: 30));
         
         if (response.statusCode == 200) {
@@ -172,12 +168,10 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
             }
           ]
         })
-      ).timeout(const Duration(seconds: 25)); // ⏳ 25 sec timeout added
+      ).timeout(const Duration(seconds: 25)); 
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        
-        // Safely parse Gemini response to avoid null crash
         var candidates = data['candidates'];
         if (candidates != null && candidates.isNotEmpty) {
            String aiText = candidates[0]['content']['parts'][0]['text'];
@@ -192,10 +186,6 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
           var data = jsonDecode(response.body);
           if (data['error'] != null) {
             errorMsg = data['error']['message'].toString();
-            // Specific check for invalid API key format
-            if(errorMsg.contains('API key not valid') || errorMsg.contains('API_KEY_INVALID')) {
-              errorMsg = "Aapki Gemini API Key galat hai! Kripya 'AIzaSy...' wali asil key daalein.";
-            }
           }
         } catch (_) {}
         throw Exception(errorMsg);
@@ -532,7 +522,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: const Color(0xFF10B981), // Emerald Green
+                      backgroundColor: const Color(0xFF10B981), 
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       elevation: 5,
                       shadowColor: const Color(0xFF10B981).withOpacity(0.5)
