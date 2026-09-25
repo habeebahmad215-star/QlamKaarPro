@@ -13,7 +13,7 @@ import 'package:image_gallery_saver/image_gallery_saver.dart';
 // 🔥 API KEYS 🔥
 // ============================================================================
 // Yahan apni Groq ki key (gsk_...) daalein. Yeh perfect Urdu likhega!
-const String GROQ_API_KEY = "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"; 
+const String GROQ_API_KEY = "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"; 
 const String REMOVE_BG_API_KEY = "ViZorV1xopiwHEdvEiERE2XN"; 
 // ============================================================================
 
