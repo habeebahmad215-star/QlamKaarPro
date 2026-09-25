@@ -10,10 +10,9 @@ import 'package:http/http.dart' as http;
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 
 // ============================================================================
-// 🔥 AAPKI VALID API KEYS 🔥
+// 🔥 API KEYS 🔥
+// Text aur Image ke liye koi key nahi chahiye. Sirf BG Remover ki key yahan hai.
 // ============================================================================
-// Aapki active HuggingFace key use kar rahe hain duniya ke best models ke liye
-const String HUGGING_FACE_API_KEY = "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";
 const String REMOVE_BG_API_KEY = "ViZorV1xopiwHEdvEiERE2XN"; 
 // ============================================================================
 
@@ -58,49 +57,34 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
   }
 
   // ==========================================
-  // REAL API INTEGRATIONS (HUGGING FACE FLUX & QWEN)
+  // REAL API INTEGRATIONS (STRICT & FIXED)
   // ==========================================
   
-  // 1. AI Image - Using FLUX.1-schnell (Best for Text & Logos)
+  // 1. Pollinations AI Image (100% Free - FLUX Model)
   Future<void> _generateAIImage() async {
     if (_promptController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isGeneratingImage = true; _generatedImageBytes = null; });
     
     try {
-      final response = await http.post(
-        Uri.parse('https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell'),
-        headers: {
-          'Authorization': 'Bearer $HUGGING_FACE_API_KEY',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'inputs': _promptController.text.trim(),
-        }),
-      ).timeout(const Duration(seconds: 60)); 
+      String safePrompt = Uri.encodeComponent(_promptController.text.trim());
+      int randomSeed = DateTime.now().millisecondsSinceEpoch % 100000;
+      
+      // enhance=false ensures AI doesn't mess with your prompt
+      String imageUrl = 'https://image.pollinations.ai/prompt/$safePrompt?width=1024&height=1024&nologo=true&enhance=false&model=flux&seed=$randomSeed';
+
+      final response = await http.get(Uri.parse(imageUrl)).timeout(const Duration(seconds: 45)); 
 
       if (response.statusCode == 200) {
-        if (response.headers['content-type']?.contains('application/json') == true) {
-          var data = jsonDecode(response.body);
-          if (data['error'] != null && data['error'].toString().contains('loading')) {
-             throw Exception('High-Quality AI Model load ho raha hai. Kripya 20 second baad dobara dabayen.');
-          }
-          throw Exception(data['error'] ?? 'API returned JSON instead of Image');
-        }
         setState(() { _generatedImageBytes = response.bodyBytes; });
         HapticFeedback.heavyImpact();
       } else {
-        String errorMsg = 'Server Error ${response.statusCode}';
-        try {
-          var data = jsonDecode(response.body);
-          if (data['error'] != null) errorMsg = data['error'].toString();
-        } catch (_) {}
-        throw Exception(errorMsg);
+        throw Exception('Image Server Error: Code ${response.statusCode}');
       }
     } on SocketException {
-      _showErrorSnackBar('Network Error: Internet connect nahi hai.');
+      _showErrorSnackBar('Network Error: Internet connection check karein.');
     } on TimeoutException {
-      _showErrorSnackBar('Server bohot busy hai (Timeout). Thodi der baad try karein.');
+      _showErrorSnackBar('Server bohot busy hai. Kripya thodi der baad try karein.');
     } catch (e) {
       _showErrorSnackBar(e.toString().replaceAll('Exception: ', ''));
     } finally {
@@ -134,7 +118,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
           throw Exception('Background Remover Error (Code: ${response.statusCode})');
         }
       } on SocketException {
-         _showErrorSnackBar('Network Error: Internet connect nahi hai.');
+         _showErrorSnackBar('Network Error: Internet connection check karein.');
       } on TimeoutException {
          _showErrorSnackBar('Internet slow hai (Timeout).');
       } catch (e) {
@@ -145,50 +129,44 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     }
   }
 
-  // 3. AI Writer - Using Qwen2.5-7B (The best model for pure Urdu)
+  // 3. AI Writer (Pollinations POST Method - GPT-4o backend - No Keys Needed)
   Future<void> _writeAIContent() async {
     if (_topicController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isWritingContent = true; _generatedContent = ''; });
     
     try {
+      // Using POST request to prevent URL length limits and ensure GPT-4o model
       final response = await http.post(
-        Uri.parse('https://api-inference.huggingface.co/models/Qwen/Qwen2.5-7B-Instruct'),
+        Uri.parse('https://text.pollinations.ai/'),
         headers: {
-          'Authorization': 'Bearer $HUGGING_FACE_API_KEY',
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          "inputs": "You are a professional Urdu scholar. Write a highly professional, beautiful, and meaningful essay in PERFECT, pure Urdu language about: '${_topicController.text.trim()}'. Do NOT use any English words. Write ONLY the Urdu text.",
-          "parameters": {
-            "max_new_tokens": 800,
-            "return_full_text": false
-          }
+          "messages": [
+            {
+              "role": "system", 
+              "content": "You are a professional Urdu scholar and writer. Write a beautiful, highly professional essay or content in PERFECT, pure Urdu language. Use rich vocabulary and correct grammar. Do NOT use any English words. Write ONLY the Urdu text."
+            },
+            {
+              "role": "user", 
+              "content": _topicController.text.trim()
+            }
+          ],
+          "model": "openai"
         })
-      ).timeout(const Duration(seconds: 40)); 
+      ).timeout(const Duration(seconds: 35)); 
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        if (data.isNotEmpty && data[0]['generated_text'] != null) {
-           String aiText = data[0]['generated_text'].toString().trim();
+        String aiText = response.body.trim();
+        if (aiText.isNotEmpty && !aiText.toLowerCase().contains('error')) {
            setState(() { _generatedContent = aiText; });
            HapticFeedback.heavyImpact();
         } else {
            throw Exception('AI ne koi text generate nahi kiya.');
         }
       } else {
-        String errorMsg = 'Server Error ${response.statusCode}';
-        try {
-          var data = jsonDecode(response.body);
-          if (data['error'] != null) {
-             if(data['error'].toString().contains('loading')) {
-               errorMsg = 'Urdu AI Model load ho raha hai. Kripya 20 sec baad dobara dabayen.';
-             } else {
-               errorMsg = data['error'].toString();
-             }
-          }
-        } catch (_) {}
-        throw Exception(errorMsg);
+        throw Exception('Writer Server Error: ${response.statusCode}');
       }
     } on SocketException {
       _showErrorSnackBar('Network Error: Server connect nahi ho raha.');
@@ -319,7 +297,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
               children: [
                 const Text('Describe Your Imagination', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
                 const SizedBox(height: 4),
-                const Text('Type your prompt in English...', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueAccent)),
+                const Text('Pro Tip: Exact spelling ki demand na karein, sirf Icon/Symbol maangein.', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueAccent)),
                 const SizedBox(height: 15),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -328,7 +306,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
                     controller: _promptController,
                     maxLines: 4,
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'Type or Paste your detailed prompt here...', hintStyle: TextStyle(color: Colors.black26)),
+                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'Type your prompt here in English...', hintStyle: TextStyle(color: Colors.black26)),
                   ),
                 ),
                 const SizedBox(height: 20),
