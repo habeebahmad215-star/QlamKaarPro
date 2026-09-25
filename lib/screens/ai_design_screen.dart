@@ -11,8 +11,9 @@ import 'package:image_gallery_saver/image_gallery_saver.dart';
 
 // ============================================================================
 // 🔥 API KEYS 🔥
-// Text aur Image ke liye koi key nahi chahiye. Yeh OpenAI/Flux par direct chalenge.
 // ============================================================================
+// Yahan apne kisi NORMAL @gmail.com se banayi hui AIzaSy... wali key daalein
+const String GEMINI_API_KEY = "AQ.Ab8RN6IO3VD5tL0o8f8q93Jv0yIqe-PDnXcVz5fEOKQBA2ZBGQ"; 
 const String REMOVE_BG_API_KEY = "ViZorV1xopiwHEdvEiERE2XN"; 
 // ============================================================================
 
@@ -57,10 +58,10 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
   }
 
   // ==========================================
-  // REAL API INTEGRATIONS (STRICT & FIXED)
+  // REAL API INTEGRATIONS (GEMINI FOR PERFECT URDU)
   // ==========================================
   
-  // 1. Pollinations AI Image (100% Free - FLUX Model)
+  // 1. AI Image Generator (Flux Model - Working Good for Icons)
   Future<void> _generateAIImage() async {
     if (_promptController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
@@ -70,7 +71,6 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
       String safePrompt = Uri.encodeComponent(_promptController.text.trim());
       int randomSeed = DateTime.now().millisecondsSinceEpoch % 100000;
       
-      // enhance=false ensures AI doesn't hallucinate your prompt
       String imageUrl = 'https://image.pollinations.ai/prompt/$safePrompt?width=1024&height=1024&nologo=true&enhance=false&model=flux&seed=$randomSeed';
 
       final response = await http.get(Uri.parse(imageUrl)).timeout(const Duration(seconds: 45)); 
@@ -129,49 +129,55 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     }
   }
 
-  // 3. AI Writer (Pollinations POST Method - CHATGPT-4o Backend - PERFECT URDU)
+  // 3. AI Writer (Gemini 1.5 Flash - FOR 100% PURE URDU)
   Future<void> _writeAIContent() async {
     if (_topicController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isWritingContent = true; _generatedContent = ''; });
     
     try {
-      // Using POST request to securely hit OpenAI (GPT-4o) model for perfect Urdu grammar
+      final String geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$GEMINI_API_KEY';
+      
       final response = await http.post(
-        Uri.parse('https://text.pollinations.ai/'),
+        Uri.parse(geminiUrl),
         headers: {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          "messages": [
+          "contents": [
             {
-              "role": "system", 
-              "content": "You are a professional Urdu scholar and writer. Write a beautiful, highly professional essay or content in PERFECT, pure Urdu language. Use rich vocabulary and grammatically correct Urdu. Do NOT use any English words. Never use fabricated or nonsensical words."
-            },
-            {
-              "role": "user", 
-              "content": _topicController.text.trim()
+              "parts": [
+                {"text": "Write a highly professional, beautiful, and meaningful essay in PERFECT, pure Urdu language about: '${_topicController.text.trim()}'. Use rich vocabulary, correct Urdu grammar, and proper formatting. Do NOT use any English words. Write like a professional Urdu scholar."}
+              ]
             }
-          ],
-          "model": "openai" // Locks the engine to ChatGPT-4o (No Llama/Groq garbage)
+          ]
         })
-      ).timeout(const Duration(seconds: 35)); 
+      ).timeout(const Duration(seconds: 25)); 
 
       if (response.statusCode == 200) {
-        String aiText = response.body.trim();
-        if (aiText.isNotEmpty && !aiText.toLowerCase().contains('error')) {
-           setState(() { _generatedContent = aiText; });
+        final data = jsonDecode(response.body);
+        var candidates = data['candidates'];
+        if (candidates != null && candidates.isNotEmpty) {
+           String aiText = candidates[0]['content']['parts'][0]['text'];
+           setState(() { _generatedContent = aiText.trim(); });
            HapticFeedback.heavyImpact();
         } else {
            throw Exception('AI ne koi text generate nahi kiya.');
         }
       } else {
-        throw Exception('Writer Server Error: ${response.statusCode}');
+        String errorMsg = 'Error ${response.statusCode}';
+        try {
+          var data = jsonDecode(response.body);
+          if (data['error'] != null) {
+            errorMsg = data['error']['message'].toString();
+          }
+        } catch (_) {}
+        throw Exception(errorMsg);
       }
     } on SocketException {
-      _showErrorSnackBar('Network Error: Server connect nahi ho raha.');
+      _showErrorSnackBar('Network Error: Gemini server connect nahi ho raha.');
     } on TimeoutException {
-      _showErrorSnackBar('API timeout! Internet check karein.');
+      _showErrorSnackBar('Gemini API timeout! Internet check karein.');
     } catch (e) {
       _showErrorSnackBar(e.toString().replaceAll('Exception: ', ''));
     } finally {
