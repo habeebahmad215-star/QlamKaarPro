@@ -78,7 +78,8 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
       String fullKey = getGeminiKey();
       String cleanKey = fullKey.trim().replaceAll('"', '').replaceAll("'", "");
       
-      final String geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent';
+      // 🔥 HIGH QUOTA MODEL: gemini-2.5-flash-lite
+      final String geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent';
       
       final geminiResponse = await http.post(
         Uri.parse(geminiUrl),
@@ -106,7 +107,6 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
            finalEnglishPrompt = candidates[0]['content']['parts'][0]['text'].trim();
         }
       } else {
-        // 🔥 STRICT CHECK: Agar Gemini fail hua toh direct error do, raw hindi FLUX ko mat bhejo!
         String errorMsg = 'Translation Error ${geminiResponse.statusCode}';
         try {
           var data = jsonDecode(geminiResponse.body);
@@ -181,7 +181,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     }
   }
 
-  // 3. AI Writer (GEMINI 3.8 FLASH)
+  // 3. AI Writer (HIGH QUOTA MODEL: GEMINI 2.5 FLASH LITE)
   Future<void> _writeAIContent() async {
     if (_topicController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
@@ -191,7 +191,8 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
       String fullKey = getGeminiKey();
       String cleanKey = fullKey.trim().replaceAll('"', '').replaceAll("'", "");
       
-      final String geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent';
+      // 🔥 HIGH QUOTA MODEL: gemini-2.5-flash-lite
+      final String geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent';
       
       final response = await http.post(
         Uri.parse(geminiUrl),
