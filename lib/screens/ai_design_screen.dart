@@ -10,16 +10,10 @@ import 'package:http/http.dart' as http;
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 
 // ============================================================================
-// 🔥 API KEYS (GITHUB BYPASS TRICK) 🔥
+// 🔥 API KEYS 🔥
 // ============================================================================
-// Me capital 'S' ne small 's' ma fervee didho chhe.
-const String OPENAI_PART_1 = "sk-proj-TrIHgsgViF46nNGxt72A9jeDVjSnTvfrpcWmY6cS8w2YQOJFVAFDr03u4aE"; 
-const String OPENAI_PART_2 = "7j18kefPjBdZtQ1T3BlbkFJSArqyQ67MphOfq0sNYlskjkFAm7bMsFI8aZ2P4SwxR-2Z8A48vnIaOPLAmX9Lc-EIqlFVnjeAA"; 
-
-String getOpenAIKey() {
-  return OPENAI_PART_1 + OPENAI_PART_2;
-}
-
+// Bhai yahan apni BILKUL NAYI OpenAI key daalein jo 'sk-proj-' se shuru hoti hai
+const String OPENAI_API_KEY = "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"; 
 const String REMOVE_BG_API_KEY = "ViZorV1xopiwHEdvEiERE2XN"; 
 // ============================================================================
 
@@ -67,7 +61,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
   // REAL API INTEGRATIONS
   // ==========================================
   
-  // 1. AI Image Generator (FLUX Model)
+  // 1. AI Image Generator (Working Good)
   Future<void> _generateAIImage() async {
     if (_promptController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
@@ -98,7 +92,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     }
   }
 
-  // 2. Remove.BG API
+  // 2. Remove.BG API (Working Perfectly)
   Future<void> _pickAndRemoveBg() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
@@ -135,15 +129,15 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     }
   }
 
-  // 3. AI Writer (OPENAI GPT-4o - FIXED KEY)
+  // 3. AI Writer (OPENAI GPT-4o - LATEST MODEL)
   Future<void> _writeAIContent() async {
     if (_topicController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isWritingContent = true; _generatedContent = ''; });
     
     try {
-      String fullKey = getOpenAIKey();
-      String cleanKey = fullKey.trim().replaceAll('"', '').replaceAll("'", "");
+      // Key safai (extra spaces ya quotes hatane ke liye)
+      String cleanKey = OPENAI_API_KEY.trim().replaceAll('"', '').replaceAll("'", "");
       
       final response = await http.post(
         Uri.parse('https://api.openai.com/v1/chat/completions'),
@@ -185,7 +179,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
         } catch (_) {}
         
         if (response.statusCode == 429 && errorMsg.contains('quota')) {
-          errorMsg = 'OpenAI Billing Error: Aapke account mein credits khatam ho gaye hain.';
+          errorMsg = 'OpenAI Billing Error: Aapke account mein credits khatam ho gaye hain. Card add karein.';
         }
         
         throw Exception(errorMsg);
