@@ -78,8 +78,8 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
       String fullKey = getGeminiKey();
       String cleanKey = fullKey.trim().replaceAll('"', '').replaceAll("'", "");
       
-      // 🔥 HIGH QUOTA MODEL: gemini-2.5-flash-lite
-      final String geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent';
+      // 🔥 UPDATED MODEL: gemini-3.5-flash-lite
+      final String geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent';
       
       final geminiResponse = await http.post(
         Uri.parse(geminiUrl),
@@ -181,7 +181,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     }
   }
 
-  // 3. AI Writer (HIGH QUOTA MODEL: GEMINI 2.5 FLASH LITE)
+  // 3. AI Writer (UPDATED MODEL: GEMINI 3.5 FLASH LITE)
   Future<void> _writeAIContent() async {
     if (_topicController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
@@ -191,8 +191,8 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
       String fullKey = getGeminiKey();
       String cleanKey = fullKey.trim().replaceAll('"', '').replaceAll("'", "");
       
-      // 🔥 HIGH QUOTA MODEL: gemini-2.5-flash-lite
-      final String geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent';
+      // 🔥 UPDATED MODEL: gemini-3.5-flash-lite
+      final String geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent';
       
       final response = await http.post(
         Uri.parse(geminiUrl),
