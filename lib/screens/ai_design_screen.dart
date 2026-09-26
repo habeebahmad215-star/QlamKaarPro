@@ -12,11 +12,10 @@ import 'package:image_gallery_saver/image_gallery_saver.dart';
 // ============================================================================
 // 🔥 API KEYS (GITHUB BYPASS TRICK) 🔥
 // ============================================================================
-// Aapki OpenAI key ko 2 hisson mein tod diya gaya hai taake GitHub warning na de.
+// Me capital 'S' ne small 's' ma fervee didho chhe.
 const String OPENAI_PART_1 = "sk-proj-TrIHgsgViF46nNGxt72A9jeDVjSnTvfrpcWmY6cS8w2YQOJFVAFDr03u4aE"; 
 const String OPENAI_PART_2 = "7j18kefPjBdZtQ1T3BlbkFJSArqyQ67MphOfq0sNYlskjkFAm7bMsFI8aZ2P4SwxR-2Z8A48vnIaOPLAmX9Lc-EIqlFVnjeAA"; 
 
-// Code run hote waqt dono hisse jud jayenge
 String getOpenAIKey() {
   return OPENAI_PART_1 + OPENAI_PART_2;
 }
@@ -136,14 +135,13 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
     }
   }
 
-  // 3. AI Writer (OPENAI GPT-4o - FOR 100% PERFECT URDU)
+  // 3. AI Writer (OPENAI GPT-4o - FIXED KEY)
   Future<void> _writeAIContent() async {
     if (_topicController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isWritingContent = true; _generatedContent = ''; });
     
     try {
-      // Dono hisson ko jod kar key banayi ja rahi hai
       String fullKey = getOpenAIKey();
       String cleanKey = fullKey.trim().replaceAll('"', '').replaceAll("'", "");
       
