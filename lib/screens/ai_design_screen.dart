@@ -64,17 +64,51 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
   }
 
   // ==========================================
-  // REAL API INTEGRATIONS
+  // REAL API INTEGRATIONS (MASTER HACK APPLIED)
   // ==========================================
   
-  // 1. AI Image Generator (FLUX Model)
+  // 1. AI Image Generator (GEMINI + FLUX COMBO)
   Future<void> _generateAIImage() async {
     if (_promptController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isGeneratingImage = true; _generatedImageBytes = null; });
     
     try {
-      String safePrompt = Uri.encodeComponent(_promptController.text.trim());
+      // 🌟 STEP 1: Gemini se Hindi/Urdu Prompt ko Professional English Prompt mein badalna
+      String fullKey = getGeminiKey();
+      String cleanKey = fullKey.trim().replaceAll('"', '').replaceAll("'", "");
+      
+      final String geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent';
+      
+      final geminiResponse = await http.post(
+        Uri.parse(geminiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': cleanKey,
+        },
+        body: jsonEncode({
+          "contents": [
+            {
+              "parts": [
+                {"text": "You are an expert AI image prompt engineer. The user will give you an idea in Urdu, Hindi, or English. Translate and enhance it into a highly detailed, cinematic, and perfect English prompt for an AI image generator (like Midjourney). ONLY output the English prompt, nothing else. User input: '${_promptController.text.trim()}'"}
+              ]
+            }
+          ]
+        })
+      ).timeout(const Duration(seconds: 15)); 
+
+      String finalEnglishPrompt = _promptController.text.trim(); // Default fallback
+
+      if (geminiResponse.statusCode == 200) {
+        final data = jsonDecode(geminiResponse.body);
+        var candidates = data['candidates'];
+        if (candidates != null && candidates.isNotEmpty) {
+           finalEnglishPrompt = candidates[0]['content']['parts'][0]['text'].trim();
+        }
+      }
+
+      // 🌟 STEP 2: Ab us perfect English prompt ko FLUX image generator ko bhejna
+      String safePrompt = Uri.encodeComponent(finalEnglishPrompt);
       int randomSeed = DateTime.now().millisecondsSinceEpoch % 100000;
       
       String imageUrl = 'https://image.pollinations.ai/prompt/$safePrompt?width=1024&height=1024&nologo=true&enhance=false&model=flux&seed=$randomSeed';
@@ -145,7 +179,6 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
       String fullKey = getGeminiKey();
       String cleanKey = fullKey.trim().replaceAll('"', '').replaceAll("'", "");
       
-      // 🔥 LATEST 3.8 FLASH MODEL
       final String geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent';
       
       final response = await http.post(
@@ -314,7 +347,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
               children: [
                 const Text('Describe Your Imagination', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
                 const SizedBox(height: 4),
-                const Text('Pro Tip: Exact spelling ki demand na karein, sirf Icon/Symbol maangein.', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueAccent)),
+                const Text('Ab aap Urdu ya Hindi mein bhi prompt likh sakte hain!', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueAccent)),
                 const SizedBox(height: 15),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -323,7 +356,7 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
                     controller: _promptController,
                     maxLines: 4,
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'Type your prompt here in English...', hintStyle: TextStyle(color: Colors.black26)),
+                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'Misaal: Ek khoobsurat chota ghar pahaadon ke beech...', hintStyle: TextStyle(color: Colors.black26)),
                   ),
                 ),
                 const SizedBox(height: 20),
