@@ -64,17 +64,17 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
   }
 
   // ==========================================
-  // REAL API INTEGRATIONS (MASTER HACK APPLIED)
+  // REAL API INTEGRATIONS
   // ==========================================
   
-  // 1. AI Image Generator (GEMINI + FLUX COMBO)
+  // 1. AI Image Generator (GEMINI TRANSLATOR + FLUX)
   Future<void> _generateAIImage() async {
     if (_promptController.text.trim().isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isGeneratingImage = true; _generatedImageBytes = null; });
     
     try {
-      // 🌟 STEP 1: Gemini se Hindi/Urdu Prompt ko Professional English Prompt mein badalna
+      // 🌟 STEP 1: Gemini se Hindi/Urdu Prompt ko English mein badalna
       String fullKey = getGeminiKey();
       String cleanKey = fullKey.trim().replaceAll('"', '').replaceAll("'", "");
       
@@ -90,14 +90,14 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
           "contents": [
             {
               "parts": [
-                {"text": "You are an expert AI image prompt engineer. The user will give you an idea in Urdu, Hindi, or English. Translate and enhance it into a highly detailed, cinematic, and perfect English prompt for an AI image generator (like Midjourney). ONLY output the English prompt, nothing else. User input: '${_promptController.text.trim()}'"}
+                {"text": "Translate the following Urdu/Hindi/Roman text into a highly detailed, cinematic English prompt for an AI image generator (like Midjourney). ONLY output the translated English prompt and nothing else. Text to translate: '${_promptController.text.trim()}'"}
               ]
             }
           ]
         })
       ).timeout(const Duration(seconds: 15)); 
 
-      String finalEnglishPrompt = _promptController.text.trim(); // Default fallback
+      String finalEnglishPrompt = "";
 
       if (geminiResponse.statusCode == 200) {
         final data = jsonDecode(geminiResponse.body);
@@ -105,6 +105,18 @@ class _AiDesignScreenState extends State<AiDesignScreen> with SingleTickerProvid
         if (candidates != null && candidates.isNotEmpty) {
            finalEnglishPrompt = candidates[0]['content']['parts'][0]['text'].trim();
         }
+      } else {
+        // 🔥 STRICT CHECK: Agar Gemini fail hua toh direct error do, raw hindi FLUX ko mat bhejo!
+        String errorMsg = 'Translation Error ${geminiResponse.statusCode}';
+        try {
+          var data = jsonDecode(geminiResponse.body);
+          if (data['error'] != null) errorMsg = data['error']['message'].toString();
+        } catch (_) {}
+        throw Exception("Prompt Translation Failed: " + errorMsg);
+      }
+
+      if (finalEnglishPrompt.isEmpty) {
+        throw Exception("AI ne prompt samajhne se inkaar kar diya.");
       }
 
       // 🌟 STEP 2: Ab us perfect English prompt ko FLUX image generator ko bhejna
