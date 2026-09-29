@@ -78,15 +78,18 @@ jobs:
       - name: Build AAB for Play Store
         run: flutter build appbundle --release --no-tree-shake-icons
 
-      # 🔥 YAHAN FIX KIYA HAI: @v4 ko wapas @v3 kar diya taaki mobile ka default file manager zip ko asani se extract kar sake
+      # 🔥 YAHAN FIX KIYA HAI: Latest @v4 ke sath 'compression-level: 0' lagaya gaya hai. 
+      # Isse file zero compression ke sath simple ZIP banegi jo aapka mobile asani se extract kar lega.
       - name: Upload APK
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: QalamKaarPro-APK
           path: build/app/outputs/flutter-apk/app-release.apk
+          compression-level: 0
 
       - name: Upload AAB (Play Store)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: QalamKaarPro-AAB
           path: build/app/outputs/bundle/release/app-release.aab
+          compression-level: 0
