@@ -46,13 +46,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
   final TransformationController _transformController = TransformationController();
   final ValueNotifier<int> _canvasNotifier = ValueNotifier<int>(0);
   
-  // 🔥 THE NEW ZOOM NOTIFIER FOR LIVE HUD 🔥
   final ValueNotifier<double> _zoomNotifier = ValueNotifier<double>(1.0);
 
   bool _isCanvasLocked = false;
   
-  // ADVANCED GRID STATE VARIABLES
-  int _gridMode = 0; // 0: Hidden, 1: Mesh, 2: Rule of Thirds
+  int _gridMode = 0; 
   double _gridSpacing = 50.0;
   bool _snapToGrid = false; 
   Color _gridColor = Colors.black26;
@@ -115,7 +113,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       _saveProjectLocally(isAutoSave: true);
     });
 
-    // 🔥 LIVE ZOOM LISTENER 🔥
     _transformController.addListener(() {
       _zoomNotifier.value = _transformController.value.getMaxScaleOnAxis();
     });
@@ -1194,7 +1191,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       }
     );
   }
-    void _showResizeModal() {
+
+  void _showResizeModal() {
     showModalBottomSheet(
       context: context,
       barrierColor: Colors.transparent,
@@ -2126,23 +2124,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     );
   }
 
-  // 🔥 UPDATED: Added Text Justify support
-  void _toggleAlignment(DesignElement sel) {
-    saveState();
-    setState(() {
-      if (sel.textAlign == TextAlign.right) {
-        sel.textAlign = TextAlign.center;
-      } else if (sel.textAlign == TextAlign.center) {
-        sel.textAlign = TextAlign.left;
-      } else if (sel.textAlign == TextAlign.left) {
-        sel.textAlign = TextAlign.justify;
-      } else {
-        sel.textAlign = TextAlign.right;
-      }
-    });
-    triggerCanvasUpdate();
-  }
-
   // 🔥 ADVANCED ALIGN STUDIO POPUP (100% PRO UX - No Vibration, Added Justify)
   void _showAlignmentModal(DesignElement sel) {
     showModalBottomSheet(
@@ -2272,7 +2253,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     );
   }
 
-  // 🔥 HELPER WIDGET FOR ALIGN STUDIO (Haptic Removed)
   Widget _buildProAlignBtn(IconData icon, String label, VoidCallback onTap, {bool isPrimary = false}) {
     return InkWell(
       onTap: onTap, 
@@ -2980,7 +2960,11 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       'duplicate': duplicateSelected,
       'lock': () { saveState(); setState(() { sel.isLocked = true; selectedId = null; }); triggerCanvasUpdate(); },
       'more': () => _showMoreOptionsModal(sel),
+      
+      // 🔥 YAHAN LINK FIX KIYA GAYA HAI: Ab Align aur Position dono par ek hi Pro Studio khulega
       'position': () => _showAlignmentModal(sel),
+      'align': () => _showAlignmentModal(sel), 
+      
       'move': () => showMoveModal(sel),
       'bringFwd': bringForward,
       'sendBwd': sendBackward,
@@ -2998,7 +2982,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       'gradient': () => _showGradientPickerModal(sel),
       'textBg': () => _showTextBgPickerModal(sel),
       'spacing': () => showSpacingModal(sel),
-      'align': () => _toggleAlignment(sel),
       'bold': () { saveState(); setState(() => sel.isBold = !sel.isBold); triggerCanvasUpdate(); },
       
       'filters': () => _showImageFiltersModal(sel),
@@ -3090,7 +3073,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
           Expanded(
             child: Stack(
               children: [
-                // 1. ASLI CANVAS AREA
                 GestureDetector(
                   onTap: () { setState(() { selectedId = null; activeToolbarMenu = 'main'; }); triggerCanvasUpdate(); }, 
                   child: Center(
@@ -3276,7 +3258,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
                                                       children: [
                                                         Positioned(
                                                           left: bp, top: bp, right: bp, bottom: bp,
-                                                          // 🔥 BUG FIX: IgnorePointer canvas par touch ko aar-paar jane dega
+                                                          // 🔥 BUG FIX: IgnorePointer allows touch to pass through locked elements
                                                           child: IgnorePointer(
                                                             ignoring: e.isLocked,
                                                             child: GestureDetector(
@@ -3394,7 +3376,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
                   ),
                 ),
                 
-                // 🔥 PREMIUM FLOATING HUD (CORRECTED) 🔥
+                // 🔥 PREMIUM FLOATING HUD 🔥
                 if (!_isExporting) ...[
                   // 1. CANVAS LOCK ICON (Top Left)
                   Positioned(
@@ -3432,7 +3414,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
                       child: ValueListenableBuilder<double>(
                         valueListenable: _zoomNotifier,
                         builder: (context, zoom, child) {
-                          // Hide if zoom is practically 100%
                           if ((zoom - 1.0).abs() < 0.05) return const SizedBox.shrink();
 
                           return InkWell(
