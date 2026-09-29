@@ -309,24 +309,22 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                         border: Border.all(color: Colors.white), 
                         borderRadius: BorderRadius.circular(15)
                       ),
-                      // 🔥 BUG FIX: Directionality wrapper completely fixes cursor positioning & deletion sync
+                      // 🔥 BUG FIX: JameelNoori font removed from typing field, system Urdu font will be used for flawless typing & cursor.
                       child: Directionality(
                         textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
                         child: TextField(
                           controller: controller,
                           maxLines: null,
                           textAlign: isRTL ? TextAlign.right : TextAlign.left,
-                          style: TextStyle(
-                            fontSize: 16, // 🔥 SIZE REDUCED from 18 to 16
-                            fontFamily: isRTL ? 'JameelNoori' : null, // Fixes cursor height and metrics for Urdu
+                          style: const TextStyle(
+                            fontSize: 16, // Size reduced for clean composer UI
                             height: 1.5,
                             color: Colors.black87,
                           ), 
                           decoration: InputDecoration(
                             border: InputBorder.none, 
                             hintText: isRTL ? 'یہاں لکھیں...' : 'Type here...',
-                            hintStyle: TextStyle(
-                              fontFamily: isRTL ? 'JameelNoori' : null,
+                            hintStyle: const TextStyle(
                               fontSize: 16,
                             )
                           ),
@@ -395,6 +393,7 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                               double calcW = (controller.text.length * 15.0) + 40; 
                               if(calcW > MediaQuery.of(context).size.width - 60) calcW = MediaQuery.of(context).size.width - 60;
                               if(calcW < 80) calcW = 80;
+                              
                               if (existingElement != null) { 
                                 setState(() { 
                                   existingElement.content = controller.text; 
@@ -409,9 +408,11 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                                   isText: true, 
                                   width: calcW, 
                                   height: 100, 
-                                  fontSize: 30
+                                  fontSize: 15 // 🔥 BUG FIX: Changed from 30 to 15 default size
                                 );
                                 newEl.textAlign = isRTL ? TextAlign.right : TextAlign.left; 
+                                newEl.fontFamily = 'JameelNoori'; // 🔥 BUG FIX: Jameel Noori applied by default on canvas
+                                
                                 setState(() { 
                                   elements.add(newEl); 
                                   selectedId = newEl.id; 
@@ -712,7 +713,6 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
     );
   }
 
-  // 🔥 ADVANCED PRO LAYERS STUDIO
   void showLayersPanel() {
     Set<String> multiSelectedIds = {};
     
@@ -943,6 +943,325 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
           ],
         ),
       ),
+    );
+  }
+
+  void showSpacingModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context,
+      barrierColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return buildGlassContainer(
+              context,
+              height: 250,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Spacing فاصلے', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
+                    ]
+                  ),
+                  Row(
+                    children: [
+                      const SizedBox(width: 45, child: Text('Line:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                      Expanded(child: Slider(value: sel.lineHeight.clamp(0.5, 3.5), min: 0.5, max: 3.5, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.lineHeight = val); setModalState((){}); triggerCanvasUpdate(); }))
+                    ]
+                  ),
+                  Row(
+                    children: [
+                      const SizedBox(width: 45, child: Text('Word:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                      Expanded(child: Slider(value: sel.wordSpacing.clamp(-10.0, 30.0), min: -10.0, max: 30.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.wordSpacing = val); setModalState((){}); triggerCanvasUpdate(); }))
+                    ]
+                  ),
+                  Row(
+                    children: [
+                      const SizedBox(width: 45, child: Text('Letter:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                      Expanded(child: Slider(value: sel.letterSpacing.clamp(-5.0, 20.0), min: -5.0, max: 20.0, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.letterSpacing = val); setModalState((){}); triggerCanvasUpdate(); }))
+                    ]
+                  )
+                ]
+              )
+            );
+          }
+        );
+      }
+    );
+  }
+
+  void showSizeSliderModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context,
+      barrierColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return buildGlassContainer(
+              context,
+              height: 120,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Size: ${sel.fontSize.toInt()}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
+                    ]
+                  ),
+                  Slider(
+                    value: sel.fontSize.clamp(10.0, 150.0),
+                    min: 10.0, max: 150.0,
+                    activeColor: const Color(0xFF8B5CF6),
+                    onChangeStart: (val) => saveState(),
+                    onChanged: (val) { setState(() => sel.fontSize = val); setModalState((){}); triggerCanvasUpdate(); }
+                  )
+                ]
+              )
+            );
+          }
+        );
+      }
+    );
+  }
+
+  void showRotationModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context,
+      barrierColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return buildGlassContainer(
+              context,
+              height: 150,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Rotate گھمائیں', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
+                    ]
+                  ),
+                  Slider(
+                    value: sel.angle.clamp(-pi, pi),
+                    min: -pi, max: pi,
+                    activeColor: const Color(0xFF8B5CF6),
+                    onChangeStart: (val) => saveState(),
+                    onChanged: (val) { setState(() => sel.angle = val); setModalState((){}); triggerCanvasUpdate(); }
+                  ),
+                  Text('${(sel.angle * 180 / pi).toInt()}°', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))
+                ]
+              )
+            );
+          }
+        );
+      }
+    );
+  }
+
+  void show3DModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context,
+      barrierColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return buildGlassContainer(
+              context,
+              height: 220,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('3D Perspective زاویہ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
+                    ]
+                  ),
+                  Row(
+                    children: [
+                      const SizedBox(width: 45, child: Text('X-Axis:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                      Expanded(child: Slider(value: sel.pitch.clamp(-pi / 2, pi / 2), min: -pi / 2, max: pi / 2, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.pitch=val); setModalState((){}); triggerCanvasUpdate(); }))
+                    ]
+                  ),
+                  Row(
+                    children: [
+                      const SizedBox(width: 45, child: Text('Y-Axis:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                      Expanded(child: Slider(value: sel.yaw.clamp(-pi / 2, pi / 2), min: -pi / 2, max: pi / 2, activeColor: const Color(0xFF8B5CF6), onChanged: (val) { setState(()=> sel.yaw=val); setModalState((){}); triggerCanvasUpdate(); }))
+                    ]
+                  ),
+                  ElevatedButton(
+                    onPressed: () { saveState(); setState((){ sel.pitch = 0; sel.yaw = 0; }); setModalState((){}); triggerCanvasUpdate(); },
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.white.withOpacity(0.6), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                    child: const Text('Reset Perspective', style: TextStyle(color: Colors.black87, fontSize: 12))
+                  )
+                ]
+              )
+            );
+          }
+        );
+      }
+    );
+  }
+
+  Future<void> _importCustomFont() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom, 
+        allowedExtensions: ['ttf', 'otf']
+      );
+      
+      if (result != null && result.files.single.path != null) {
+        String filePath = result.files.single.path!;
+        String fontName = result.files.single.name.replaceAll('.ttf', '').replaceAll('.otf', '');
+        var fontLoader = FontLoader(fontName);
+        fontLoader.addFont(Future.value(ByteData.view(File(filePath).readAsBytesSync().buffer)));
+        await fontLoader.load();
+        setState(() { 
+          if (!customFonts.contains(fontName)) customFonts.add(fontName); 
+        });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Font "$fontName" import ho gaya!')));
+      }
+    } catch (e) {
+      debugPrint("Font Import Error: $e");
+    }
+  }
+
+  void showFontPickerModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context,
+      barrierColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return buildGlassContainer(
+              context,
+              height: MediaQuery.of(context).size.height * 0.70,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Select Font', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      Row(
+                        children: [
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), elevation: 0),
+                            onPressed: () async { await _importCustomFont(); setModalState(() {}); },
+                            icon: const Icon(Icons.add, color: Colors.white, size: 14),
+                            label: const Text('Add', style: TextStyle(color: Colors.white, fontSize: 11))
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
+                        ],
+                      )
+                    ]
+                  ),
+                  const Divider(color: Colors.black12),
+                  Expanded(
+                    child: ListView(
+                      physics: const BouncingScrollPhysics(),
+                      children: [
+                        const Padding(padding: EdgeInsets.symmetric(vertical: 8.0), child: Text('Pre-installed Fonts', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                        ...availableFontsData.map((font) {
+                          bool isSelected = sel.fontFamily == font['name'];
+                          return Card(
+                            elevation: 0,
+                            color: isSelected ? Colors.white.withOpacity(0.8) : Colors.white.withOpacity(0.4),
+                            shape: RoundedRectangleBorder(side: BorderSide(color: isSelected ? const Color(0xFF8B5CF6) : Colors.transparent), borderRadius: BorderRadius.circular(12)),
+                            margin: const EdgeInsets.only(bottom: 8),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: () { saveState(); setState(() => sel.fontFamily = font['name']!); triggerCanvasUpdate(); Navigator.pop(context); },
+                              child: Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 2,
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(font['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                          Text(font['desc']!, style: const TextStyle(fontSize: 9, color: Colors.black54))
+                                        ],
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 3,
+                                      child: Text(font['title']!, textAlign: TextAlign.right, textDirection: TextDirection.rtl, style: TextStyle(fontFamily: font['name'], fontSize: 22, color: Colors.black))
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Icon(isSelected ? Icons.check_circle : Icons.radio_button_unchecked, color: isSelected ? const Color(0xFF8B5CF6) : Colors.black26, size: 18)
+                                  ],
+                                ),
+                              ),
+                            )
+                          );
+                        }),
+                        if (customFonts.isNotEmpty) ...[
+                          const Padding(padding: EdgeInsets.only(top: 15, bottom: 8.0), child: Text('My Custom Fonts', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12))),
+                          ...customFonts.map((fontName) {
+                            bool isSelected = sel.fontFamily == fontName;
+                            return Card(
+                              elevation: 0,
+                              color: isSelected ? Colors.white.withOpacity(0.8) : Colors.white.withOpacity(0.4),
+                              shape: RoundedRectangleBorder(side: BorderSide(color: isSelected ? const Color(0xFF8B5CF6) : Colors.transparent), borderRadius: BorderRadius.circular(12)),
+                              margin: const EdgeInsets.only(bottom: 8),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () { saveState(); setState(() => sel.fontFamily = fontName); triggerCanvasUpdate(); Navigator.pop(context); },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(10.0),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(fontName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                            const Text('Imported TTF', style: TextStyle(fontSize: 9, color: Colors.black54))
+                                          ],
+                                        )
+                                      ),
+                                      const Text('نمونہ تحریر', textAlign: TextAlign.right, textDirection: TextDirection.rtl, style: TextStyle(fontSize: 22)),
+                                      const SizedBox(width: 10),
+                                      Icon(isSelected ? Icons.check_circle : Icons.radio_button_unchecked, color: isSelected ? const Color(0xFF8B5CF6) : Colors.black26, size: 18)
+                                    ],
+                                  ),
+                                ),
+                              )
+                            );
+                          })
+                        ]
+                      ],
+                    )
+                  )
+                ]
+              )
+            );
+          }
+        );
+      }
     );
   }
 }
