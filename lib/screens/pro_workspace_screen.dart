@@ -1805,6 +1805,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     );
   }
 
+  // ---> RESTORED: 6 DELETED FUNCTIONS START <---
+
   void showSpacingModal(DesignElement sel) {
     showModalBottomSheet(
       context: context,
@@ -2124,7 +2126,26 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     );
   }
 
-  // 🔥 ADVANCED ALIGN STUDIO POPUP (100% PRO UX - No Vibration, Added Justify)
+  // ---> RESTORED: 6 DELETED FUNCTIONS END <---
+
+
+  void _toggleAlignment(DesignElement sel) {
+    saveState();
+    setState(() {
+      if (sel.textAlign == TextAlign.right) {
+        sel.textAlign = TextAlign.center;
+      } else if (sel.textAlign == TextAlign.center) {
+        sel.textAlign = TextAlign.left;
+      } else if (sel.textAlign == TextAlign.left) {
+        sel.textAlign = TextAlign.justify;
+      } else {
+        sel.textAlign = TextAlign.right;
+      }
+    });
+    triggerCanvasUpdate();
+  }
+
+  // 🔥 ADVANCED ALIGN STUDIO POPUP (100% PRO UX - Added Safe Area Padding & Justify)
   void _showAlignmentModal(DesignElement sel) {
     showModalBottomSheet(
       context: context,
@@ -2134,6 +2155,12 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
+            
+            // Safe Area Padding: 16px for text/shapes, 0 for borders
+            double sp = sel.isBorder ? 0.0 : 16.0; 
+            double ew = getElWidth(sel);
+            double eh = getElHeight(sel);
+
             return buildGlassContainer(
               context,
               height: sel.isText ? 480 : 380,
@@ -2159,7 +2186,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
                   ),
                   const SizedBox(height: 20),
 
-                  // 🔥 TEXT ALIGNMENT OPTIONS
+                  // TEXT ALIGNMENT OPTIONS
                   if (sel.isText) ...[
                     const Text('Text Alignment (تحریر کی ترتیب)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.black54, letterSpacing: 0.5)),
                     const SizedBox(height: 12),
@@ -2175,7 +2202,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
                     const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(height: 1, color: Colors.black12)),
                   ],
 
-                  // 🔥 ABSOLUTE CENTER BUTTON
+                  // ABSOLUTE CENTER BUTTON
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
@@ -2192,8 +2219,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
                       onPressed: () {
                         saveState();
                         setState(() {
-                          sel.x = (currentCanvasW / 2) - (getElWidth(sel) / 2);
-                          sel.y = (currentCanvasH / 2) - (getElHeight(sel) / 2);
+                          sel.x = (currentCanvasW / 2) - (ew / 2);
+                          sel.y = (currentCanvasH / 2) - (eh / 2);
                         });
                         triggerCanvasUpdate();
                       },
@@ -2204,7 +2231,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
                   const Text('Page Alignment Matrix (صفحہ کے لحاظ سے)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.black54, letterSpacing: 0.5)),
                   const SizedBox(height: 12),
 
-                  // 🔥 3x3 PRO ALIGNMENT MATRIX
+                  // 3x3 PRO ALIGNMENT MATRIX (WITH SAFE MARGIN)
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
@@ -2218,27 +2245,27 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _buildProAlignBtn(Icons.align_horizontal_left_rounded, 'Top Left', () { saveState(); setState(() { sel.x = 0; sel.y = 0; }); triggerCanvasUpdate(); }),
-                            _buildProAlignBtn(Icons.align_vertical_top_rounded, 'Top Center', () { saveState(); setState(() { sel.x = (currentCanvasW / 2) - (getElWidth(sel) / 2); sel.y = 0; }); triggerCanvasUpdate(); }),
-                            _buildProAlignBtn(Icons.align_horizontal_right_rounded, 'Top Right', () { saveState(); setState(() { sel.x = currentCanvasW - getElWidth(sel); sel.y = 0; }); triggerCanvasUpdate(); }),
+                            _buildProAlignBtn(Icons.align_horizontal_left_rounded, 'Top Left', () { saveState(); setState(() { sel.x = sp; sel.y = sp; }); triggerCanvasUpdate(); }),
+                            _buildProAlignBtn(Icons.align_vertical_top_rounded, 'Top Center', () { saveState(); setState(() { sel.x = (currentCanvasW / 2) - (ew / 2); sel.y = sp; }); triggerCanvasUpdate(); }),
+                            _buildProAlignBtn(Icons.align_horizontal_right_rounded, 'Top Right', () { saveState(); setState(() { sel.x = currentCanvasW - ew - sp; sel.y = sp; }); triggerCanvasUpdate(); }),
                           ]
                         ),
                         const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(height: 1, color: Colors.black12)),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _buildProAlignBtn(Icons.keyboard_arrow_left_rounded, 'Mid Left', () { saveState(); setState(() { sel.x = 0; sel.y = (currentCanvasH / 2) - (getElHeight(sel) / 2); }); triggerCanvasUpdate(); }),
-                            _buildProAlignBtn(Icons.center_focus_strong_rounded, 'Center', () { saveState(); setState(() { sel.x = (currentCanvasW / 2) - (getElWidth(sel) / 2); sel.y = (currentCanvasH / 2) - (getElHeight(sel) / 2); }); triggerCanvasUpdate(); }, isPrimary: true),
-                            _buildProAlignBtn(Icons.keyboard_arrow_right_rounded, 'Mid Right', () { saveState(); setState(() { sel.x = currentCanvasW - getElWidth(sel); sel.y = (currentCanvasH / 2) - (getElHeight(sel) / 2); }); triggerCanvasUpdate(); }),
+                            _buildProAlignBtn(Icons.keyboard_arrow_left_rounded, 'Mid Left', () { saveState(); setState(() { sel.x = sp; sel.y = (currentCanvasH / 2) - (eh / 2); }); triggerCanvasUpdate(); }),
+                            _buildProAlignBtn(Icons.center_focus_strong_rounded, 'Center', () { saveState(); setState(() { sel.x = (currentCanvasW / 2) - (ew / 2); sel.y = (currentCanvasH / 2) - (eh / 2); }); triggerCanvasUpdate(); }, isPrimary: true),
+                            _buildProAlignBtn(Icons.keyboard_arrow_right_rounded, 'Mid Right', () { saveState(); setState(() { sel.x = currentCanvasW - ew - sp; sel.y = (currentCanvasH / 2) - (eh / 2); }); triggerCanvasUpdate(); }),
                           ]
                         ),
                         const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(height: 1, color: Colors.black12)),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _buildProAlignBtn(Icons.call_received_rounded, 'Bot Left', () { saveState(); setState(() { sel.x = 0; sel.y = currentCanvasH - getElHeight(sel); }); triggerCanvasUpdate(); }),
-                            _buildProAlignBtn(Icons.align_vertical_bottom_rounded, 'Bot Center', () { saveState(); setState(() { sel.x = (currentCanvasW / 2) - (getElWidth(sel) / 2); sel.y = currentCanvasH - getElHeight(sel); }); triggerCanvasUpdate(); }),
-                            _buildProAlignBtn(Icons.call_made_rounded, 'Bot Right', () { saveState(); setState(() { sel.x = currentCanvasW - getElWidth(sel); sel.y = currentCanvasH - getElHeight(sel); }); triggerCanvasUpdate(); }),
+                            _buildProAlignBtn(Icons.call_received_rounded, 'Bot Left', () { saveState(); setState(() { sel.x = sp; sel.y = currentCanvasH - eh - sp; }); triggerCanvasUpdate(); }),
+                            _buildProAlignBtn(Icons.align_vertical_bottom_rounded, 'Bot Center', () { saveState(); setState(() { sel.x = (currentCanvasW / 2) - (ew / 2); sel.y = currentCanvasH - eh - sp; }); triggerCanvasUpdate(); }),
+                            _buildProAlignBtn(Icons.call_made_rounded, 'Bot Right', () { saveState(); setState(() { sel.x = currentCanvasW - ew - sp; sel.y = currentCanvasH - eh - sp; }); triggerCanvasUpdate(); }),
                           ]
                         ),
                       ]
@@ -3258,7 +3285,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
                                                       children: [
                                                         Positioned(
                                                           left: bp, top: bp, right: bp, bottom: bp,
-                                                          // 🔥 BUG FIX: IgnorePointer allows touch to pass through locked elements
+                                                          // 🔥 BUG FIX: IgnorePointer canvas par touch ko aar-paar jane dega
                                                           child: IgnorePointer(
                                                             ignoring: e.isLocked,
                                                             child: GestureDetector(
