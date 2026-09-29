@@ -46,13 +46,13 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
   final TransformationController _transformController = TransformationController();
   final ValueNotifier<int> _canvasNotifier = ValueNotifier<int>(0);
   
-  // 🔥 LIVE ZOOM TRACKER 🔥
+  // 🔥 THE NEW ZOOM NOTIFIER FOR LIVE HUD 🔥
   final ValueNotifier<double> _zoomNotifier = ValueNotifier<double>(1.0);
 
   bool _isCanvasLocked = false;
   
   // ADVANCED GRID STATE VARIABLES
-  int _gridMode = 0; 
+  int _gridMode = 0; // 0: Hidden, 1: Mesh, 2: Rule of Thirds
   double _gridSpacing = 50.0;
   bool _snapToGrid = false; 
   Color _gridColor = Colors.black26;
@@ -115,6 +115,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       _saveProjectLocally(isAutoSave: true);
     });
 
+    // 🔥 LIVE ZOOM LISTENER 🔥
     _transformController.addListener(() {
       _zoomNotifier.value = _transformController.value.getMaxScaleOnAxis();
     });
@@ -1193,8 +1194,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       }
     );
   }
-
-  void _showResizeModal() {
+    void _showResizeModal() {
     showModalBottomSheet(
       context: context,
       barrierColor: Colors.transparent,
@@ -1385,7 +1385,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       }
     );
   }
-    void _showOpacityModal(DesignElement sel) {
+
+  void _showOpacityModal(DesignElement sel) {
     showModalBottomSheet(
       context: context, 
       barrierColor: Colors.transparent,
@@ -2125,6 +2126,117 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     );
   }
 
+  void _toggleAlignment(DesignElement sel) {
+    saveState();
+    setState(() {
+      if (sel.textAlign == TextAlign.right) {
+        sel.textAlign = TextAlign.center;
+      } else if (sel.textAlign == TextAlign.center) {
+        sel.textAlign = TextAlign.left;
+      } else {
+        sel.textAlign = TextAlign.right;
+      }
+    });
+    triggerCanvasUpdate();
+  }
+
+  void _showAlignmentModal(DesignElement sel) {
+    showModalBottomSheet(
+      context: context,
+      barrierColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return buildGlassContainer(
+          context,
+          height: 280, 
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Align to Page (صفحہ پر سیٹ کریں)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
+                ]
+              ),
+              const Divider(color: Colors.black12),
+              
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF8B5CF6).withOpacity(0.1),
+                    foregroundColor: const Color(0xFF8B5CF6),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Color(0xFF8B5CF6)))
+                  ),
+                  icon: const Icon(Icons.center_focus_strong),
+                  label: const Text('Center to Page (بالکل درمیان)', style: TextStyle(fontWeight: FontWeight.bold)),
+                  onPressed: () {
+                    saveState();
+                    setState(() {
+                      sel.x = (currentCanvasW / 2) - (getElWidth(sel) / 2);
+                      sel.y = (currentCanvasH / 2) - (getElHeight(sel) / 2);
+                    });
+                    triggerCanvasUpdate();
+                  },
+                ),
+              ),
+              const SizedBox(height: 15),
+
+              const Text('Horizontal Align (دائیں بائیں)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54)),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Expanded(child: _buildAlignButton(Icons.align_horizontal_left, 'Left', () { saveState(); setState(() => sel.x = 0); triggerCanvasUpdate(); })),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildAlignButton(Icons.align_horizontal_center, 'Center', () { saveState(); setState(() => sel.x = (currentCanvasW / 2) - (getElWidth(sel) / 2)); triggerCanvasUpdate(); })),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildAlignButton(Icons.align_horizontal_right, 'Right', () { saveState(); setState(() => sel.x = currentCanvasW - getElWidth(sel)); triggerCanvasUpdate(); })),
+                ]
+              ),
+              
+              const SizedBox(height: 15),
+              
+              const Text('Vertical Align (اوپر نیچے)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54)),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Expanded(child: _buildAlignButton(Icons.align_vertical_top, 'Top', () { saveState(); setState(() => sel.y = 0); triggerCanvasUpdate(); })),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildAlignButton(Icons.align_vertical_center, 'Middle', () { saveState(); setState(() => sel.y = (currentCanvasH / 2) - (getElHeight(sel) / 2)); triggerCanvasUpdate(); })),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildAlignButton(Icons.align_vertical_bottom, 'Bottom', () { saveState(); setState(() => sel.y = currentCanvasH - getElHeight(sel)); triggerCanvasUpdate(); })),
+                ]
+              )
+            ]
+          )
+        );
+      }
+    );
+  }
+
+  Widget _buildAlignButton(IconData icon, String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(color: Colors.white.withOpacity(0.7), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.black12)),
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.black87, size: 20),
+            const SizedBox(height: 4),
+            Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black87))
+          ]
+        )
+      )
+    );
+  }
+
   void _showMultiStyleModal(DesignElement sel) {
     Set<int> selectedIndices = {};
     List<String> words = sel.content.split(' ');
@@ -2507,151 +2619,6 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     );
   }
 
-  // 🔥 NEW MEGA STUDIO: showAlignAndArrangeModal 🔥
-  void showAlignAndArrangeModal(DesignElement sel) {
-    showModalBottomSheet(
-      context: context,
-      barrierColor: Colors.transparent,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-
-            Widget buildSectionTitle(String title) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8.0, top: 16.0, left: 4.0),
-                child: Text(title, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black54, letterSpacing: 1.0)),
-              );
-            }
-
-            Widget buildActionButton({required IconData icon, required String label, required VoidCallback onTap, bool isActive = false}) {
-              return Expanded(
-                child: InkWell(
-                  onTap: () { onTap(); setModalState(() {}); },
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isActive ? const Color(0xFF8B5CF6).withOpacity(0.15) : Colors.white.withOpacity(0.8),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: isActive ? const Color(0xFF8B5CF6) : Colors.black12, width: 1),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(icon, color: isActive ? const Color(0xFF8B5CF6) : Colors.black87, size: 20),
-                        const SizedBox(height: 4),
-                        Text(label, style: TextStyle(fontSize: 9, fontWeight: isActive ? FontWeight.bold : FontWeight.w600, color: isActive ? const Color(0xFF8B5CF6) : Colors.black87)),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }
-
-            return buildGlassContainer(
-              context,
-              height: sel.isText ? 420 : 340, 
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Align & Arrange', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
-                    ]
-                  ),
-                  const Divider(color: Colors.black12, height: 10),
-                  
-                  Expanded(
-                    child: ListView(
-                      physics: const BouncingScrollPhysics(),
-                      padding: EdgeInsets.zero,
-                      children: [
-                        
-                        if (sel.isText) ...[
-                          buildSectionTitle('TEXT ALIGNMENT'),
-                          Row(
-                            children: [
-                              buildActionButton(icon: Icons.format_align_left, label: 'Left', isActive: sel.textAlign == TextAlign.left, onTap: () { saveState(); setState(() => sel.textAlign = TextAlign.left); triggerCanvasUpdate(); }),
-                              buildActionButton(icon: Icons.format_align_center, label: 'Center', isActive: sel.textAlign == TextAlign.center, onTap: () { saveState(); setState(() => sel.textAlign = TextAlign.center); triggerCanvasUpdate(); }),
-                              buildActionButton(icon: Icons.format_align_right, label: 'Right', isActive: sel.textAlign == TextAlign.right, onTap: () { saveState(); setState(() => sel.textAlign = TextAlign.right); triggerCanvasUpdate(); }),
-                              buildActionButton(icon: Icons.format_align_justify, label: 'Justify', isActive: sel.textAlign == TextAlign.justify, onTap: () { saveState(); setState(() => sel.textAlign = TextAlign.justify); triggerCanvasUpdate(); }),
-                            ],
-                          ),
-                        ],
-
-                        buildSectionTitle('ALIGN TO PAGE'),
-                        Row(
-                          children: [
-                            buildActionButton(icon: Icons.align_horizontal_left, label: 'Left', onTap: () { saveState(); setState(() => sel.x = 0); triggerCanvasUpdate(); }),
-                            buildActionButton(icon: Icons.align_horizontal_center, label: 'Center', onTap: () { saveState(); setState(() => sel.x = (currentCanvasW / 2) - (getElWidth(sel) / 2)); triggerCanvasUpdate(); }),
-                            buildActionButton(icon: Icons.align_horizontal_right, label: 'Right', onTap: () { saveState(); setState(() => sel.x = currentCanvasW - getElWidth(sel)); triggerCanvasUpdate(); }),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            buildActionButton(icon: Icons.align_vertical_top, label: 'Top', onTap: () { saveState(); setState(() => sel.y = 0); triggerCanvasUpdate(); }),
-                            buildActionButton(icon: Icons.align_vertical_center, label: 'Middle', onTap: () { saveState(); setState(() => sel.y = (currentCanvasH / 2) - (getElHeight(sel) / 2)); triggerCanvasUpdate(); }),
-                            buildActionButton(icon: Icons.align_vertical_bottom, label: 'Bottom', onTap: () { saveState(); setState(() => sel.y = currentCanvasH - getElHeight(sel)); triggerCanvasUpdate(); }),
-                          ],
-                        ),
-
-                        buildSectionTitle('ARRANGE (LAYERS)'),
-                        Row(
-                          children: [
-                            buildActionButton(icon: Icons.flip_to_front, label: 'Bring Fwd', onTap: () { 
-                              int idx = elements.indexWhere((e) => e.id == sel.id);
-                              if (idx < elements.length - 1 && idx != -1) {
-                                saveState(); setState(() { var item = elements.removeAt(idx); elements.insert(idx + 1, item); }); triggerCanvasUpdate();
-                              }
-                            }),
-                            buildActionButton(icon: Icons.flip_to_back, label: 'Send Bwd', onTap: () { 
-                              int idx = elements.indexWhere((e) => e.id == sel.id);
-                              if (idx > 0) {
-                                saveState(); setState(() { var item = elements.removeAt(idx); elements.insert(idx - 1, item); }); triggerCanvasUpdate();
-                              }
-                            }),
-                            buildActionButton(icon: Icons.vertical_align_top, label: 'To Front', onTap: () { 
-                              int idx = elements.indexWhere((e) => e.id == sel.id);
-                              if (idx != -1 && idx != elements.length - 1) {
-                                saveState(); setState(() { var item = elements.removeAt(idx); elements.add(item); }); triggerCanvasUpdate();
-                              }
-                            }),
-                            buildActionButton(icon: Icons.vertical_align_bottom, label: 'To Back', onTap: () { 
-                              int idx = elements.indexWhere((e) => e.id == sel.id);
-                              if (idx > 0) {
-                                saveState(); setState(() { var item = elements.removeAt(idx); elements.insert(0, item); }); triggerCanvasUpdate();
-                              }
-                            }),
-                          ],
-                        ),
-
-                        buildSectionTitle('FLIP & ROTATE'),
-                        Row(
-                          children: [
-                            buildActionButton(icon: Icons.flip, label: 'Flip H', onTap: () { saveState(); setState(() => sel.flipX = !sel.flipX); triggerCanvasUpdate(); }),
-                            buildActionButton(icon: Icons.flip_camera_android, label: 'Flip V', onTap: () { saveState(); setState(() => sel.flipY = !sel.flipY); triggerCanvasUpdate(); }),
-                            buildActionButton(icon: Icons.refresh, label: 'Reset Rot.', onTap: () { saveState(); setState(() => sel.angle = 0); triggerCanvasUpdate(); }),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                    ),
-                  ),
-                ],
-              )
-            );
-          }
-        );
-      }
-    );
-  }
-
   void _showMoreOptionsModal(DesignElement sel) {
     showModalBottomSheet(
       context: context,
@@ -2671,7 +2638,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
         } else {
            if (sel.imageBytes != null || sel.isShape) moreTools.add(_buildGridToolBtn(Icons.format_paint_rounded, 'Tint', () { Navigator.pop(context); _openProColorPicker(title: 'Color', currentColor: sel.elementColor, onColorChanged: (c) { setState(()=> sel.elementColor = c); }); }));
            if (sel.imageBytes != null) moreTools.add(_buildGridToolBtn(Icons.auto_awesome_motion_rounded, 'Blend', () { Navigator.pop(context); _showBlendModeModal(sel); }));
-           moreTools.add(_buildGridToolBtn(Icons.center_focus_strong_rounded, 'Align', () { Navigator.pop(context); showAlignAndArrangeModal(sel); }));
+           moreTools.add(_buildGridToolBtn(Icons.center_focus_strong_rounded, 'Position', () { Navigator.pop(context); _showAlignmentModal(sel); }));
            moreTools.add(_buildGridToolBtn(Icons.open_with_rounded, 'Move', () { Navigator.pop(context); showMoveModal(sel); }));
            moreTools.add(_buildGridToolBtn(Icons.rotate_right_rounded, 'Rotate', () { Navigator.pop(context); showRotationModal(sel); }));
            moreTools.add(_buildGridToolBtn(Icons.view_in_ar_rounded, 'Perspective', () { Navigator.pop(context); show3DModal(sel); }));
@@ -2954,15 +2921,17 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       'duplicate': duplicateSelected,
       'lock': () { saveState(); setState(() { sel.isLocked = true; selectedId = null; }); triggerCanvasUpdate(); },
       'more': () => _showMoreOptionsModal(sel),
-      
-      // POSITION BUTTON REMOVED
-      
+      'position': () => _showAlignmentModal(sel),
       'move': () => showMoveModal(sel),
+      'bringFwd': bringForward,
+      'sendBwd': sendBackward,
       'size': () => _showElementSizeModal(sel),
       'color': () => _showColorPickerModal(sel),
       'opacity': () => _showOpacityModal(sel),
       'stroke': () => _showAdvancedStrokeModal(sel),
       'shadow': () => _showAdvancedShadowModal(sel),
+      'flipH': () { saveState(); setState(() => sel.flipX = !sel.flipX); triggerCanvasUpdate(); },
+      'flipV': () { saveState(); setState(() => sel.flipY = !sel.flipY); triggerCanvasUpdate(); },
       
       'edit': () => showTextComposerDialog(existingElement: sel),
       'font': () => showFontPickerModal(sel),
@@ -2970,18 +2939,18 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       'gradient': () => _showGradientPickerModal(sel),
       'textBg': () => _showTextBgPickerModal(sel),
       'spacing': () => showSpacingModal(sel),
-      
-      // 🔥 ALIGN IS NOW THE MASTER STUDIO 🔥
-      'align': () => showAlignAndArrangeModal(sel), 
-      
+      'align': () => _toggleAlignment(sel),
       'bold': () { saveState(); setState(() => sel.isBold = !sel.isBold); triggerCanvasUpdate(); },
+      
       'filters': () => _showImageFiltersModal(sel),
       'crop': () => _showShapeClipModal(sel),
       'tint': () { _openProColorPicker(title: 'Color', currentColor: sel.elementColor, onColorChanged: (c) { setState(()=> sel.elementColor = c); }); },
       'blend': () => _showBlendModeModal(sel),
+      
       'fitPage': () => _fitBorderToPage(sel),
       'setup': () => _showBorderSettingsModal(sel),
       'radius': () => _showRadiusModal(sel),
+      
       'editTable': () => _showTableEditorModal(sel),
     };
 
@@ -3057,389 +3026,387 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
         ],
       ),
 
-      // 🔥 CRASH PROTECTION: Positioned.fill Added 🔥
-      body: Stack(
+      body: Column(
         children: [
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: () { setState(() { selectedId = null; activeToolbarMenu = 'main'; }); triggerCanvasUpdate(); }, 
-              child: Center(
-                child: InteractiveViewer(
-                  transformationController: _transformController,
-                  panEnabled: !_isCanvasLocked && !hasSelection,
-                  scaleEnabled: !_isCanvasLocked,
-                  minScale: 0.2, maxScale: 5.0, 
-                  boundaryMargin: const EdgeInsets.all(double.infinity),
-                  child: AspectRatio(
-                    aspectRatio: canvasRatio,
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        double newW = constraints.maxWidth - 32;
-                        double newH = constraints.maxHeight - 32;
+          Expanded(
+            child: Stack(
+              children: [
+                // 1. ASLI CANVAS AREA
+                GestureDetector(
+                  onTap: () { setState(() { selectedId = null; activeToolbarMenu = 'main'; }); triggerCanvasUpdate(); }, 
+                  child: Center(
+                    child: InteractiveViewer(
+                      transformationController: _transformController,
+                      panEnabled: !_isCanvasLocked && !hasSelection,
+                      scaleEnabled: !_isCanvasLocked,
+                      minScale: 0.2, maxScale: 5.0, 
+                      boundaryMargin: const EdgeInsets.all(double.infinity),
+                      child: AspectRatio(
+                        aspectRatio: canvasRatio,
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            double newW = constraints.maxWidth - 32;
+                            double newH = constraints.maxHeight - 32;
 
-                        if (_needsRescale && currentCanvasW > 50 && currentCanvasH > 50) {
-                          double scaleX = newW / currentCanvasW;
-                          double scaleY = newH / currentCanvasH;
-                          double scaleMin = min(scaleX, scaleY);
-                          
-                          for (var e in elements) {
-                            e.x *= scaleX;
-                            e.y *= scaleY;
-                            e.width *= scaleX;
-                            e.height *= scaleY;
-                            
-                            if (e.isText) {
-                              e.fontSize *= scaleMin;
-                              e.textCurveRadius *= scaleMin;
-                              e.shadowOffsetX *= scaleX;
-                              e.shadowOffsetY *= scaleY;
+                            if (_needsRescale && currentCanvasW > 50 && currentCanvasH > 50) {
+                              double scaleX = newW / currentCanvasW;
+                              double scaleY = newH / currentCanvasH;
+                              double scaleMin = min(scaleX, scaleY);
+                              
+                              for (var e in elements) {
+                                e.x *= scaleX;
+                                e.y *= scaleY;
+                                e.width *= scaleX;
+                                e.height *= scaleY;
+                                
+                                if (e.isText) {
+                                  e.fontSize *= scaleMin;
+                                  e.textCurveRadius *= scaleMin;
+                                  e.shadowOffsetX *= scaleX;
+                                  e.shadowOffsetY *= scaleY;
+                                }
+                                e.strokeWidth *= scaleMin;
+                                e.cornerRadius *= scaleMin;
+                              }
+                              _needsRescale = false;
                             }
-                            e.strokeWidth *= scaleMin;
-                            e.cornerRadius *= scaleMin;
-                          }
-                          _needsRescale = false;
-                        }
 
-                        currentCanvasW = newW;
-                        currentCanvasH = newH;
+                            currentCanvasW = newW;
+                            currentCanvasH = newH;
 
-                        return ValueListenableBuilder<int>(
-                          valueListenable: _canvasNotifier,
-                          builder: (context, _, __) {
-                            return Container(
-                              margin: const EdgeInsets.all(16),
-                              decoration: const BoxDecoration(boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)]),
-                              child: RepaintBoundary(
-                                key: _canvasKey,
-                                child: ClipRect(
-                                  child: Container(
-                                    width: currentCanvasW,
-                                    height: currentCanvasH,
-                                    color: bgImageBytes != null || bgGradient != null ? null : (pageColor == Colors.transparent ? Colors.white : pageColor),
-                                    decoration: bgImageBytes != null 
-                                      ? BoxDecoration(image: DecorationImage(image: MemoryImage(bgImageBytes!), fit: BoxFit.cover))
-                                      : (bgGradient != null ? BoxDecoration(gradient: LinearGradient(colors: bgGradient!)) : null),
-                                    child: Stack(
-                                      clipBehavior: Clip.none,
-                                      children: [
-                                        if (_gridMode > 0 && !_isExporting)
-                                          Positioned.fill(
-                                            child: IgnorePointer(
-                                              child: CustomPaint(
-                                                painter: AdvancedGridPainter(
-                                                  mode: _gridMode, 
-                                                  spacing: _gridSpacing, 
-                                                  color: _gridColor
+                            return ValueListenableBuilder<int>(
+                              valueListenable: _canvasNotifier,
+                              builder: (context, _, __) {
+                                return Container(
+                                  margin: const EdgeInsets.all(16),
+                                  decoration: const BoxDecoration(boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)]),
+                                  child: RepaintBoundary(
+                                    key: _canvasKey,
+                                    child: ClipRect(
+                                      child: Container(
+                                        width: currentCanvasW,
+                                        height: currentCanvasH,
+                                        color: bgImageBytes != null || bgGradient != null ? null : (pageColor == Colors.transparent ? Colors.white : pageColor),
+                                        decoration: bgImageBytes != null 
+                                          ? BoxDecoration(image: DecorationImage(image: MemoryImage(bgImageBytes!), fit: BoxFit.cover))
+                                          : (bgGradient != null ? BoxDecoration(gradient: LinearGradient(colors: bgGradient!)) : null),
+                                        child: Stack(
+                                          clipBehavior: Clip.none,
+                                          children: [
+                                            if (_gridMode > 0 && !_isExporting)
+                                              Positioned.fill(
+                                                child: IgnorePointer(
+                                                  child: CustomPaint(
+                                                    painter: AdvancedGridPainter(
+                                                      mode: _gridMode, 
+                                                      spacing: _gridSpacing, 
+                                                      color: _gridColor
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                          ),
-                                        
-                                        if (!_isExporting)
-                                          Positioned.fill(child: Container(decoration: BoxDecoration(border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1)))),
-                                        
-                                        ...elements.map((e) {
-                                          if (e.isHidden) return const SizedBox.shrink();
-                                          bool isSel = (e.id == selectedId) && !_isExporting;
-                                          
-                                          Matrix4 matrix = Matrix4.identity()
-                                            ..setEntry(3, 2, 0.002) 
-                                            ..rotateX(e.pitch)
-                                            ..rotateY(e.yaw)
-                                            ..rotateZ(e.angle);
-                                          
-                                          if (e.flipX) matrix.rotateY(pi);
-                                          if (e.flipY) matrix.rotateX(pi);
-
-                                          double currentWidth = getElWidth(e); 
-                                          double currentHeight = getElHeight(e);
-                                          double bp = 20.0; 
-                                          
-                                          Widget contentWidget;
-                                          if (e.isBorder) {
-                                            contentWidget = SizedBox(
-                                              width: currentWidth,
-                                              height: currentHeight,
-                                              child: CustomPaint(
-                                                painter: AdvancedBorderPainter(
-                                                  color: e.elementColor,
-                                                  strokeWidth: e.strokeWidth,
-                                                  radius: e.cornerRadius,
-                                                  styleIndex: int.tryParse(e.borderStyle) ?? 0,
-                                                ),
-                                              ),
-                                            );
-                                          } else if (e.isTable && e.tableData != null) {
-                                            contentWidget = CustomTableWidget(tableData: e.tableData!, width: currentWidth, height: currentHeight, fontFamily: e.fontFamily, textColor: e.textColor, borderColor: e.elementColor, hasBorder: true);
-                                          } else if (e.isShape) {
-                                            contentWidget = Container(width: currentWidth, height: currentHeight, decoration: BoxDecoration(color: e.elementColor, borderRadius: BorderRadius.circular(e.cornerRadius)));
-                                          } else if (e.imageBytes != null) {
-                                            Widget img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, fit: BoxFit.fill);
-                                            if (e.isTinted) img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, color: e.elementColor, fit: BoxFit.fill);
-                                            else {
-                                              if (e.imageFilter == 1) img = ColorFiltered(colorFilter: const ColorFilter.matrix([0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0, 0, 0, 1, 0]), child: img);
-                                              else if (e.imageFilter == 2) img = ColorFiltered(colorFilter: const ColorFilter.matrix([0.393, 0.769, 0.189, 0, 0, 0.349, 0.686, 0.168, 0, 0, 0.272, 0.534, 0.131, 0, 0, 0, 0, 0, 1, 0]), child: img);
-                                              else if (e.imageFilter == 3) img = ColorFiltered(colorFilter: const ColorFilter.matrix([-1, 0, 0, 0, 255, 0, -1, 0, 0, 255, 0, 0, -1, 0, 255, 0, 0, 0, 1, 0]), child: img);
-                                            }
-                                            if (e.blendModeIndex != 0) img = ColorFiltered(colorFilter: ColorFilter.mode(Colors.white.withOpacity(0.0), AppConstants.blendModes[e.blendModeIndex]), child: img);
-                                            Widget clippedImg = img;
-                                            if (e.clipShape == 1) clippedImg = Container(clipBehavior: Clip.antiAlias, decoration: const BoxDecoration(shape: BoxShape.circle), child: img);
-                                            else if (e.clipShape == 2) clippedImg = ClipPath(clipper: TriangleClipper(), child: img);
-                                            else if (e.clipShape == 3) clippedImg = ClipPath(clipper: StarClipper(), child: img);
-                                            else if (e.clipShape == 4) clippedImg = ClipPath(clipper: HexagonClipper(), child: img);
-                                            contentWidget = SizedBox(width: currentWidth, height: e.clipShape == 0 ? currentHeight : currentWidth, child: clippedImg);
-                                          } else {
-                                            List<Widget> blockLayers = [];
-                                            if (e.text3dDepth > 0) {
-                                              for (double i = e.text3dDepth; i > 0; i -= 1.0) {
-                                                blockLayers.add(Transform.translate(offset: Offset(i, i), child: _buildTextWidget(e, currentWidth, e.text3dColor, extraShadows: [])));
-                                              }
-                                            }
                                             
-                                            Widget mainTxt = _buildTextWidget(e, currentWidth, e.textGradient != null ? Colors.white : e.textColor);
-                                            if (e.textGradient != null) mainTxt = ShaderMask(shaderCallback: (bounds) => LinearGradient(colors: e.textGradient!).createShader(bounds), child: mainTxt);
-                                            if (e.textTextureBytes != null) mainTxt = TextureTextWrapper(child: mainTxt, textureBytes: e.textTextureBytes!);
-                                            blockLayers.add(mainTxt);
+                                            if (!_isExporting)
+                                              Positioned.fill(child: Container(decoration: BoxDecoration(border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1)))),
                                             
-                                            Widget txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: blockLayers);
-                                            
-                                            if (e.hasStroke) {
-                                              Paint strokePaint = Paint()
-                                                 ..style = PaintingStyle.stroke
-                                                 ..strokeWidth = e.strokeWidth
-                                                 ..color = e.strokeColor;
+                                            ...elements.map((e) {
+                                              if (e.isHidden) return const SizedBox.shrink();
+                                              bool isSel = (e.id == selectedId) && !_isExporting;
                                               
-                                              Widget strokeTxt = _buildTextWidget(e, currentWidth, null, foregroundPaint: strokePaint);
-                                              txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [strokeTxt, txt]);
-                                            }
-                                            
-                                            if (e.textBgColor != null) {
-                                               txt = Container(padding: const EdgeInsets.all(5), decoration: BoxDecoration(color: e.textBgColor, borderRadius: BorderRadius.circular(e.cornerRadius)), child: txt);
-                                            }
-                                            contentWidget = txt; 
-                                          }
-                                          
-                                          if (_isExporting) { 
-                                            return Positioned(
-                                              left: e.x, 
-                                              top: e.y, 
-                                              child: Transform(
-                                                transform: matrix, 
-                                                alignment: Alignment.center, 
-                                                child: Opacity(
-                                                  opacity: e.opacity.clamp(0.0, 1.0),
-                                                  child: contentWidget
-                                                )
-                                              )
-                                            );
-                                          }
-                                          
-                                          return Positioned(
-                                            left: e.x - bp, 
-                                            top: e.y - bp,
-                                            child: Transform(
-                                              transform: matrix, alignment: Alignment.center,
-                                              child: SizedBox(
-                                                width: currentWidth + (bp * 2), height: currentHeight + (bp * 2),
-                                                child: Stack(
-                                                  clipBehavior: Clip.none,
-                                                  children: [
-                                                    Positioned(
-                                                      left: bp, top: bp, right: bp, bottom: bp,
-                                                      child: GestureDetector(
-                                                        behavior: HitTestBehavior.opaque,
-                                                        onTap: () { 
-                                                          if (e.isLocked) {
-                                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Layer is Locked')));
-                                                          } else {
-                                                            setState(() => selectedId = e.id);
-                                                            triggerCanvasUpdate();
-                                                          }
-                                                        },
-                                                        onPanStart: (d) { if(!e.isLocked) saveState(); },
-                                                        onPanUpdate: (d) {
-                                                          if(!e.isLocked && selectedId == e.id) {
-                                                            double newX = e.x + d.delta.dx; 
-                                                            double newY = e.y + d.delta.dy; 
+                                              Matrix4 matrix = Matrix4.identity()
+                                                ..setEntry(3, 2, 0.002) 
+                                                ..rotateX(e.pitch)
+                                                ..rotateY(e.yaw)
+                                                ..rotateZ(e.angle);
+                                              
+                                              if (e.flipX) matrix.rotateY(pi);
+                                              if (e.flipY) matrix.rotateX(pi);
 
-                                                            if (_snapToGrid && _gridMode == 1) {
-                                                              double snapThreshold = 8.0; 
-                                                              double snappedX = (newX / _gridSpacing).round() * _gridSpacing;
-                                                              double snappedY = (newY / _gridSpacing).round() * _gridSpacing;
+                                              double currentWidth = getElWidth(e); 
+                                              double currentHeight = getElHeight(e);
+                                              double bp = 20.0; 
+                                              
+                                              Widget contentWidget;
+                                              if (e.isBorder) {
+                                                contentWidget = SizedBox(
+                                                  width: currentWidth,
+                                                  height: currentHeight,
+                                                  child: CustomPaint(
+                                                    painter: AdvancedBorderPainter(
+                                                      color: e.elementColor,
+                                                      strokeWidth: e.strokeWidth,
+                                                      radius: e.cornerRadius,
+                                                      styleIndex: int.tryParse(e.borderStyle) ?? 0,
+                                                    ),
+                                                  ),
+                                                );
+                                              } else if (e.isTable && e.tableData != null) {
+                                                contentWidget = CustomTableWidget(tableData: e.tableData!, width: currentWidth, height: currentHeight, fontFamily: e.fontFamily, textColor: e.textColor, borderColor: e.elementColor, hasBorder: true);
+                                              } else if (e.isShape) {
+                                                contentWidget = Container(width: currentWidth, height: currentHeight, decoration: BoxDecoration(color: e.elementColor, borderRadius: BorderRadius.circular(e.cornerRadius)));
+                                              } else if (e.imageBytes != null) {
+                                                Widget img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, fit: BoxFit.fill);
+                                                if (e.isTinted) img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, color: e.elementColor, fit: BoxFit.fill);
+                                                else {
+                                                  if (e.imageFilter == 1) img = ColorFiltered(colorFilter: const ColorFilter.matrix([0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0, 0, 0, 1, 0]), child: img);
+                                                  else if (e.imageFilter == 2) img = ColorFiltered(colorFilter: const ColorFilter.matrix([0.393, 0.769, 0.189, 0, 0, 0.349, 0.686, 0.168, 0, 0, 0.272, 0.534, 0.131, 0, 0, 0, 0, 0, 1, 0]), child: img);
+                                                  else if (e.imageFilter == 3) img = ColorFiltered(colorFilter: const ColorFilter.matrix([-1, 0, 0, 0, 255, 0, -1, 0, 0, 255, 0, 0, -1, 0, 255, 0, 0, 0, 1, 0]), child: img);
+                                                }
+                                                if (e.blendModeIndex != 0) img = ColorFiltered(colorFilter: ColorFilter.mode(Colors.white.withOpacity(0.0), AppConstants.blendModes[e.blendModeIndex]), child: img);
+                                                Widget clippedImg = img;
+                                                if (e.clipShape == 1) clippedImg = Container(clipBehavior: Clip.antiAlias, decoration: const BoxDecoration(shape: BoxShape.circle), child: img);
+                                                else if (e.clipShape == 2) clippedImg = ClipPath(clipper: TriangleClipper(), child: img);
+                                                else if (e.clipShape == 3) clippedImg = ClipPath(clipper: StarClipper(), child: img);
+                                                else if (e.clipShape == 4) clippedImg = ClipPath(clipper: HexagonClipper(), child: img);
+                                                contentWidget = SizedBox(width: currentWidth, height: e.clipShape == 0 ? currentHeight : currentWidth, child: clippedImg);
+                                              } else {
+                                                List<Widget> blockLayers = [];
+                                                if (e.text3dDepth > 0) {
+                                                  for (double i = e.text3dDepth; i > 0; i -= 1.0) {
+                                                    blockLayers.add(Transform.translate(offset: Offset(i, i), child: _buildTextWidget(e, currentWidth, e.text3dColor, extraShadows: [])));
+                                                  }
+                                                }
+                                                
+                                                Widget mainTxt = _buildTextWidget(e, currentWidth, e.textGradient != null ? Colors.white : e.textColor);
+                                                if (e.textGradient != null) mainTxt = ShaderMask(shaderCallback: (bounds) => LinearGradient(colors: e.textGradient!).createShader(bounds), child: mainTxt);
+                                                if (e.textTextureBytes != null) mainTxt = TextureTextWrapper(child: mainTxt, textureBytes: e.textTextureBytes!);
+                                                blockLayers.add(mainTxt);
+                                                
+                                                Widget txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: blockLayers);
+                                                
+                                                if (e.hasStroke) {
+                                                  Paint strokePaint = Paint()
+                                                     ..style = PaintingStyle.stroke
+                                                     ..strokeWidth = e.strokeWidth
+                                                     ..color = e.strokeColor;
+                                                  
+                                                  Widget strokeTxt = _buildTextWidget(e, currentWidth, null, foregroundPaint: strokePaint);
+                                                  txt = Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [strokeTxt, txt]);
+                                                }
+                                                
+                                                if (e.textBgColor != null) {
+                                                   txt = Container(padding: const EdgeInsets.all(5), decoration: BoxDecoration(color: e.textBgColor, borderRadius: BorderRadius.circular(e.cornerRadius)), child: txt);
+                                                }
+                                                contentWidget = txt; 
+                                              }
+                                              
+                                              if (_isExporting) { 
+                                                return Positioned(
+                                                  left: e.x, 
+                                                  top: e.y, 
+                                                  child: Transform(
+                                                    transform: matrix, 
+                                                    alignment: Alignment.center, 
+                                                    child: Opacity(
+                                                      opacity: e.opacity.clamp(0.0, 1.0),
+                                                      child: contentWidget
+                                                    )
+                                                  )
+                                                );
+                                              }
+                                              
+                                              return Positioned(
+                                                left: e.x - bp, 
+                                                top: e.y - bp,
+                                                child: Transform(
+                                                  transform: matrix, alignment: Alignment.center,
+                                                  child: SizedBox(
+                                                    width: currentWidth + (bp * 2), height: currentHeight + (bp * 2),
+                                                    child: Stack(
+                                                      clipBehavior: Clip.none,
+                                                      children: [
+                                                        Positioned(
+                                                          left: bp, top: bp, right: bp, bottom: bp,
+                                                          // 🔥 BUG FIX: IgnorePointer canvas par touch ko aar-paar jane dega
+                                                          child: IgnorePointer(
+                                                            ignoring: e.isLocked,
+                                                            child: GestureDetector(
+                                                              behavior: HitTestBehavior.opaque,
+                                                              onTap: () { 
+                                                                setState(() => selectedId = e.id);
+                                                                triggerCanvasUpdate();
+                                                              },
+                                                              onPanStart: (d) { saveState(); },
+                                                              onPanUpdate: (d) {
+                                                                if(selectedId == e.id) {
+                                                                  double newX = e.x + d.delta.dx; 
+                                                                  double newY = e.y + d.delta.dy; 
 
-                                                              if ((newX - snappedX).abs() < snapThreshold) newX = snappedX;
-                                                              if ((newY - snappedY).abs() < snapThreshold) newY = snappedY;
-                                                            }
+                                                                  if (_snapToGrid && _gridMode == 1) {
+                                                                    double snapThreshold = 8.0; 
+                                                                    double snappedX = (newX / _gridSpacing).round() * _gridSpacing;
+                                                                    double snappedY = (newY / _gridSpacing).round() * _gridSpacing;
 
-                                                            double actualDx = newX - e.x;
-                                                            double actualDy = newY - e.y;
+                                                                    if ((newX - snappedX).abs() < snapThreshold) newX = snappedX;
+                                                                    if ((newY - snappedY).abs() < snapThreshold) newY = snappedY;
+                                                                  }
 
-                                                            e.x = newX;
-                                                            e.y = newY;
+                                                                  double actualDx = newX - e.x;
+                                                                  double actualDy = newY - e.y;
 
-                                                            if (e.groupId != null) {
-                                                              for (var other in elements) {
-                                                                if (other.id != e.id && other.groupId == e.groupId && !other.isLocked) {
-                                                                  other.x += actualDx; 
-                                                                  other.y += actualDy;
+                                                                  e.x = newX;
+                                                                  e.y = newY;
+
+                                                                  if (e.groupId != null) {
+                                                                    for (var other in elements) {
+                                                                      if (other.id != e.id && other.groupId == e.groupId && !other.isLocked) {
+                                                                        other.x += actualDx; 
+                                                                        other.y += actualDy;
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                  triggerCanvasUpdate();
                                                                 }
-                                                              }
-                                                            }
-                                                            triggerCanvasUpdate();
-                                                          }
-                                                        },
-                                                        child: Stack(
-                                                          fit: StackFit.passthrough,
-                                                          clipBehavior: Clip.none,
-                                                          children: [
-                                                            Opacity(opacity: e.opacity.clamp(0.0, 1.0), child: contentWidget),
-                                                            if (isSel)
-                                                              Positioned.fill(
-                                                                child: IgnorePointer(
-                                                                  child: Container(
-                                                                    decoration: BoxDecoration(
-                                                                      border: Border.all(color: Colors.white, width: 2.0),
-                                                                    ),
-                                                                    child: Container(
-                                                                      decoration: BoxDecoration(
-                                                                        border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5),
+                                                              },
+                                                              child: Stack(
+                                                                fit: StackFit.passthrough,
+                                                                clipBehavior: Clip.none,
+                                                                children: [
+                                                                  Opacity(opacity: e.opacity.clamp(0.0, 1.0), child: contentWidget),
+                                                                  if (isSel)
+                                                                    Positioned.fill(
+                                                                      child: IgnorePointer(
+                                                                        child: Container(
+                                                                          decoration: BoxDecoration(
+                                                                            border: Border.all(color: Colors.white, width: 2.0),
+                                                                          ),
+                                                                          child: Container(
+                                                                            decoration: BoxDecoration(
+                                                                              border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5),
+                                                                          ),
+                                                                          ),
+                                                                        ),
                                                                       ),
                                                                     ),
-                                                                  ),
-                                                                ),
+                                                                ],
                                                               ),
-                                                          ],
+                                                            )
+                                                          )
                                                         ),
-                                                      )
+                                                        
+                                                        if (isSel) ...[
+                                                          Positioned(top: bp - 20, left: bp + currentWidth/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'T', e), child: _buildTouchTarget(child: _buildPill(true)))),
+                                                          Positioned(bottom: bp - 20, left: bp + currentWidth/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'B', e), child: _buildTouchTarget(child: _buildPill(true)))),
+                                                          Positioned(left: bp - 20, top: bp + currentHeight/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'L', e), child: _buildTouchTarget(child: _buildPill(false)))),
+                                                          Positioned(right: bp - 20, top: bp + currentHeight/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'R', e), child: _buildTouchTarget(child: _buildPill(false)))),
+                                                          
+                                                          Positioned(top: bp - 20, left: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TL'), child: _buildTouchTarget(child: _buildCircle()))),
+                                                          Positioned(top: bp - 20, right: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TR'), child: _buildTouchTarget(child: _buildCircle()))),
+                                                          Positioned(bottom: bp - 20, left: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BL'), child: _buildTouchTarget(child: _buildCircle()))),
+                                                          Positioned(bottom: bp - 20, right: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BR'), child: _buildTouchTarget(child: _buildCircle()))),
+                                                          
+                                                          Positioned(
+                                                            top: bp - 35, right: bp - 35, 
+                                                            child: GestureDetector(
+                                                              behavior: HitTestBehavior.opaque,
+                                                              onPanStart: (_) => saveState(),
+                                                              onPanUpdate: (d) => _rotateElement(d, e), 
+                                                              child: _buildTouchTarget(child: _buildIconCircle(Icons.rotate_right))
+                                                            )
+                                                          ),
+                                                          Positioned(
+                                                            bottom: bp - 35, left: bp - 35, 
+                                                            child: GestureDetector(
+                                                              behavior: HitTestBehavior.opaque,
+                                                              onPanStart: (_) => saveState(),
+                                                              onPanUpdate: (d) => _scaleCorner(d, e, 'BL'),
+                                                              child: _buildTouchTarget(child: _buildIconCircle(Icons.open_in_full))
+                                                            )
+                                                          ),
+                                                        ]
+                                                      ],
                                                     ),
-                                                    
-                                                    if (isSel) ...[
-                                                      Positioned(top: bp - 20, left: bp + currentWidth/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'T', e), child: _buildTouchTarget(child: _buildPill(true)))),
-                                                      Positioned(bottom: bp - 20, left: bp + currentWidth/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'B', e), child: _buildTouchTarget(child: _buildPill(true)))),
-                                                      Positioned(left: bp - 20, top: bp + currentHeight/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'L', e), child: _buildTouchTarget(child: _buildPill(false)))),
-                                                      Positioned(right: bp - 20, top: bp + currentHeight/2 - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _resizeEdge(d, 'R', e), child: _buildTouchTarget(child: _buildPill(false)))),
-                                                      
-                                                      Positioned(top: bp - 20, left: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TL'), child: _buildTouchTarget(child: _buildCircle()))),
-                                                      Positioned(top: bp - 20, right: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'TR'), child: _buildTouchTarget(child: _buildCircle()))),
-                                                      Positioned(bottom: bp - 20, left: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BL'), child: _buildTouchTarget(child: _buildCircle()))),
-                                                      Positioned(bottom: bp - 20, right: bp - 20, child: GestureDetector(behavior: HitTestBehavior.opaque, onPanStart: (_) => saveState(), onPanUpdate: (d) => _scaleCorner(d, e, 'BR'), child: _buildTouchTarget(child: _buildCircle()))),
-                                                      
-                                                      Positioned(
-                                                        top: bp - 35, right: bp - 35, 
-                                                        child: GestureDetector(
-                                                          behavior: HitTestBehavior.opaque,
-                                                          onPanStart: (_) => saveState(),
-                                                          onPanUpdate: (d) => _rotateElement(d, e), 
-                                                          child: _buildTouchTarget(child: _buildIconCircle(Icons.rotate_right))
-                                                        )
-                                                      ),
-                                                      Positioned(
-                                                        bottom: bp - 35, left: bp - 35, 
-                                                        child: GestureDetector(
-                                                          behavior: HitTestBehavior.opaque,
-                                                          onPanStart: (_) => saveState(),
-                                                          onPanUpdate: (d) => _scaleCorner(d, e, 'BL'),
-                                                          child: _buildTouchTarget(child: _buildIconCircle(Icons.open_in_full))
-                                                        )
-                                                      ),
-                                                    ]
-                                                  ],
+                                                  ),
                                                 ),
-                                              ),
-                                            ),
-                                          );
-                                        }).toList(),
-                                      ],
+                                              );
+                                            }).toList(),
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
+                                );
+                              }
                             );
                           }
-                        );
-                      }
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-          ),
-
-          if (!_isExporting)
-            Positioned(
-              top: 10,
-              left: 10,
-              child: InkWell(
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  setState(() => _isCanvasLocked = !_isCanvasLocked);
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: _isCanvasLocked ? const Color(0xFF1E293B) : Colors.white.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
-                  ),
-                  child: Icon(
-                    _isCanvasLocked ? Icons.lock_rounded : Icons.lock_open_rounded,
-                    size: 20,
-                    color: _isCanvasLocked ? Colors.white : Colors.black87,
-                  ),
-                ),
-              ),
-            ),
-
-          if (!_isExporting)
-            Positioned(
-              top: 10,
-              left: 0,
-              right: 0,
-              child: ValueListenableBuilder<double>(
-                valueListenable: _zoomNotifier,
-                builder: (context, zoom, child) {
-                  bool isZoomed = zoom > 1.01 || zoom < 0.99;
-                  return AnimatedOpacity(
-                    opacity: isZoomed ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 200),
-                    child: isZoomed ? Center(
+                
+                // 🔥 NEW PREMIUM FLOATING HUD 🔥
+                if (!_isExporting)
+                  Positioned(
+                    top: 16,
+                    left: 0,
+                    right: 0,
+                    child: Center(
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(20),
                         child: BackdropFilter(
                           filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                           child: Container(
                             height: 36,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withOpacity(0.8),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(color: Colors.white, width: 1.5),
                               boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
                             ),
-                            child: InkWell(
-                              onTap: () {
-                                HapticFeedback.selectionClick();
-                                _transformController.value = Matrix4.identity(); 
-                              },
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.zoom_in, size: 16, color: Color(0xFF8B5CF6)),
-                                  const SizedBox(width: 6),
-                                  Text('${(zoom * 100).toInt()}%', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-                                  const SizedBox(width: 6),
-                                  const Icon(Icons.refresh, size: 14, color: Colors.black54),
-                                ],
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Zoom Percentage & Reset
+                                ValueListenableBuilder<double>(
+                                  valueListenable: _zoomNotifier,
+                                  builder: (context, zoom, child) {
+                                    return InkWell(
+                                      onTap: () {
+                                        HapticFeedback.selectionClick();
+                                        _transformController.value = Matrix4.identity();
+                                      },
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.search, size: 14, color: Color(0xFF64748B)),
+                                          const SizedBox(width: 4),
+                                          Text('${(zoom * 100).toInt()}%', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                                        ],
+                                      ),
+                                    );
+                                  }
+                                ),
+                                
+                                // Divider
+                                Container(margin: const EdgeInsets.symmetric(horizontal: 8), width: 1, height: 16, color: Colors.black26),
+                                
+                                // Canvas Lock Toggle
+                                InkWell(
+                                  onTap: () {
+                                    HapticFeedback.selectionClick();
+                                    setState(() => _isCanvasLocked = !_isCanvasLocked);
+                                  },
+                                  child: Row(
+                                    children: [
+                                      Icon(_isCanvasLocked ? Icons.lock_rounded : Icons.lock_open_rounded, size: 16, color: _isCanvasLocked ? Colors.redAccent : const Color(0xFF64748B)),
+                                      if (_isCanvasLocked) ...[
+                                        const SizedBox(width: 4),
+                                        const Text('Locked', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                                      ]
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
                       ),
-                    ) : const SizedBox.shrink(),
-                  );
-                }
-              ),
+                    ),
+                  ),
+              ],
             ),
+          ),
         ],
       ),
       bottomNavigationBar: SafeArea(
@@ -3515,4 +3482,3 @@ class AdvancedGridPainter extends CustomPainter {
     return oldDelegate.mode != mode || oldDelegate.spacing != spacing || oldDelegate.color != color;
   }
 }
-
