@@ -53,6 +53,10 @@ jobs:
               with open(path, 'w') as f: f.write(content)
           "
 
+      - name: Set Professional App Name
+        run: |
+          sed -i 's/android:label="qalamkaarpro"/android:label="QalamKaar Pro"/g' android/app/src/main/AndroidManifest.xml || true
+
       - name: Fix Android Build Settings (SDK & MultiDex)
         run: |
           sed -i 's/compileSdkVersion [0-9]*/compileSdkVersion 34/g' android/app/build.gradle || true
@@ -64,6 +68,9 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Generate Custom App Launcher Icons
+        run: flutter pub run flutter_launcher_icons
 
       - name: Build APK for Testing
         run: flutter build apk --release --no-tree-shake-icons
