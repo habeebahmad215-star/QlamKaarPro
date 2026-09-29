@@ -700,17 +700,19 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
     );
   }
 
+  // 🔥 ADVANCED PRO LAYERS STUDIO (Bug-Free Reordering & Multi-Actions)
   void showLayersPanel() {
-    Set<String> selectedForGroup = {};
+    Set<String> multiSelectedIds = {};
     
+    // Auto-select current item and its group
     if (selectedId != null) {
-      selectedForGroup.add(selectedId!);
+      multiSelectedIds.add(selectedId!);
       try {
         DesignElement activeEl = elements.firstWhere((e) => e.id == selectedId);
         if (activeEl.groupId != null) {
           for (var e in elements) {
             if (e.groupId == activeEl.groupId) {
-              selectedForGroup.add(e.id);
+              multiSelectedIds.add(e.id);
             }
           }
         }
@@ -721,18 +723,20 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
 
     showModalBottomSheet(
       context: context,
-      barrierColor: Colors.transparent,
+      barrierColor: Colors.transparent, // Keeps canvas visible
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             
+            // 🔥 BUG FIX: Reordering array logic fixed completely
             List<DesignElement> reversedElements = elements.reversed.toList();
 
             return buildGlassContainer(
               context,
-              height: MediaQuery.of(context).size.height * 0.5,
+              height: MediaQuery.of(context).size.height * 0.48, // Slightly compact for better canvas view
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -741,70 +745,74 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.layers, color: Color(0xFF1E293B)),
+                          const Icon(Icons.layers_rounded, color: Color(0xFF8B5CF6)),
                           const SizedBox(width: 8),
-                          const Text('Layers Studio', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                          const Text('Layers Studio', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
+                          if (multiSelectedIds.isNotEmpty)
+                             Text('  (${multiSelectedIds.length})', style: const TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold))
                         ],
                       ),
-                      Row(
-                        children: [
-                          if (selectedForGroup.length > 1)
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 10)), 
-                              onPressed: () { 
-                                saveState(); 
-                                String gId = Random().nextInt(10000).toString(); 
-                                setState(() { 
-                                  for (var e in elements) { if (selectedForGroup.contains(e.id)) e.groupId = gId; } 
-                                  selectedForGroup.clear(); 
-                                }); 
-                                triggerCanvasUpdate(); 
-                                setModalState((){}); 
-                              }, 
-                              icon: const Icon(Icons.link, color: Colors.white, size: 14), 
-                              label: const Text('Group', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))
-                            ),
-                          if (selectedForGroup.isNotEmpty) ...[
-                            const SizedBox(width: 5),
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 10)), 
-                              onPressed: () { 
-                                saveState(); 
-                                setState(() { 
-                                  for (var e in elements) { if (selectedForGroup.contains(e.id)) e.groupId = null; } 
-                                  selectedForGroup.clear(); 
-                                }); 
-                                triggerCanvasUpdate(); 
-                                setModalState((){}); 
-                              }, 
-                              icon: const Icon(Icons.link_off, color: Colors.white, size: 14), 
-                              label: const Text('Ungroup', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))
-                            ),
-                          ],
-                          IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
-                        ]
-                      )
+                      IconButton(icon: const Icon(Icons.close_rounded, size: 22), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
                     ]
                   ),
-                  const Divider(color: Colors.black12, height: 20),
+                  const SizedBox(height: 10),
+                  
+                  // 🔥 MULTI-SELECT PRO TOOLBAR
+                  if (multiSelectedIds.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                      margin: const EdgeInsets.only(bottom: 10),
+                      decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(12)),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildMiniToolBtn(Icons.lock_outline, 'Lock', () {
+                             saveState();
+                             setState(() { for (var e in elements) { if (multiSelectedIds.contains(e.id)) e.isLocked = true; } selectedId = null; });
+                             triggerCanvasUpdate(); setModalState((){});
+                          }, Colors.orange),
+                          
+                          _buildMiniToolBtn(Icons.visibility_off_outlined, 'Hide', () {
+                             saveState();
+                             setState(() { for (var e in elements) { if (multiSelectedIds.contains(e.id)) e.isHidden = true; } selectedId = null; });
+                             triggerCanvasUpdate(); setModalState((){});
+                          }, Colors.blueGrey),
+                          
+                          if (multiSelectedIds.length > 1)
+                            _buildMiniToolBtn(Icons.link_rounded, 'Group', () {
+                               saveState();
+                               String gId = Random().nextInt(10000).toString();
+                               setState(() { for (var e in elements) { if (multiSelectedIds.contains(e.id)) e.groupId = gId; } });
+                               triggerCanvasUpdate(); setModalState((){});
+                            }, const Color(0xFF10B981)),
+                            
+                          _buildMiniToolBtn(Icons.delete_outline, 'Delete', () {
+                             saveState();
+                             setState(() { 
+                               elements.removeWhere((item) => multiSelectedIds.contains(item.id)); 
+                               if (multiSelectedIds.contains(selectedId)) selectedId = null;
+                               multiSelectedIds.clear();
+                             });
+                             triggerCanvasUpdate(); setModalState((){});
+                          }, Colors.redAccent),
+                        ],
+                      ),
+                    ),
                   
                   Expanded(
                     child: reversedElements.isEmpty 
-                      ? const Center(child: Text('Canvas is empty.', style: TextStyle(color: Colors.black54)))
+                      ? const Center(child: Text('Canvas is empty.', style: TextStyle(color: Colors.black54, fontWeight: FontWeight.bold)))
                       : ReorderableListView.builder(
                           physics: const BouncingScrollPhysics(),
-                          proxyDecorator: (child, index, animation) {
-                            return Material(color: Colors.transparent, child: child);
-                          },
+                          proxyDecorator: (child, index, animation) => Material(color: Colors.transparent, child: child),
                           onReorder: (oldIndex, newIndex) {
+                            // 🔥 BULLETPROOF REORDER LOGIC
                             saveState();
                             setState(() {
                               if (newIndex > oldIndex) newIndex -= 1;
-                              int actualOldIndex = elements.length - 1 - oldIndex;
-                              int actualNewIndex = elements.length - 1 - newIndex;
-                              
-                              final DesignElement item = elements.removeAt(actualOldIndex);
-                              elements.insert(actualNewIndex, item);
+                              final item = reversedElements.removeAt(oldIndex);
+                              reversedElements.insert(newIndex, item);
+                              elements = reversedElements.reversed.toList();
                             });
                             triggerCanvasUpdate();
                             setModalState((){});
@@ -813,34 +821,33 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                           itemBuilder: (context, index) {
                             DesignElement e = reversedElements[index];
                             bool isSel = selectedId == e.id;
-                            bool isGroupChecked = selectedForGroup.contains(e.id);
+                            bool isGroupChecked = multiSelectedIds.contains(e.id);
                             
                             Widget previewIcon;
                             if (e.isText) {
-                               previewIcon = CircleAvatar(radius: 12, backgroundColor: e.textColor.withOpacity(0.2), child: Text("T", style: TextStyle(color: e.textColor, fontWeight: FontWeight.bold, fontSize: 12)));
+                               previewIcon = CircleAvatar(radius: 14, backgroundColor: e.textColor.withOpacity(0.15), child: Text("T", style: TextStyle(color: e.textColor, fontWeight: FontWeight.w900, fontSize: 13)));
                             } else if (e.imageBytes != null) {
-                               previewIcon = ClipRRect(borderRadius: BorderRadius.circular(4), child: Image.memory(e.imageBytes!, width: 24, height: 24, fit: BoxFit.cover));
+                               previewIcon = ClipRRect(borderRadius: BorderRadius.circular(6), child: Image.memory(e.imageBytes!, width: 28, height: 28, fit: BoxFit.cover));
                             } else {
-                               previewIcon = Container(width: 24, height: 24, decoration: BoxDecoration(color: e.elementColor, borderRadius: BorderRadius.circular(e.isShape ? e.cornerRadius : 4), border: Border.all(color: Colors.black12)));
+                               previewIcon = Container(width: 28, height: 28, decoration: BoxDecoration(color: e.elementColor, borderRadius: BorderRadius.circular(e.isShape ? e.cornerRadius : 6), border: Border.all(color: Colors.black12)));
                             }
 
                             return Container(
                               key: ValueKey(e.id),
                               margin: const EdgeInsets.only(bottom: 8),
                               decoration: BoxDecoration(
-                                color: isSel ? const Color(0xFF8B5CF6).withOpacity(0.1) : (e.groupId != null ? Colors.blue.withOpacity(0.05) : Colors.white),
-                                borderRadius: BorderRadius.circular(12),
+                                color: isSel ? const Color(0xFF8B5CF6).withOpacity(0.08) : (e.groupId != null ? Colors.blue.shade50.withOpacity(0.5) : Colors.white),
+                                borderRadius: BorderRadius.circular(14),
                                 border: Border.all(color: isSel ? const Color(0xFF8B5CF6) : Colors.grey.shade200, width: isSel ? 1.5 : 1),
-                                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1))]
+                                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))]
                               ),
                               child: ListTile(
                                 dense: true,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                                
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                 leading: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.drag_indicator, color: Colors.black26, size: 20),
+                                    const Icon(Icons.drag_indicator_rounded, color: Colors.black26, size: 20),
                                     Checkbox(
                                       value: isGroupChecked, 
                                       activeColor: const Color(0xFF8B5CF6), 
@@ -848,13 +855,13 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                                       onChanged: (val) { 
                                         setModalState((){ 
                                           if(val == true) {
-                                            selectedForGroup.add(e.id); 
+                                            multiSelectedIds.add(e.id); 
                                             if(!e.isLocked && !e.isHidden) {
                                               setState(() => selectedId = e.id);
                                               triggerCanvasUpdate();
                                             }
                                           } else {
-                                            selectedForGroup.remove(e.id); 
+                                            multiSelectedIds.remove(e.id); 
                                             if (selectedId == e.id) {
                                               setState(() => selectedId = null);
                                               triggerCanvasUpdate();
@@ -866,45 +873,30 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                                     previewIcon,
                                   ]
                                 ),
-                                
                                 title: Row(
                                   children: [
                                     Expanded(
                                       child: Text(
                                         e.isText ? e.content.replaceAll('\n', ' ') : (e.isBorder ? 'Border Element' : 'Graphic Element'), 
                                         maxLines: 1, overflow: TextOverflow.ellipsis, 
-                                        style: TextStyle(fontWeight: isSel ? FontWeight.bold : FontWeight.w500, fontSize: 13, color: isSel ? const Color(0xFF8B5CF6) : Colors.black87)
+                                        style: TextStyle(fontWeight: isSel ? FontWeight.w800 : FontWeight.w600, fontSize: 13, color: isSel ? const Color(0xFF8B5CF6) : const Color(0xFF1E293B))
                                       )
                                     ),
-                                    if (e.groupId != null) const Icon(Icons.link, size: 14, color: Colors.blue)
+                                    if (e.groupId != null) const Padding(padding: EdgeInsets.only(left: 4), child: Icon(Icons.link_rounded, size: 14, color: Color(0xFF10B981)))
                                   ]
                                 ),
-                                
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
-                                      padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 30), 
-                                      icon: Icon(e.isHidden ? Icons.visibility_off : Icons.visibility, size: 18, color: e.isHidden ? Colors.red : Colors.black45), 
+                                      padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 32), 
+                                      icon: Icon(e.isHidden ? Icons.visibility_off_rounded : Icons.visibility_rounded, size: 18, color: e.isHidden ? Colors.redAccent : Colors.black45), 
                                       onPressed: () { saveState(); setState(() => e.isHidden = !e.isHidden); triggerCanvasUpdate(); setModalState((){}); }
                                     ),
                                     IconButton(
-                                      padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 30), 
-                                      icon: Icon(e.isLocked ? Icons.lock : Icons.lock_open, size: 18, color: e.isLocked ? Colors.orange : Colors.black45), 
+                                      padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 32), 
+                                      icon: Icon(e.isLocked ? Icons.lock_rounded : Icons.lock_open_rounded, size: 18, color: e.isLocked ? Colors.orange : Colors.black45), 
                                       onPressed: () { saveState(); setState(() { e.isLocked = !e.isLocked; if(e.isLocked && selectedId == e.id) selectedId = null; }); triggerCanvasUpdate(); setModalState((){}); }
-                                    ),
-                                    IconButton(
-                                      padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 30), 
-                                      icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent), 
-                                      onPressed: () { 
-                                        saveState(); 
-                                        setState(() { 
-                                          elements.removeWhere((item) => item.id == e.id); 
-                                          if (selectedId == e.id) selectedId = null;
-                                        }); 
-                                        triggerCanvasUpdate(); 
-                                        setModalState((){}); 
-                                      }
                                     ),
                                   ]
                                 ),
@@ -929,148 +921,21 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
     );
   }
 
-  // 🔥 NEW MEGA STUDIO: showAlignAndArrangeModal 🔥
-  void showAlignAndArrangeModal(DesignElement sel) {
-    showModalBottomSheet(
-      context: context,
-      barrierColor: Colors.transparent,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-
-            Widget buildSectionTitle(String title) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8.0, top: 16.0, left: 4.0),
-                child: Text(title, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black54, letterSpacing: 1.0)),
-              );
-            }
-
-            Widget buildActionButton({required IconData icon, required String label, required VoidCallback onTap, bool isActive = false}) {
-              return Expanded(
-                child: InkWell(
-                  onTap: () { onTap(); setModalState(() {}); },
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isActive ? const Color(0xFF8B5CF6).withOpacity(0.15) : Colors.white.withOpacity(0.8),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: isActive ? const Color(0xFF8B5CF6) : Colors.black12, width: 1),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(icon, color: isActive ? const Color(0xFF8B5CF6) : Colors.black87, size: 20),
-                        const SizedBox(height: 4),
-                        Text(label, style: TextStyle(fontSize: 9, fontWeight: isActive ? FontWeight.bold : FontWeight.w600, color: isActive ? const Color(0xFF8B5CF6) : Colors.black87)),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }
-
-            return buildGlassContainer(
-              context,
-              height: sel.isText ? 420 : 340, 
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Align & Arrange', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
-                    ]
-                  ),
-                  const Divider(color: Colors.black12, height: 10),
-                  
-                  Expanded(
-                    child: ListView(
-                      physics: const BouncingScrollPhysics(),
-                      padding: EdgeInsets.zero,
-                      children: [
-                        
-                        if (sel.isText) ...[
-                          buildSectionTitle('TEXT ALIGNMENT'),
-                          Row(
-                            children: [
-                              buildActionButton(icon: Icons.format_align_left, label: 'Left', isActive: sel.textAlign == TextAlign.left, onTap: () { saveState(); setState(() => sel.textAlign = TextAlign.left); triggerCanvasUpdate(); }),
-                              buildActionButton(icon: Icons.format_align_center, label: 'Center', isActive: sel.textAlign == TextAlign.center, onTap: () { saveState(); setState(() => sel.textAlign = TextAlign.center); triggerCanvasUpdate(); }),
-                              buildActionButton(icon: Icons.format_align_right, label: 'Right', isActive: sel.textAlign == TextAlign.right, onTap: () { saveState(); setState(() => sel.textAlign = TextAlign.right); triggerCanvasUpdate(); }),
-                              buildActionButton(icon: Icons.format_align_justify, label: 'Justify', isActive: sel.textAlign == TextAlign.justify, onTap: () { saveState(); setState(() => sel.textAlign = TextAlign.justify); triggerCanvasUpdate(); }),
-                            ],
-                          ),
-                        ],
-
-                        buildSectionTitle('ALIGN TO PAGE'),
-                        Row(
-                          children: [
-                            buildActionButton(icon: Icons.align_horizontal_left, label: 'Left', onTap: () { saveState(); setState(() => sel.x = 0); triggerCanvasUpdate(); }),
-                            buildActionButton(icon: Icons.align_horizontal_center, label: 'Center', onTap: () { saveState(); setState(() => sel.x = (currentCanvasW / 2) - (getElWidth(sel) / 2)); triggerCanvasUpdate(); }),
-                            buildActionButton(icon: Icons.align_horizontal_right, label: 'Right', onTap: () { saveState(); setState(() => sel.x = currentCanvasW - getElWidth(sel)); triggerCanvasUpdate(); }),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            buildActionButton(icon: Icons.align_vertical_top, label: 'Top', onTap: () { saveState(); setState(() => sel.y = 0); triggerCanvasUpdate(); }),
-                            buildActionButton(icon: Icons.align_vertical_center, label: 'Middle', onTap: () { saveState(); setState(() => sel.y = (currentCanvasH / 2) - (getElHeight(sel) / 2)); triggerCanvasUpdate(); }),
-                            buildActionButton(icon: Icons.align_vertical_bottom, label: 'Bottom', onTap: () { saveState(); setState(() => sel.y = currentCanvasH - getElHeight(sel)); triggerCanvasUpdate(); }),
-                          ],
-                        ),
-
-                        buildSectionTitle('ARRANGE (LAYERS)'),
-                        Row(
-                          children: [
-                            buildActionButton(icon: Icons.flip_to_front, label: 'Bring Fwd', onTap: () { 
-                              int idx = elements.indexWhere((e) => e.id == sel.id);
-                              if (idx < elements.length - 1 && idx != -1) {
-                                saveState(); setState(() { var item = elements.removeAt(idx); elements.insert(idx + 1, item); }); triggerCanvasUpdate();
-                              }
-                            }),
-                            buildActionButton(icon: Icons.flip_to_back, label: 'Send Bwd', onTap: () { 
-                              int idx = elements.indexWhere((e) => e.id == sel.id);
-                              if (idx > 0) {
-                                saveState(); setState(() { var item = elements.removeAt(idx); elements.insert(idx - 1, item); }); triggerCanvasUpdate();
-                              }
-                            }),
-                            buildActionButton(icon: Icons.vertical_align_top, label: 'To Front', onTap: () { 
-                              int idx = elements.indexWhere((e) => e.id == sel.id);
-                              if (idx != -1 && idx != elements.length - 1) {
-                                saveState(); setState(() { var item = elements.removeAt(idx); elements.add(item); }); triggerCanvasUpdate();
-                              }
-                            }),
-                            buildActionButton(icon: Icons.vertical_align_bottom, label: 'To Back', onTap: () { 
-                              int idx = elements.indexWhere((e) => e.id == sel.id);
-                              if (idx > 0) {
-                                saveState(); setState(() { var item = elements.removeAt(idx); elements.insert(0, item); }); triggerCanvasUpdate();
-                              }
-                            }),
-                          ],
-                        ),
-
-                        buildSectionTitle('FLIP & ROTATE'),
-                        Row(
-                          children: [
-                            buildActionButton(icon: Icons.flip, label: 'Flip H', onTap: () { saveState(); setState(() => sel.flipX = !sel.flipX); triggerCanvasUpdate(); }),
-                            buildActionButton(icon: Icons.flip_camera_android, label: 'Flip V', onTap: () { saveState(); setState(() => sel.flipY = !sel.flipY); triggerCanvasUpdate(); }),
-                            buildActionButton(icon: Icons.refresh, label: 'Reset Rot.', onTap: () { saveState(); setState(() => sel.angle = 0); triggerCanvasUpdate(); }),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                    ),
-                  ),
-                ],
-              )
-            );
-          }
-        );
-      }
+  // Helper Widget for Layer Toolbar
+  Widget _buildMiniToolBtn(IconData icon, String label, VoidCallback onTap, Color color) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        child: Column(
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(height: 2),
+            Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color))
+          ],
+        ),
+      ),
     );
   }
 }
