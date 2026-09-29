@@ -78,14 +78,15 @@ jobs:
       - name: Build AAB for Play Store
         run: flutter build appbundle --release --no-tree-shake-icons
 
+      # 🔥 YAHAN FIX KIYA HAI: @v4 ko wapas @v3 kar diya taaki mobile ka default file manager zip ko asani se extract kar sake
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: QalamKaarPro-APK
           path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload AAB (Play Store)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: QalamKaarPro-AAB
           path: build/app/outputs/bundle/release/app-release.aab
