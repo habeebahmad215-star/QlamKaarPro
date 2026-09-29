@@ -26,9 +26,10 @@ dev_dependencies:
   flutter_lints: ^3.0.0
   flutter_launcher_icons: ^0.13.1
 
+# 🔥 Custom Launcher Icon Configuration
 flutter_launcher_icons:
   android: "launcher_icon"
-  ios: true
+  ios: false   # 🔥 YAHAN FIX KIYA HAI: iOS ko false kar diya taaki crash na ho
   image_path: "assets/app_icon.png"
   min_sdk_android: 23
 
