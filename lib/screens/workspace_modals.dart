@@ -309,15 +309,27 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                         border: Border.all(color: Colors.white), 
                         borderRadius: BorderRadius.circular(15)
                       ),
-                      child: TextField(
-                        controller: controller,
-                        maxLines: null,
+                      // 🔥 BUG FIX: Directionality wrapper completely fixes cursor positioning & deletion sync
+                      child: Directionality(
                         textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
-                        textAlign: isRTL ? TextAlign.right : TextAlign.left,
-                        style: const TextStyle(fontSize: 18), 
-                        decoration: InputDecoration(
-                          border: InputBorder.none, 
-                          hintText: isRTL ? 'یہاں لکھیں...' : 'Type here...'
+                        child: TextField(
+                          controller: controller,
+                          maxLines: null,
+                          textAlign: isRTL ? TextAlign.right : TextAlign.left,
+                          style: TextStyle(
+                            fontSize: 16, // 🔥 SIZE REDUCED from 18 to 16
+                            fontFamily: isRTL ? 'JameelNoori' : null, // Fixes cursor height and metrics for Urdu
+                            height: 1.5,
+                            color: Colors.black87,
+                          ), 
+                          decoration: InputDecoration(
+                            border: InputBorder.none, 
+                            hintText: isRTL ? 'یہاں لکھیں...' : 'Type here...',
+                            hintStyle: TextStyle(
+                              fontFamily: isRTL ? 'JameelNoori' : null,
+                              fontSize: 16,
+                            )
+                          ),
                         ),
                       ),
                     ),
@@ -700,11 +712,10 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
     );
   }
 
-  // 🔥 ADVANCED PRO LAYERS STUDIO (Bug-Free Reordering & Multi-Actions)
+  // 🔥 ADVANCED PRO LAYERS STUDIO
   void showLayersPanel() {
     Set<String> multiSelectedIds = {};
     
-    // Auto-select current item and its group
     if (selectedId != null) {
       multiSelectedIds.add(selectedId!);
       try {
@@ -723,19 +734,18 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
 
     showModalBottomSheet(
       context: context,
-      barrierColor: Colors.transparent, // Keeps canvas visible
+      barrierColor: Colors.transparent, 
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             
-            // 🔥 BUG FIX: Reordering array logic fixed completely
             List<DesignElement> reversedElements = elements.reversed.toList();
 
             return buildGlassContainer(
               context,
-              height: MediaQuery.of(context).size.height * 0.48, // Slightly compact for better canvas view
+              height: MediaQuery.of(context).size.height * 0.48, 
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -757,7 +767,6 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                   ),
                   const SizedBox(height: 10),
                   
-                  // 🔥 MULTI-SELECT PRO TOOLBAR
                   if (multiSelectedIds.isNotEmpty)
                     Container(
                       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
@@ -806,7 +815,6 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                           physics: const BouncingScrollPhysics(),
                           proxyDecorator: (child, index, animation) => Material(color: Colors.transparent, child: child),
                           onReorder: (oldIndex, newIndex) {
-                            // 🔥 BULLETPROOF REORDER LOGIC
                             saveState();
                             setState(() {
                               if (newIndex > oldIndex) newIndex -= 1;
@@ -921,7 +929,6 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
     );
   }
 
-  // Helper Widget for Layer Toolbar
   Widget _buildMiniToolBtn(IconData icon, String label, VoidCallback onTap, Color color) {
     return InkWell(
       onTap: onTap,
