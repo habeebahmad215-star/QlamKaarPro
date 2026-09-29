@@ -3273,7 +3273,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
                                                                           child: Container(
                                                                             decoration: BoxDecoration(
                                                                               border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5),
-                                                                          ),
+                                                                            ),
                                                                           ),
                                                                         ),
                                                                       ),
@@ -3335,75 +3335,83 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
                   ),
                 ),
                 
-                // 🔥 NEW PREMIUM FLOATING HUD 🔥
-                if (!_isExporting)
+                // 🔥 PREMIUM FLOATING HUD (CORRECTED) 🔥
+                if (!_isExporting) ...[
+                  // 1. CANVAS LOCK ICON (Top Left)
+                  Positioned(
+                    top: 16,
+                    left: 16,
+                    child: InkWell(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => _isCanvasLocked = !_isCanvasLocked);
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.85),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white, width: 1.5),
+                          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
+                        ),
+                        child: Icon(
+                          _isCanvasLocked ? Icons.lock_rounded : Icons.lock_open_rounded, 
+                          size: 20, 
+                          color: _isCanvasLocked ? Colors.redAccent : const Color(0xFF64748B)
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // 2. ZOOM PERCENTAGE & RESET (Top Center - Hidden at 100%)
                   Positioned(
                     top: 16,
                     left: 0,
                     right: 0,
                     child: Center(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: BackdropFilter(
-                          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                          child: Container(
-                            height: 36,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.8),
+                      child: ValueListenableBuilder<double>(
+                        valueListenable: _zoomNotifier,
+                        builder: (context, zoom, child) {
+                          // Hide if zoom is practically 100%
+                          if ((zoom - 1.0).abs() < 0.05) return const SizedBox.shrink();
+
+                          return InkWell(
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              _transformController.value = Matrix4.identity(); // Reset Zoom
+                            },
+                            borderRadius: BorderRadius.circular(20),
+                            child: ClipRRect(
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.white, width: 1.5),
-                              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                // Zoom Percentage & Reset
-                                ValueListenableBuilder<double>(
-                                  valueListenable: _zoomNotifier,
-                                  builder: (context, zoom, child) {
-                                    return InkWell(
-                                      onTap: () {
-                                        HapticFeedback.selectionClick();
-                                        _transformController.value = Matrix4.identity();
-                                      },
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.search, size: 14, color: Color(0xFF64748B)),
-                                          const SizedBox(width: 4),
-                                          Text('${(zoom * 100).toInt()}%', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-                                        ],
-                                      ),
-                                    );
-                                  }
-                                ),
-                                
-                                // Divider
-                                Container(margin: const EdgeInsets.symmetric(horizontal: 8), width: 1, height: 16, color: Colors.black26),
-                                
-                                // Canvas Lock Toggle
-                                InkWell(
-                                  onTap: () {
-                                    HapticFeedback.selectionClick();
-                                    setState(() => _isCanvasLocked = !_isCanvasLocked);
-                                  },
+                              child: BackdropFilter(
+                                filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                child: Container(
+                                  height: 38,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF8B5CF6).withOpacity(0.9),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: const Color(0xFF8B5CF6), width: 1),
+                                    boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
+                                  ),
                                   child: Row(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(_isCanvasLocked ? Icons.lock_rounded : Icons.lock_open_rounded, size: 16, color: _isCanvasLocked ? Colors.redAccent : const Color(0xFF64748B)),
-                                      if (_isCanvasLocked) ...[
-                                        const SizedBox(width: 4),
-                                        const Text('Locked', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.redAccent)),
-                                      ]
+                                      const Icon(Icons.zoom_out_map_rounded, size: 16, color: Colors.white),
+                                      const SizedBox(width: 8),
+                                      Text('${(zoom * 100).toInt()}%', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
                                     ],
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
-                        ),
+                          );
+                        }
                       ),
                     ),
                   ),
+                ],
               ],
             ),
           ),
