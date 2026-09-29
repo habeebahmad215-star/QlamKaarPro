@@ -2126,6 +2126,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     );
   }
 
+  // 🔥 UPDATED: Added Text Justify support
   void _toggleAlignment(DesignElement sel) {
     saveState();
     setState(() {
@@ -2133,6 +2134,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
         sel.textAlign = TextAlign.center;
       } else if (sel.textAlign == TextAlign.center) {
         sel.textAlign = TextAlign.left;
+      } else if (sel.textAlign == TextAlign.left) {
+        sel.textAlign = TextAlign.justify;
       } else {
         sel.textAlign = TextAlign.right;
       }
@@ -2140,6 +2143,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     triggerCanvasUpdate();
   }
 
+  // 🔥 ADVANCED ALIGN STUDIO POPUP (100% PRO UX - No Vibration, Added Justify)
   void _showAlignmentModal(DesignElement sel) {
     showModalBottomSheet(
       context: context,
@@ -2147,90 +2151,145 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
-        return buildGlassContainer(
-          context,
-          height: 280, 
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return buildGlassContainer(
+              context,
+              height: sel.isText ? 480 : 380,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Align to Page (صفحہ پر سیٹ کریں)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
-                ]
-              ),
-              const Divider(color: Colors.black12),
-              
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8B5CF6).withOpacity(0.1),
-                    foregroundColor: const Color(0xFF8B5CF6),
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Color(0xFF8B5CF6)))
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(color: const Color(0xFF8B5CF6).withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+                            child: const Icon(Icons.center_focus_strong_rounded, color: Color(0xFF8B5CF6), size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text('Align Studio', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
+                        ]
+                      ),
+                      IconButton(icon: const Icon(Icons.close_rounded, size: 22), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
+                    ]
                   ),
-                  icon: const Icon(Icons.center_focus_strong),
-                  label: const Text('Center to Page (بالکل درمیان)', style: TextStyle(fontWeight: FontWeight.bold)),
-                  onPressed: () {
-                    saveState();
-                    setState(() {
-                      sel.x = (currentCanvasW / 2) - (getElWidth(sel) / 2);
-                      sel.y = (currentCanvasH / 2) - (getElHeight(sel) / 2);
-                    });
-                    triggerCanvasUpdate();
-                  },
-                ),
-              ),
-              const SizedBox(height: 15),
+                  const SizedBox(height: 20),
 
-              const Text('Horizontal Align (دائیں بائیں)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54)),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Expanded(child: _buildAlignButton(Icons.align_horizontal_left, 'Left', () { saveState(); setState(() => sel.x = 0); triggerCanvasUpdate(); })),
-                  const SizedBox(width: 8),
-                  Expanded(child: _buildAlignButton(Icons.align_horizontal_center, 'Center', () { saveState(); setState(() => sel.x = (currentCanvasW / 2) - (getElWidth(sel) / 2)); triggerCanvasUpdate(); })),
-                  const SizedBox(width: 8),
-                  Expanded(child: _buildAlignButton(Icons.align_horizontal_right, 'Right', () { saveState(); setState(() => sel.x = currentCanvasW - getElWidth(sel)); triggerCanvasUpdate(); })),
-                ]
-              ),
-              
-              const SizedBox(height: 15),
-              
-              const Text('Vertical Align (اوپر نیچے)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54)),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Expanded(child: _buildAlignButton(Icons.align_vertical_top, 'Top', () { saveState(); setState(() => sel.y = 0); triggerCanvasUpdate(); })),
-                  const SizedBox(width: 8),
-                  Expanded(child: _buildAlignButton(Icons.align_vertical_center, 'Middle', () { saveState(); setState(() => sel.y = (currentCanvasH / 2) - (getElHeight(sel) / 2)); triggerCanvasUpdate(); })),
-                  const SizedBox(width: 8),
-                  Expanded(child: _buildAlignButton(Icons.align_vertical_bottom, 'Bottom', () { saveState(); setState(() => sel.y = currentCanvasH - getElHeight(sel)); triggerCanvasUpdate(); })),
+                  // 🔥 TEXT ALIGNMENT OPTIONS
+                  if (sel.isText) ...[
+                    const Text('Text Alignment (تحریر کی ترتیب)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.black54, letterSpacing: 0.5)),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildProAlignBtn(Icons.format_align_left_rounded, 'Left', () { saveState(); setState(() => sel.textAlign = TextAlign.left); setModalState((){}); triggerCanvasUpdate(); }, isPrimary: sel.textAlign == TextAlign.left),
+                        _buildProAlignBtn(Icons.format_align_center_rounded, 'Center', () { saveState(); setState(() => sel.textAlign = TextAlign.center); setModalState((){}); triggerCanvasUpdate(); }, isPrimary: sel.textAlign == TextAlign.center),
+                        _buildProAlignBtn(Icons.format_align_right_rounded, 'Right', () { saveState(); setState(() => sel.textAlign = TextAlign.right); setModalState((){}); triggerCanvasUpdate(); }, isPrimary: sel.textAlign == TextAlign.right),
+                        _buildProAlignBtn(Icons.format_align_justify_rounded, 'Justify', () { saveState(); setState(() => sel.textAlign = TextAlign.justify); setModalState((){}); triggerCanvasUpdate(); }, isPrimary: sel.textAlign == TextAlign.justify),
+                      ]
+                    ),
+                    const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(height: 1, color: Colors.black12)),
+                  ],
+
+                  // 🔥 ABSOLUTE CENTER BUTTON
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8B5CF6),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shadowColor: const Color(0xFF8B5CF6).withOpacity(0.4),
+                      ),
+                      icon: const Icon(Icons.filter_center_focus_rounded, size: 20),
+                      label: const Text('Absolute Center (بالکل درمیان)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      onPressed: () {
+                        saveState();
+                        setState(() {
+                          sel.x = (currentCanvasW / 2) - (getElWidth(sel) / 2);
+                          sel.y = (currentCanvasH / 2) - (getElHeight(sel) / 2);
+                        });
+                        triggerCanvasUpdate();
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+
+                  const Text('Page Alignment Matrix (صفحہ کے لحاظ سے)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.black54, letterSpacing: 0.5)),
+                  const SizedBox(height: 12),
+
+                  // 🔥 3x3 PRO ALIGNMENT MATRIX
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white, width: 2.0),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))]
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildProAlignBtn(Icons.align_horizontal_left_rounded, 'Top Left', () { saveState(); setState(() { sel.x = 0; sel.y = 0; }); triggerCanvasUpdate(); }),
+                            _buildProAlignBtn(Icons.align_vertical_top_rounded, 'Top Center', () { saveState(); setState(() { sel.x = (currentCanvasW / 2) - (getElWidth(sel) / 2); sel.y = 0; }); triggerCanvasUpdate(); }),
+                            _buildProAlignBtn(Icons.align_horizontal_right_rounded, 'Top Right', () { saveState(); setState(() { sel.x = currentCanvasW - getElWidth(sel); sel.y = 0; }); triggerCanvasUpdate(); }),
+                          ]
+                        ),
+                        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(height: 1, color: Colors.black12)),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildProAlignBtn(Icons.keyboard_arrow_left_rounded, 'Mid Left', () { saveState(); setState(() { sel.x = 0; sel.y = (currentCanvasH / 2) - (getElHeight(sel) / 2); }); triggerCanvasUpdate(); }),
+                            _buildProAlignBtn(Icons.center_focus_strong_rounded, 'Center', () { saveState(); setState(() { sel.x = (currentCanvasW / 2) - (getElWidth(sel) / 2); sel.y = (currentCanvasH / 2) - (getElHeight(sel) / 2); }); triggerCanvasUpdate(); }, isPrimary: true),
+                            _buildProAlignBtn(Icons.keyboard_arrow_right_rounded, 'Mid Right', () { saveState(); setState(() { sel.x = currentCanvasW - getElWidth(sel); sel.y = (currentCanvasH / 2) - (getElHeight(sel) / 2); }); triggerCanvasUpdate(); }),
+                          ]
+                        ),
+                        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(height: 1, color: Colors.black12)),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildProAlignBtn(Icons.call_received_rounded, 'Bot Left', () { saveState(); setState(() { sel.x = 0; sel.y = currentCanvasH - getElHeight(sel); }); triggerCanvasUpdate(); }),
+                            _buildProAlignBtn(Icons.align_vertical_bottom_rounded, 'Bot Center', () { saveState(); setState(() { sel.x = (currentCanvasW / 2) - (getElWidth(sel) / 2); sel.y = currentCanvasH - getElHeight(sel); }); triggerCanvasUpdate(); }),
+                            _buildProAlignBtn(Icons.call_made_rounded, 'Bot Right', () { saveState(); setState(() { sel.x = currentCanvasW - getElWidth(sel); sel.y = currentCanvasH - getElHeight(sel); }); triggerCanvasUpdate(); }),
+                          ]
+                        ),
+                      ]
+                    ),
+                  ),
                 ]
               )
-            ]
-          )
+            );
+          }
         );
       }
     );
   }
 
-  Widget _buildAlignButton(IconData icon, String label, VoidCallback onTap) {
+  // 🔥 HELPER WIDGET FOR ALIGN STUDIO (Haptic Removed)
+  Widget _buildProAlignBtn(IconData icon, String label, VoidCallback onTap, {bool isPrimary = false}) {
     return InkWell(
-      onTap: onTap,
+      onTap: onTap, 
+      borderRadius: BorderRadius.circular(10),
       child: Container(
+        width: 65,
         padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(color: Colors.white.withOpacity(0.7), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.black12)),
+        decoration: BoxDecoration(
+          color: isPrimary ? const Color(0xFF8B5CF6).withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: isPrimary ? const Color(0xFF8B5CF6).withOpacity(0.3) : Colors.transparent, width: 1),
+        ),
         child: Column(
           children: [
-            Icon(icon, color: Colors.black87, size: 20),
-            const SizedBox(height: 4),
-            Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black87))
+            Icon(icon, color: isPrimary ? const Color(0xFF8B5CF6) : const Color(0xFF475569), size: 22),
+            const SizedBox(height: 6),
+            Text(label, style: TextStyle(fontSize: 9, fontWeight: isPrimary ? FontWeight.w900 : FontWeight.bold, color: isPrimary ? const Color(0xFF8B5CF6) : const Color(0xFF64748B)))
           ]
         )
       )
