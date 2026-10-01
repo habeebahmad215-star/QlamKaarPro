@@ -317,10 +317,9 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                           maxLines: null,
                           textAlign: isRTL ? TextAlign.right : TextAlign.left,
                           style: const TextStyle(
-                            fontSize: 16, // Size reduced for clean composer UI
+                            fontSize: 16, 
                             height: 1.5,
                             color: Colors.black87,
-                            // Note: Explicitly NOT assigning JameelNoori here to allow System Font for accurate cursor rendering.
                           ), 
                           decoration: InputDecoration(
                             border: InputBorder.none, 
@@ -409,10 +408,10 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
                                   isText: true, 
                                   width: calcW, 
                                   height: 100, 
-                                  fontSize: 15 // 🔥 BUG FIX: Changed from 30 to 15 default size
+                                  fontSize: 15 
                                 );
                                 newEl.textAlign = isRTL ? TextAlign.right : TextAlign.left; 
-                                newEl.fontFamily = 'JameelNoori'; // 🔥 BUG FIX: Jameel Noori applied by default on canvas
+                                newEl.fontFamily = 'JameelNoori'; 
                                 
                                 setState(() { 
                                   elements.add(newEl); 
@@ -944,6 +943,311 @@ mixin WorkspaceModals<T extends StatefulWidget> on State<T> {
           ],
         ),
       ),
+    );
+  }
+
+  // 🔥 NAYA ADVANCED MULTI-STYLE FEATURE (Safe and Clean)
+  void _showMultiStyleModal(DesignElement sel) {
+    Set<int> selectedIndices = {};
+    
+    List<String> tokens = [];
+    RegExp exp = RegExp(r'(\S+|\s+)');
+    for (var m in exp.allMatches(sel.content)) {
+      tokens.add(m.group(0)!);
+    }
+    
+    if (!textMultiStyles.containsKey(sel.id)) {
+      textMultiStyles[sel.id] = {};
+    }
+
+    showModalBottomSheet(
+      context: context,
+      barrierColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return buildGlassContainer(
+              context,
+              height: 420, 
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Word Style (الفاظ کے انداز)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
+                    ]
+                  ),
+                  const Divider(color: Colors.black12),
+                  
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Select words below:', style: TextStyle(fontSize: 11, color: Colors.black54)),
+                      Row(
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              setModalState(() {
+                                for(int i=0; i<tokens.length; i++) {
+                                  if(tokens[i].trim().isNotEmpty) selectedIndices.add(i);
+                                }
+                              });
+                            },
+                            child: const Text('Select All', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold))
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              setModalState(() => selectedIndices.clear());
+                            },
+                            child: const Text('Clear', style: TextStyle(fontSize: 11, color: Colors.black54))
+                          ),
+                          if (textMultiStyles[sel.id]!.isNotEmpty)
+                            TextButton.icon(
+                              onPressed: () {
+                                saveState();
+                                setState(() {
+                                  textMultiStyles[sel.id]!.clear();
+                                  selectedIndices.clear();
+                                });
+                                setModalState((){});
+                                triggerCanvasUpdate();
+                              }, 
+                              icon: const Icon(Icons.refresh, size: 12, color: Colors.red), 
+                              label: const Text('Reset', style: TextStyle(color: Colors.red, fontSize: 11))
+                            ),
+                        ]
+                      )
+                    ]
+                  ),
+                  const SizedBox(height: 5),
+                  
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        alignment: isRTLText(sel.content) ? WrapAlignment.end : WrapAlignment.start,
+                        textDirection: isRTLText(sel.content) ? TextDirection.rtl : TextDirection.ltr,
+                        children: List.generate(tokens.length, (i) {
+                          if (tokens[i].trim().isEmpty) return const SizedBox.shrink();
+
+                          bool isSel = selectedIndices.contains(i);
+                          bool hasStyle = textMultiStyles[sel.id]!.containsKey(i);
+                          var ms = hasStyle ? textMultiStyles[sel.id]![i]! : null;
+                          
+                          Color chipTextColor = Colors.black;
+                          if (hasStyle && ms!['color'] != null) chipTextColor = ms['color'];
+                          if (isSel) chipTextColor = Colors.white;
+
+                          return FilterChip(
+                            label: Text(
+                              tokens[i], 
+                              style: TextStyle(
+                                fontFamily: (hasStyle && ms!['fontFamily'] != null) ? ms['fontFamily'] : sel.fontFamily, 
+                                fontSize: 16, 
+                                fontWeight: (hasStyle && ms!['isBold'] == true) ? FontWeight.bold : FontWeight.normal,
+                                color: chipTextColor
+                              )
+                            ),
+                            selected: isSel,
+                            selectedColor: const Color(0xFF8B5CF6),
+                            backgroundColor: (hasStyle && ms!['bgColor'] != null) ? ms['bgColor'] : Colors.white.withOpacity(0.5),
+                            checkmarkColor: Colors.white,
+                            onSelected: (val) {
+                              setModalState(() {
+                                if (val) selectedIndices.add(i);
+                                else selectedIndices.remove(i);
+                              });
+                            },
+                          );
+                        }),
+                      ),
+                    ),
+                  ),
+                  
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(border: Border(top: BorderSide(color: Colors.grey.shade200))),
+                    child: Opacity(
+                      opacity: selectedIndices.isEmpty ? 0.3 : 1.0,
+                      child: IgnorePointer(
+                        ignoring: selectedIndices.isEmpty,
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), elevation: 0),
+                                icon: const Icon(Icons.color_lens, size: 14, color: Colors.white),
+                                label: const Text('Color', style: TextStyle(color: Colors.white, fontSize: 11)),
+                                onPressed: () {
+                                  showDialog(context: context, builder: (ctx) {
+                                     return AlertDialog(
+                                       title: const Text('Pick Color'),
+                                       content: Wrap(
+                                         children: Colors.primaries.map((c) => InkWell(
+                                           onTap: () {
+                                              saveState();
+                                              setState(() {
+                                                for (int idx in selectedIndices) {
+                                                  textMultiStyles[sel.id]![idx] ??= {};
+                                                  textMultiStyles[sel.id]![idx]!['color'] = c;
+                                                }
+                                              });
+                                              setModalState((){});
+                                              triggerCanvasUpdate();
+                                              Navigator.pop(ctx);
+                                           },
+                                           child: Container(margin: const EdgeInsets.all(4), width: 30, height: 30, color: c)
+                                         )).toList()
+                                       )
+                                     );
+                                  });
+                                }
+                              ),
+                              const SizedBox(width: 4),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, elevation: 0, side: BorderSide(color: Colors.grey.shade300)),
+                                icon: const Icon(Icons.font_download, size: 14, color: Colors.black87),
+                                label: const Text('Font', style: TextStyle(color: Colors.black87, fontSize: 11)),
+                                onPressed: () {
+                                  showModalBottomSheet(context: context, backgroundColor: Colors.white, builder: (ctx) {
+                                    return ListView(
+                                      children: [
+                                        ListTile(title: const Text('JameelNoori', style: TextStyle(fontFamily: 'JameelNoori')), onTap: () { saveState(); setState(() { for (int idx in selectedIndices) { textMultiStyles[sel.id]![idx] ??= {}; textMultiStyles[sel.id]![idx]!['fontFamily'] = 'JameelNoori'; } }); triggerCanvasUpdate(); Navigator.pop(ctx); }),
+                                        ListTile(title: const Text('AlviNastaleeq', style: TextStyle(fontFamily: 'AlviNastaleeq')), onTap: () { saveState(); setState(() { for (int idx in selectedIndices) { textMultiStyles[sel.id]![idx] ??= {}; textMultiStyles[sel.id]![idx]!['fontFamily'] = 'AlviNastaleeq'; } }); triggerCanvasUpdate(); Navigator.pop(ctx); }),
+                                        ListTile(title: const Text('Mehr', style: TextStyle(fontFamily: 'Mehr')), onTap: () { saveState(); setState(() { for (int idx in selectedIndices) { textMultiStyles[sel.id]![idx] ??= {}; textMultiStyles[sel.id]![idx]!['fontFamily'] = 'Mehr'; } }); triggerCanvasUpdate(); Navigator.pop(ctx); }),
+                                        ListTile(title: const Text('BombayBlack', style: TextStyle(fontFamily: 'BombayBlack')), onTap: () { saveState(); setState(() { for (int idx in selectedIndices) { textMultiStyles[sel.id]![idx] ??= {}; textMultiStyles[sel.id]![idx]!['fontFamily'] = 'BombayBlack'; } }); triggerCanvasUpdate(); Navigator.pop(ctx); }),
+                                        ListTile(title: const Text('AlMajeed', style: TextStyle(fontFamily: 'AlMajeed')), onTap: () { saveState(); setState(() { for (int idx in selectedIndices) { textMultiStyles[sel.id]![idx] ??= {}; textMultiStyles[sel.id]![idx]!['fontFamily'] = 'AlMajeed'; } }); triggerCanvasUpdate(); Navigator.pop(ctx); }),
+                                      ]
+                                    );
+                                  });
+                                }
+                              ),
+                              const SizedBox(width: 4),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, elevation: 0, side: BorderSide(color: Colors.grey.shade300)),
+                                icon: const Icon(Icons.text_increase, size: 14, color: Colors.black87),
+                                label: const Text('Size', style: TextStyle(color: Colors.black87, fontSize: 11)),
+                                onPressed: () {
+                                  double currentSize = sel.fontSize;
+                                  if (selectedIndices.isNotEmpty && textMultiStyles[sel.id]!.containsKey(selectedIndices.first)) {
+                                    currentSize = textMultiStyles[sel.id]![selectedIndices.first]!['fontSize'] ?? sel.fontSize;
+                                  }
+                                  showModalBottomSheet(context: context, backgroundColor: Colors.white, builder: (ctx) {
+                                    return StatefulBuilder(builder: (ctx, setSizeState) {
+                                      return SizedBox(
+                                        height: 150,
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text('Size: ${currentSize.toInt()}'),
+                                            Slider(
+                                              value: currentSize.clamp(10.0, 150.0), min: 10.0, max: 150.0,
+                                              activeColor: const Color(0xFF8B5CF6),
+                                              onChanged: (val) {
+                                                setSizeState(() => currentSize = val);
+                                                saveState();
+                                                setState(() {
+                                                  for (int idx in selectedIndices) {
+                                                    textMultiStyles[sel.id]![idx] ??= {};
+                                                    textMultiStyles[sel.id]![idx]!['fontSize'] = val;
+                                                  }
+                                                });
+                                                setModalState((){});
+                                                triggerCanvasUpdate();
+                                              }
+                                            )
+                                          ]
+                                        )
+                                      );
+                                    });
+                                  });
+                                }
+                              ),
+                              const SizedBox(width: 4),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, elevation: 0, side: BorderSide(color: Colors.grey.shade300)),
+                                icon: const Icon(Icons.format_color_fill, size: 14, color: Colors.orange),
+                                label: const Text('Bg Color', style: TextStyle(color: Colors.black87, fontSize: 11)),
+                                onPressed: () {
+                                  showDialog(context: context, builder: (ctx) {
+                                     return AlertDialog(
+                                       title: const Text('Highlight Color'),
+                                       content: Wrap(
+                                         children: [
+                                           InkWell(
+                                             onTap: () {
+                                                saveState();
+                                                setState(() {
+                                                  for (int idx in selectedIndices) {
+                                                    textMultiStyles[sel.id]![idx] ??= {};
+                                                    textMultiStyles[sel.id]![idx]!['bgColor'] = null; 
+                                                  }
+                                                });
+                                                setModalState((){});
+                                                triggerCanvasUpdate();
+                                                Navigator.pop(ctx);
+                                             },
+                                             child: Container(margin: const EdgeInsets.all(4), width: 30, height: 30, decoration: BoxDecoration(border: Border.all(), color: Colors.transparent), child: const Icon(Icons.clear, size: 16))
+                                           ),
+                                           ...Colors.primaries.map((c) => InkWell(
+                                             onTap: () {
+                                                saveState();
+                                                setState(() {
+                                                  for (int idx in selectedIndices) {
+                                                    textMultiStyles[sel.id]![idx] ??= {};
+                                                    textMultiStyles[sel.id]![idx]!['bgColor'] = c.withOpacity(0.5); 
+                                                  }
+                                                });
+                                                setModalState((){});
+                                                triggerCanvasUpdate();
+                                                Navigator.pop(ctx);
+                                             },
+                                             child: Container(margin: const EdgeInsets.all(4), width: 30, height: 30, color: c.withOpacity(0.5))
+                                           )).toList()
+                                         ]
+                                       )
+                                     );
+                                  });
+                                }
+                              ),
+                              const SizedBox(width: 4),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, elevation: 0, side: BorderSide(color: Colors.grey.shade300), minimumSize: const Size(40, 36), padding: const EdgeInsets.symmetric(horizontal: 10)),
+                                onPressed: () {
+                                  saveState();
+                                  setState(() {
+                                    for (int idx in selectedIndices) {
+                                      textMultiStyles[sel.id]![idx] ??= {};
+                                      bool currentBold = textMultiStyles[sel.id]![idx]!['isBold'] ?? false;
+                                      textMultiStyles[sel.id]![idx]!['isBold'] = !currentBold;
+                                    }
+                                  });
+                                  setModalState((){});
+                                  triggerCanvasUpdate();
+                                },
+                                child: const Text('B', style: TextStyle(color: Colors.black87, fontSize: 13, fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                ]
+              )
+            );
+          }
+        );
+      }
     );
   }
 }
