@@ -23,7 +23,8 @@ import 'workspace_modals.dart';
 import 'workspace_toolbars.dart';
 import 'vector_pdf_service.dart';
 import 'advanced_export_modal.dart';
-import 'background_studio_modal.dart'; 
+import 'background_studio_modal.dart';
+import 'marksheet_studio_modal.dart';
 
 class ProWorkspaceScreen extends StatefulWidget {
   final ProjectModel? project;
@@ -558,7 +559,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     }
   }
 
-  void showAddNewModal() {
+    void showAddNewModal() {
     showModalBottomSheet(
       context: context,
       barrierColor: Colors.transparent,
@@ -590,6 +591,23 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
                   _buildGridItem(Icons.border_outer, 'Borders', Colors.amber.withOpacity(0.2), Colors.amber.shade800, () { Navigator.pop(context); showGenericStockModal('Borders', 'border', Icons.border_outer); }),
                   _buildGridItem(Icons.category, 'Shapes', Colors.pink.withOpacity(0.2), Colors.pink, () { Navigator.pop(context); showGenericStockModal('Shapes', 'shape', Icons.category); }),
                   _buildGridItem(Icons.table_chart, 'Table', Colors.cyan.withOpacity(0.2), Colors.cyan.shade800, () { Navigator.pop(context); _addTable(); }),
+                  // 🔥 NAYA MARKSHEET STUDIO BUTTON 🔥
+                  _buildGridItem(Icons.school, 'Marksheet', Colors.teal.withOpacity(0.2), Colors.teal, () async { 
+                    Navigator.pop(context); 
+                    var result = await showModalBottomSheet(
+                      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+                      builder: (ctx) => const MarksheetStudioModal()
+                    );
+                    if (result != null && result is List<DesignElement>) {
+                      saveState();
+                      setState(() {
+                        canvasRatio = 1 / 1.414; // A4 Print Size Auto-Set
+                        elements.clear(); // Clear canvas for fresh marksheet
+                        elements.addAll(result);
+                      });
+                      triggerCanvasUpdate();
+                    }
+                  }),
                 ]
               )
             )
@@ -598,6 +616,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       )
     );
   }
+
 
   void _addTable() {
     saveState();
