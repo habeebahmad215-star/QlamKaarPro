@@ -24,10 +24,10 @@ class _MarksheetStudioModalState extends State<MarksheetStudioModal> {
   void initState() {
     super.initState();
     // Default 4 Subjects
-    _addSubject('قرآن مجید', '100', '');
-    _addSubject('اردو', '100', '');
-    _addSubject('ریاضی (Math)', '100', '');
-    _addSubject('اسلامیات', '100', '');
+    _addSubject('قرآن مجید (یادداشت)', '100', '');
+    _addSubject('صحت حروف لب و لہجہ', '100', '');
+    _addSubject('تجوید عملی / قواعد', '100', '');
+    _addSubject('دینیات / نماز', '100', '');
   }
 
   void _addSubject(String name, String total, String obtained) {
@@ -40,12 +40,16 @@ class _MarksheetStudioModalState extends State<MarksheetStudioModal> {
   }
 
   void _generateMarksheet() {
-    // 1. Calculate Totals
+    // 🔥 MOBILE RESPONSIVE SIZING LOGIC 🔥
+    // Mobile screen ki width nikal kar use canvas base banayenge
+    double cw = MediaQuery.of(context).size.width - 32; 
+    double ch = cw * 1.414; // Perfect A4 Ratio
+    
     int grandTotal = 0;
     int grandObtained = 0;
     
     List<List<String>> tableData = [
-      ['حاصل کردہ', 'کل نمبر', 'مضمون'] // Table Headers (RTL)
+      ['حاصل کردہ', 'کل نمبر', 'مضمون']
     ];
 
     for (var sub in subjects) {
@@ -56,68 +60,68 @@ class _MarksheetStudioModalState extends State<MarksheetStudioModal> {
       tableData.add([o.toString(), t.toString(), sub['name']!.text]);
     }
 
-    // Adding Footer Row to Table
     tableData.add([grandObtained.toString(), grandTotal.toString(), 'میزان (Total)']);
 
     double percentage = grandTotal > 0 ? (grandObtained / grandTotal) * 100 : 0;
     String grade = _calculateGrade(percentage);
 
-    // 2. Generate Design Elements (A4 Size Base: 800 x 1131)
     List<DesignElement> elements = [];
 
     // --- Border ---
     elements.add(DesignElement(
       id: Random().nextInt(10000).toString(),
-      x: 20, y: 20,
-      content: 'Border', width: 760, height: 1091,
+      x: cw * 0.03, y: cw * 0.03, // Thoda andar margin
+      content: 'Border', width: cw * 0.94, height: ch - (cw * 0.06),
       isText: false, isBorder: true, borderStyle: '0',
-      elementColor: const Color(0xFFD4AF37), // Gold Border
-      strokeWidth: 8.0, cornerRadius: 0.0,
+      elementColor: const Color(0xFFD4AF37), 
+      strokeWidth: 3.0, cornerRadius: 0.0,
     ));
 
     // --- School Name ---
     elements.add(_createTextEl(
-      schoolCtrl.text, 50, 60, 700, 55, true, const Color(0xFF1E293B)
+      schoolCtrl.text, cw * 0.05, ch * 0.05, cw * 0.9, cw * 0.08, true, const Color(0xFF1E293B)
     ));
 
     // --- Exam Name ---
     elements.add(_createTextEl(
-      examCtrl.text, 50, 130, 700, 25, false, const Color(0xFF8B5CF6)
+      examCtrl.text, cw * 0.05, ch * 0.13, cw * 0.9, cw * 0.045, false, const Color(0xFF8B5CF6)
     ));
 
     // --- Marksheet Title ---
     elements.add(_createTextEl(
-      'مارک شیٹ / نتیجہ کارڈ', 250, 180, 300, 22, true, Colors.white, bgColor: const Color(0xFFD4AF37)
+      'مارک شیٹ / نتیجہ کارڈ', cw * 0.25, ch * 0.19, cw * 0.5, cw * 0.04, true, Colors.white, bgColor: const Color(0xFFD4AF37)
     ));
 
     // --- Student Details ---
     String studentInfo = "نام طالب علم: ${nameCtrl.text}      ولدیت: ${fatherCtrl.text}\nدرجہ: ${classCtrl.text}      رول نمبر: ${rollCtrl.text}";
-    var infoEl = _createTextEl(studentInfo, 50, 250, 700, 20, false, Colors.black);
+    var infoEl = _createTextEl(studentInfo, cw * 0.05, ch * 0.26, cw * 0.9, cw * 0.035, false, Colors.black);
     infoEl.textAlign = TextAlign.right;
     infoEl.lineHeight = 2.0;
     elements.add(infoEl);
 
     // --- Marks Table ---
+    double tableY = ch * 0.36;
     elements.add(DesignElement(
       id: Random().nextInt(10000).toString(),
-      x: 50, y: 350,
+      x: cw * 0.05, y: tableY,
       content: 'Table', isText: false, isTable: true,
-      width: 700, height: (tableData.length * 40).toDouble(),
+      width: cw * 0.9, height: (tableData.length * 30).toDouble(),
       tableData: tableData,
       elementColor: const Color(0xFFD4AF37), textColor: Colors.black, fontFamily: 'JameelNoori'
     ));
 
     // --- Result Text (Bottom) ---
-    double tableEndY = 350 + (tableData.length * 45).toDouble() + 40;
+    double resultY = tableY + (tableData.length * 30).toDouble() + (ch * 0.03);
     String resultText = "فیصد (Percentage): ${percentage.toStringAsFixed(1)}%\nگریڈ (Grade): $grade";
-    var resEl = _createTextEl(resultText, 50, tableEndY, 700, 22, true, Colors.black);
+    var resEl = _createTextEl(resultText, cw * 0.05, resultY, cw * 0.9, cw * 0.04, true, Colors.black);
     resEl.textAlign = TextAlign.center;
     resEl.lineHeight = 1.8;
     elements.add(resEl);
 
     // --- Signature Lines ---
-    elements.add(_createTextEl('دستخط مہتمم/پرنسپل', 500, 1000, 250, 18, false, Colors.black));
-    elements.add(_createTextEl('دستخط ناظمِ امتحان', 50, 1000, 250, 18, false, Colors.black));
+    double signY = ch * 0.88;
+    elements.add(_createTextEl('دستخط مہتمم/پرنسپل', cw * 0.55, signY, cw * 0.4, cw * 0.035, false, Colors.black));
+    elements.add(_createTextEl('دستخط ناظمِ امتحان', cw * 0.05, signY, cw * 0.4, cw * 0.035, false, Colors.black));
 
     Navigator.pop(context, elements);
   }
@@ -135,7 +139,7 @@ class _MarksheetStudioModalState extends State<MarksheetStudioModal> {
     var el = DesignElement(
       id: Random().nextInt(10000).toString(),
       x: x, y: y, content: text,
-      isText: true, width: w, height: size * 2, fontSize: size
+      isText: true, width: w, height: size * 2.5, fontSize: size
     );
     el.fontFamily = 'JameelNoori';
     el.textColor = color;
@@ -143,7 +147,7 @@ class _MarksheetStudioModalState extends State<MarksheetStudioModal> {
     el.textAlign = TextAlign.center;
     if (bgColor != null) {
       el.textBgColor = bgColor;
-      el.cornerRadius = 10.0;
+      el.cornerRadius = 8.0;
     }
     return el;
   }
