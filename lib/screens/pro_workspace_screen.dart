@@ -25,6 +25,7 @@ import 'vector_pdf_service.dart';
 import 'advanced_export_modal.dart';
 import 'background_studio_modal.dart';
 import 'marksheet_studio_modal.dart';
+import 'true_crop_studio.dart';
 
 class ProWorkspaceScreen extends StatefulWidget {
   final ProjectModel? project;
@@ -1687,7 +1688,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     );
   }
 
-  void _showShapeClipModal(DesignElement sel) {
+   void _showShapeClipModal(DesignElement sel) {
     showModalBottomSheet(
       context: context,
       barrierColor: Colors.transparent,
@@ -1698,18 +1699,60 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
           builder: (context, setModalState) {
             return buildGlassContainer(
               context,
-              height: 180,
+              height: 280,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Crop to Shape کٹنگ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      Row(
+                        children: [
+                          const Icon(Icons.crop, color: Color(0xFF8B5CF6)),
+                          const SizedBox(width: 8),
+                          const Text('Pro Crop Studio کٹنگ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        ]
+                      ),
                       IconButton(icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints(), onPressed: () => Navigator.pop(context))
                     ]
                   ),
+                  const Divider(color: Colors.black12),
+                  
+                  // 🔥 LEVEL 2: True Cut Button 🔥
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8B5CF6),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0
+                      ),
+                      onPressed: () async {
+                         Navigator.pop(context);
+                         var resultBytes = await Navigator.push(
+                           context, 
+                           MaterialPageRoute(builder: (_) => TrueCropStudioModal(imageBytes: sel.imageBytes!))
+                         );
+                         if (resultBytes != null) {
+                           saveState();
+                           setState(() {
+                             sel.imageBytes = resultBytes;
+                             sel.clipShape = 0; // True crop ke baad mask hata do
+                           });
+                           triggerCanvasUpdate();
+                         }
+                      },
+                      icon: const Icon(Icons.content_cut, color: Colors.white, size: 18),
+                      label: const Text('True Image Trim (اصلی کٹنگ)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))
+                    )
+                  ),
+                  
+                  const SizedBox(height: 15),
+                  const Text('Level 1: Shape Frames (فریم)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54)),
                   const SizedBox(height: 10),
+                  
+                  // 🔥 LEVEL 1: Advanced Shape Masks 🔥
                   Expanded(
                     child: ListView(
                       scrollDirection: Axis.horizontal,
@@ -1719,7 +1762,9 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
                         _buildShapeOption(sel, setModalState, 'Circle', 1, Icons.circle_outlined),
                         _buildShapeOption(sel, setModalState, 'Triangle', 2, Icons.change_history),
                         _buildShapeOption(sel, setModalState, 'Star', 3, Icons.star_border),
-                        _buildShapeOption(sel, setModalState, 'Hexagon', 4, Icons.hexagon_outlined)
+                        _buildShapeOption(sel, setModalState, 'Hexagon', 4, Icons.hexagon_outlined),
+                        _buildShapeOption(sel, setModalState, 'Heart', 5, Icons.favorite_border),
+                        _buildShapeOption(sel, setModalState, 'Splash', 6, Icons.water_drop_outlined),
                       ]
                     )
                   )
@@ -1730,7 +1775,8 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
         );
       }
     );
-  }
+   }
+  
 
   Widget _buildShapeOption(DesignElement sel, StateSetter setModalState, String title, int val, IconData icon) {
     bool isSel = sel.clipShape == val;
@@ -3232,21 +3278,29 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
                                               } else if (e.isShape) {
                                                 contentWidget = Container(width: currentWidth, height: currentHeight, decoration: BoxDecoration(color: e.elementColor, borderRadius: BorderRadius.circular(e.cornerRadius)));
                                               } else if (e.imageBytes != null) {
-                                                Widget img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, fit: BoxFit.fill);
-                                                if (e.isTinted) img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, color: e.elementColor, fit: BoxFit.fill);
-                                                else {
-                                                  if (e.imageFilter == 1) img = ColorFiltered(colorFilter: const ColorFilter.matrix([0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0, 0, 0, 1, 0]), child: img);
-                                                  else if (e.imageFilter == 2) img = ColorFiltered(colorFilter: const ColorFilter.matrix([0.393, 0.769, 0.189, 0, 0, 0.349, 0.686, 0.168, 0, 0, 0.272, 0.534, 0.131, 0, 0, 0, 0, 0, 1, 0]), child: img);
-                                                  else if (e.imageFilter == 3) img = ColorFiltered(colorFilter: const ColorFilter.matrix([-1, 0, 0, 0, 255, 0, -1, 0, 0, 255, 0, 0, -1, 0, 255, 0, 0, 0, 1, 0]), child: img);
-                                                }
-                                                if (e.blendModeIndex != 0) img = ColorFiltered(colorFilter: ColorFilter.mode(Colors.white.withOpacity(0.0), AppConstants.blendModes[e.blendModeIndex]), child: img);
-                                                Widget clippedImg = img;
-                                                if (e.clipShape == 1) clippedImg = Container(clipBehavior: Clip.antiAlias, decoration: const BoxDecoration(shape: BoxShape.circle), child: img);
-                                                else if (e.clipShape == 2) clippedImg = ClipPath(clipper: TriangleClipper(), child: img);
-                                                else if (e.clipShape == 3) clippedImg = ClipPath(clipper: StarClipper(), child: img);
-                                                else if (e.clipShape == 4) clippedImg = ClipPath(clipper: HexagonClipper(), child: img);
-                                                contentWidget = SizedBox(width: currentWidth, height: e.clipShape == 0 ? currentHeight : currentWidth, child: clippedImg);
-                                              } else {
+  // 🔥 LEVEL 1 FIX: Stretching bachane ke liye BoxFit.cover 🔥
+  bool hasShape = e.clipShape > 0;
+  Widget img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, fit: hasShape ? BoxFit.cover : BoxFit.fill);
+  
+  if (e.isTinted) img = Image.memory(e.imageBytes!, width: currentWidth, height: currentHeight, color: e.elementColor, fit: hasShape ? BoxFit.cover : BoxFit.fill);
+  else {
+    if (e.imageFilter == 1) img = ColorFiltered(colorFilter: const ColorFilter.matrix([0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0.2126, 0.7152, 0.0722, 0, 0, 0, 0, 0, 1, 0]), child: img);
+    else if (e.imageFilter == 2) img = ColorFiltered(colorFilter: const ColorFilter.matrix([0.393, 0.769, 0.189, 0, 0, 0.349, 0.686, 0.168, 0, 0, 0.272, 0.534, 0.131, 0, 0, 0, 0, 0, 1, 0]), child: img);
+    else if (e.imageFilter == 3) img = ColorFiltered(colorFilter: const ColorFilter.matrix([-1, 0, 0, 0, 255, 0, -1, 0, 0, 255, 0, 0, -1, 0, 255, 0, 0, 0, 1, 0]), child: img);
+  }
+  if (e.blendModeIndex != 0) img = ColorFiltered(colorFilter: ColorFilter.mode(Colors.white.withOpacity(0.0), AppConstants.blendModes[e.blendModeIndex]), child: img);
+  
+  Widget clippedImg = img;
+  if (e.clipShape == 1) clippedImg = Container(clipBehavior: Clip.antiAlias, decoration: const BoxDecoration(shape: BoxShape.circle), child: img);
+  else if (e.clipShape == 2) clippedImg = ClipPath(clipper: TriangleClipper(), child: img);
+  else if (e.clipShape == 3) clippedImg = ClipPath(clipper: StarClipper(), child: img);
+  else if (e.clipShape == 4) clippedImg = ClipPath(clipper: HexagonClipper(), child: img);
+  else if (e.clipShape == 5) clippedImg = ClipPath(clipper: HeartClipper(), child: img); // Premium Shape
+  else if (e.clipShape == 6) clippedImg = ClipPath(clipper: BlobClipper(), child: img); // Premium Shape
+  
+  contentWidget = SizedBox(width: currentWidth, height: hasShape ? currentWidth : currentHeight, child: clippedImg);
+} else {
+                                                
                                                 List<Widget> blockLayers = [];
                                                 if (e.text3dDepth > 0) {
                                                   for (double i = e.text3dDepth; i > 0; i -= 1.0) {
@@ -3576,3 +3630,38 @@ class AdvancedGridPainter extends CustomPainter {
     return oldDelegate.mode != mode || oldDelegate.spacing != spacing || oldDelegate.color != color;
   }
 }
+class HeartClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    Path path = Path();
+    double width = size.width;
+    double height = size.height;
+    path.moveTo(width / 2, height / 5);
+    path.cubicTo(width * 5 / 14, 0, 0, height / 15, width / 28, height * 2 / 5);
+    path.cubicTo(width / 14, height * 2 / 3, width * 3 / 7, height * 5 / 6, width / 2, height);
+    path.cubicTo(width * 4 / 7, height * 5 / 6, width * 13 / 14, height * 2 / 3, width * 27 / 28, height * 2 / 5);
+    path.cubicTo(width, height / 15, width * 9 / 14, 0, width / 2, height / 5);
+    return path;
+  }
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+class BlobClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    Path path = Path();
+    double w = size.width;
+    double h = size.height;
+    path.moveTo(w * 0.5, h * 0.05);
+    path.cubicTo(w * 0.8, h * 0.0, w * 1.0, h * 0.3, w * 0.95, h * 0.6);
+    path.cubicTo(w * 0.9, h * 0.9, w * 0.6, h * 1.0, w * 0.3, h * 0.9);
+    path.cubicTo(w * 0.0, h * 0.8, w * 0.05, h * 0.4, w * 0.2, h * 0.15);
+    path.cubicTo(w * 0.3, h * 0.05, w * 0.4, h * 0.1, w * 0.5, h * 0.05);
+    path.close();
+    return path;
+  }
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
