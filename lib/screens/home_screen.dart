@@ -26,6 +26,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   List<ProjectModel> recentProjects = [];
   bool isLoading = true;
+    String? appDirPath;
 
   @override
   void initState() {
@@ -38,9 +39,14 @@ class _HomeScreenState extends State<HomeScreen> {
     return File('${directory.path}/qalamkaar_projects.json');
   }
 
-  Future<void> _loadRecentProjects() async {
+    Future<void> _loadRecentProjects() async {
     try {
-      final file = await _getProjectsFile();
+      final directory = await getApplicationDocumentsDirectory();
+      setState(() {
+        appDirPath = directory.path; 
+      });
+      final file = File('${directory.path}/qalamkaar_projects.json');
+      
       if (await file.exists()) {
         String contents = await file.readAsString();
         List<dynamic> jsonList = jsonDecode(contents);
@@ -56,7 +62,8 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       setState(() => isLoading = false);
     }
-  }
+    }
+  
 
   void _showComingSoon() {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Yeh feature jald aa raha hai! (Phase 2)', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF8B5CF6)));
@@ -395,13 +402,34 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                                                    // 🔥 NAYA CODE: Live Preview Thumbnail UI 🔥
                                   Expanded(
-                                    child: Container(
-                                      width: double.infinity,
-                                      decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: const BorderRadius.vertical(top: Radius.circular(18))),
-                                      child: const Icon(Icons.design_services_rounded, size: 45, color: Color(0xFFCBD5E1)),
+                                    child: Builder(
+                                      builder: (context) {
+                                        File? thumbFile;
+                                        if (appDirPath != null) {
+                                          thumbFile = File('$appDirPath/thumb_${proj.id}.png');
+                                        }
+                                        bool hasThumb = thumbFile != null && thumbFile.existsSync();
+
+                                        return Container(
+                                          width: double.infinity,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFF8FAFC), 
+                                            borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                                            image: hasThumb 
+                                                ? DecorationImage(image: FileImage(thumbFile!), fit: BoxFit.cover) 
+                                                : null,
+                                          ),
+                                          child: hasThumb 
+                                              ? null 
+                                              : const Icon(Icons.design_services_rounded, size: 45, color: Color(0xFFCBD5E1)),
+                                        );
+                                      }
                                     ),
                                   ),
+                                  // 🔥 END THUMBNAIL UI 🔥
+
                                   Padding(
                                     padding: const EdgeInsets.all(12),
                                     child: Column(
