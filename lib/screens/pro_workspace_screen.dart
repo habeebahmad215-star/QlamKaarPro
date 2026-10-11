@@ -182,8 +182,26 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     return File('${directory.path}/qalamkaar_projects.json');
   }
 
-  Future<void> _saveProjectLocally({bool isAutoSave = false}) async {
+    Future<void> _saveProjectLocally({bool isAutoSave = false}) async {
     try {
+      // 🔥 NAYA CODE: Live Preview Thumbnail Capture Karna 🔥
+      try {
+        if (_globalKey.currentContext != null) {
+          RenderRepaintBoundary boundary = _globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+          ui.Image image = await boundary.toImage(pixelRatio: 0.4); 
+          ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+          
+          if (byteData != null) {
+            final directory = await getApplicationDocumentsDirectory();
+            File thumbFile = File('${directory.path}/thumb_$projectId.png');
+            await thumbFile.writeAsBytes(byteData.buffer.asUint8List());
+          }
+        }
+      } catch (e) {
+        debugPrint("Thumbnail save error: $e");
+      }
+      // 🔥 THUMBNAIL LOGIC END 🔥
+
       final file = await _getProjectsFile();
       List<dynamic> jsonList = [];
       if (await file.exists()) {
@@ -218,6 +236,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
       }
     }
   }
+
 
   @override
   List<DesignElement> get elements => pages[currentPageIndex].elements;
