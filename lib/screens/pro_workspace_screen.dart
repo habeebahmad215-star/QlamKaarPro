@@ -186,7 +186,7 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
     try {
       // 🔥 NAYA CODE: Live Preview Thumbnail Capture Karna 🔥
       try {
-        if (_globalKey.currentContext != null) {
+        if (_canvasKey.currentContext != null) {
           RenderRepaintBoundary boundary = _globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
           ui.Image image = await boundary.toImage(pixelRatio: 0.4); 
           ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
