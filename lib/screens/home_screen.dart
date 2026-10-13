@@ -246,6 +246,38 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+    // 🔥 ADVANCED FEATURE: Clear App Cache (Junk Cleaner) 🔥
+  Future<void> _clearAppCache(BuildContext context) async {
+    Navigator.pop(context); // Sabse pehle Drawer band karo
+    
+    // Smooth Loading Spinner show karo
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6))),
+    );
+
+    try {
+      final tempDir = await getTemporaryDirectory();
+      if (tempDir.existsSync()) {
+        tempDir.deleteSync(recursive: true); // Cache Folder delete
+      }
+      
+      await Future.delayed(const Duration(milliseconds: 800)); // Premium feel ke liye thoda delay
+      
+      Navigator.pop(context); // Loading band karo
+      
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('App Cache Cleared Successfully! 🚀', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: Color(0xFF10B981),
+      ));
+      HapticFeedback.heavyImpact(); // Strong Vibration
+    } catch (e) {
+      Navigator.pop(context);
+      debugPrint("Cache error: $e");
+    }
+  }
+
   Widget _buildDrawer() {
     return Drawer(
       child: Container(
@@ -275,7 +307,17 @@ class _HomeScreenState extends State<HomeScreen> {
             }, iconColor: const Color(0xFF25D366)),
             _buildDrawerItem(Icons.star_rounded, 'Rate App', _showComingSoon, iconColor: const Color(0xFFD4AF37)),
             _buildDrawerItem(Icons.share_rounded, 'Share with Friends', _showComingSoon),
+            
+            // 🔥 NAYA FEATURE: Cache Cleaner Button 🔥
             const Padding(padding: EdgeInsets.symmetric(horizontal: 20), child: Divider()),
+            _buildDrawerItem(
+              Icons.cleaning_services_rounded, 
+              'Clear Cache (کیش صاف کریں)', 
+              () => _clearAppCache(context), 
+              iconColor: const Color(0xFFEF4444) // Lal rang (Red color) for cleaning
+            ),
+            const Padding(padding: EdgeInsets.symmetric(horizontal: 20), child: Divider()),
+            
             _buildDrawerItem(Icons.info_outline_rounded, 'About Us', _showComingSoon, isGrey: true),
             _buildDrawerItem(Icons.privacy_tip_outlined, 'Privacy Policy', _showComingSoon, isGrey: true),
           ],
