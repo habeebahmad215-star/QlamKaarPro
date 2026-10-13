@@ -621,29 +621,54 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       
+            // 🔥 PREMIUM ADVANCED FLOATING BUTTON 🔥
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: Container(
-        height: 70, width: 70,
+        height: 64, width: 64, // Sleek aur compact size
         margin: const EdgeInsets.only(top: 30),
         child: FloatingActionButton(
-          onPressed: () => NewDesignBottomSheet.show(context, _loadRecentProjects),
+          onPressed: () {
+            HapticFeedback.lightImpact(); // Smooth tap vibration
+            NewDesignBottomSheet.show(context, _loadRecentProjects);
+          },
           backgroundColor: Colors.transparent,
           elevation: 0,
+          highlightElevation: 0,
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
+              // Modern Indigo-Purple Gradient (Matching the Top Banner)
               gradient: const LinearGradient(
-                colors: [Color(0xFFFFE066), Color(0xFFF5D020), Color(0xFFD4AF37)], 
-                begin: Alignment.topLeft, end: Alignment.bottomRight
+                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)], 
+                begin: Alignment.topLeft, 
+                end: Alignment.bottomRight
               ),
+              // 3D Glass Edge Bevel
+              border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
               boxShadow: [
-                BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.6), blurRadius: 15, spreadRadius: 2, offset: const Offset(0, 6)),
+                // Soft Glowing Drop Shadow
+                BoxShadow(
+                  color: const Color(0xFF8B5CF6).withOpacity(0.45), 
+                  blurRadius: 16, 
+                  spreadRadius: 2, 
+                  offset: const Offset(0, 6)
+                ),
+                // Inner Top-Left Shine (For 3D effect)
+                BoxShadow(
+                  color: Colors.white.withOpacity(0.3), 
+                  blurRadius: 4, 
+                  spreadRadius: -2, 
+                  offset: const Offset(-2, -2)
+                ),
               ]
             ),
-            child: const Center(child: Icon(Icons.add_rounded, color: Colors.white, size: 38)),
+            child: const Center(
+              child: Icon(Icons.add_rounded, color: Colors.white, size: 34) // Crisp Icon
+            ),
           ),
         ),
       ),
+
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
         notchMargin: 10.0,
