@@ -63,6 +63,125 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() => isLoading = false);
     }
     }
+    // 🔥 ADVANCED FEATURE: Delete Project
+  Future<void> _deleteProject(String id) async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/qalamkaar_projects.json');
+      if (await file.exists()) {
+        String contents = await file.readAsString();
+        List<dynamic> jsonList = jsonDecode(contents);
+        jsonList.removeWhere((item) => item['id'] == id);
+        await file.writeAsString(jsonEncode(jsonList));
+
+        // Thumbnail bhi delete karein
+        File thumbFile = File('${directory.path}/thumb_$id.png');
+        if (await thumbFile.exists()) await thumbFile.delete();
+
+        _loadRecentProjects(); // UI Refresh
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Project Deleted Successfully!', style: TextStyle(color: Colors.white)), 
+          backgroundColor: Colors.redAccent
+        ));
+      }
+    } catch (e) {
+      debugPrint("Delete error: $e");
+    }
+  }
+
+  // 🔥 ADVANCED FEATURE: Rename Project Dialog
+  void _showRenameDialog(ProjectModel proj) {
+    TextEditingController renameCtrl = TextEditingController(text: proj.name);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Rename Project', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1E293B))),
+        content: TextField(
+          controller: renameCtrl,
+          decoration: InputDecoration(
+            hintText: "Enter new name",
+            filled: true,
+            fillColor: const Color(0xFFF1F5F9),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel', style: TextStyle(color: Colors.grey))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+            onPressed: () async {
+              if (renameCtrl.text.trim().isNotEmpty) {
+                try {
+                  final directory = await getApplicationDocumentsDirectory();
+                  final file = File('${directory.path}/qalamkaar_projects.json');
+                  if (await file.exists()) {
+                    String contents = await file.readAsString();
+                    List<dynamic> jsonList = jsonDecode(contents);
+                    for (var item in jsonList) {
+                      if (item['id'] == proj.id) {
+                        item['name'] = renameCtrl.text.trim();
+                        break;
+                      }
+                    }
+                    await file.writeAsString(jsonEncode(jsonList));
+                    _loadRecentProjects();
+                  }
+                  Navigator.pop(context);
+                } catch (e) {
+                  debugPrint("Rename error: $e");
+                }
+              }
+            },
+            child: const Text('Save', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 🔥 ADVANCED FEATURE: Long-Press Options Menu
+  void _showProjectOptionsModal(ProjectModel proj) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10))),
+            const SizedBox(height: 20),
+            Text(proj.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)), maxLines: 1, overflow: TextOverflow.ellipsis),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: const Color(0xFF8B5CF6).withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.edit_rounded, color: Color(0xFF8B5CF6))),
+              title: const Text('Rename Project (نام تبدیل کریں)', style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () {
+                Navigator.pop(context);
+                _showRenameDialog(proj);
+              },
+            ),
+            const Divider(color: Colors.black12),
+            ListTile(
+              leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.delete_rounded, color: Colors.red)),
+              title: const Text('Delete Project (ختم کریں)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+              onTap: () {
+                Navigator.pop(context);
+                _deleteProject(proj.id);
+              },
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+  
   
 
   void _showComingSoon() {
@@ -388,9 +507,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         itemCount: recentProjects.length,
                         itemBuilder: (context, index) {
                           var proj = recentProjects[index];
-                          return GestureDetector(
-                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ProWorkspaceScreen(project: proj))).then((_) => _loadRecentProjects()),
-                            child: Container(
+                                              return GestureDetector(
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ProWorkspaceScreen(project: proj))).then((_) => _loadRecentProjects()),
+                      // 🔥 NAYA CODE: LONG PRESS (Daba kar rakhna) 🔥
+                      onLongPress: () {
+                        HapticFeedback.mediumImpact(); // Phone vibrate karega
+                        _showProjectOptionsModal(proj); // Options menu khulega
+                      },
+                      child: Container(
+
                               width: 135,
                               margin: const EdgeInsets.only(right: 15, bottom: 8),
                               decoration: BoxDecoration(
