@@ -711,14 +711,18 @@ class NewDesignBottomSheet extends StatefulWidget {
   State<NewDesignBottomSheet> createState() => _NewDesignBottomSheetState();
 }
 
-class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
+ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
   final TextEditingController _widthCtrl = TextEditingController(text: '1080');
   final TextEditingController _heightCtrl = TextEditingController(text: '1080');
   
   bool _isLocked = false;
   String _activeRatio = '1:1';
+  
+  // 🔥 NAYA PRO FEATURE: Multi-Unit System (px, in, cm, mm)
+  String _selectedUnit = 'px';
+  final List<String> _units = ['px', 'in', 'cm', 'mm'];
 
-  final Map<String, List<int>> _presets = {
+  final Map<String, List<double>> _presets = {
     '1:1': [1080, 1080],
     '16:9': [1920, 1080],
     '9:16': [1080, 1920],
@@ -729,8 +733,9 @@ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
   void _onPresetTapped(String key) {
     setState(() {
       _activeRatio = key;
-      _widthCtrl.text = _presets[key]![0].toString();
-      _heightCtrl.text = _presets[key]![1].toString();
+      _selectedUnit = 'px'; // Presets hamesha pixels mein hote hain
+      _widthCtrl.text = _presets[key]![0].toInt().toString();
+      _heightCtrl.text = _presets[key]![1].toInt().toString();
     });
   }
 
@@ -741,6 +746,30 @@ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
       _heightCtrl.text = temp;
       _activeRatio = 'Custom';
     });
+  }
+
+  // 🔥 ADVANCED CONVERSION LOGIC (300 DPI for High Quality Print)
+  void _createDesign() {
+    FocusScope.of(context).unfocus();
+    double wVal = double.tryParse(_widthCtrl.text) ?? 1080;
+    double hVal = double.tryParse(_heightCtrl.text) ?? 1080;
+
+    double finalW = wVal;
+    double finalH = hVal;
+
+    // Convert everything to pixels for the Canvas based on 300 DPI
+    if (_selectedUnit == 'in') {
+      finalW = wVal * 300; 
+      finalH = hVal * 300;
+    } else if (_selectedUnit == 'cm') {
+      finalW = wVal * 118.11; // (300 / 2.54)
+      finalH = hVal * 118.11;
+    } else if (_selectedUnit == 'mm') {
+      finalW = wVal * 11.811;
+      finalH = hVal * 11.811;
+    }
+
+    _launchDesign(finalW, finalH);
   }
 
   void _launchDesign(double w, double h) {
@@ -773,25 +802,14 @@ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
     ).then((_) => widget.onProjectCreated()); 
   }
 
-  void _createDesign() {
-    FocusScope.of(context).unfocus();
-    double w = double.tryParse(_widthCtrl.text) ?? 1080;
-    double h = double.tryParse(_heightCtrl.text) ?? 1080;
-    _launchDesign(w, h);
-  }
-
   void _showMoreSizesModal() {
     final List<Map<String, dynamic>> extendedSizes = [
       {'title': 'Square Post', 'w': 1080.0, 'h': 1080.0, 'icon': Icons.crop_square_rounded},
       {'title': 'YouTube Thumbnail', 'w': 1920.0, 'h': 1080.0, 'icon': Icons.video_label_rounded},
       {'title': 'Instagram Story', 'w': 1080.0, 'h': 1920.0, 'icon': Icons.stay_current_portrait_rounded},
       {'title': 'A4 Document', 'w': 2480.0, 'h': 3508.0, 'icon': Icons.description_rounded},
-      {'title': 'Letter Page', 'w': 2550.0, 'h': 3300.0, 'icon': Icons.contact_page_rounded},
-      {'title': 'Legal Page', 'w': 2550.0, 'h': 4200.0, 'icon': Icons.article_rounded},
       {'title': 'Facebook Post', 'w': 1200.0, 'h': 630.0, 'icon': Icons.facebook_rounded},
-      {'title': 'Twitter Header', 'w': 1500.0, 'h': 500.0, 'icon': Icons.image_aspect_ratio_rounded},
       {'title': 'Business Card', 'w': 1050.0, 'h': 600.0, 'icon': Icons.badge_rounded},
-      {'title': 'A5 Flyer', 'w': 1748.0, 'h': 2480.0, 'icon': Icons.note_rounded},
     ];
 
     showModalBottomSheet(
@@ -889,13 +907,13 @@ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
                   onTap: () => setState(() => _isLocked = !_isLocked),
                   borderRadius: BorderRadius.circular(14),
                   child: Container(
-                    height: 55, width: 50,
+                    height: 55, width: 45,
                     decoration: BoxDecoration(
                       color: _isLocked ? const Color(0xFF8B5CF6).withOpacity(0.1) : Colors.transparent,
                       border: Border.all(color: _isLocked ? const Color(0xFF8B5CF6) : Colors.grey.shade300, width: 1.5),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Icon(_isLocked ? Icons.lock_rounded : Icons.lock_open_rounded, color: _isLocked ? const Color(0xFF8B5CF6) : Colors.grey.shade500, size: 22),
+                    child: Icon(_isLocked ? Icons.lock_rounded : Icons.lock_open_rounded, color: _isLocked ? const Color(0xFF8B5CF6) : Colors.grey.shade500, size: 20),
                   ),
                 ),
               ),
@@ -904,6 +922,7 @@ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
               Expanded(flex: 3, child: _buildInputColumn('HEIGHT', _heightCtrl)),
               const SizedBox(width: 12),
               
+              // 🔥 NAYA UNIT SELECTOR (Dropdown) 🔥
               Expanded(
                 flex: 2,
                 child: Column(
@@ -912,9 +931,31 @@ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
                     const Text('UNIT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8), letterSpacing: 0.5)),
                     const SizedBox(height: 8),
                     Container(
-                      height: 55, alignment: Alignment.center,
+                      height: 55,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
                       decoration: BoxDecoration(color: const Color(0xFFF8FAFC), border: Border.all(color: Colors.grey.shade200), borderRadius: BorderRadius.circular(14)),
-                      child: const Text('px', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF64748B), fontSize: 16)),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedUnit,
+                          icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF64748B)),
+                          isExpanded: true,
+                          style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF64748B), fontSize: 14),
+                          items: _units.map((String unit) {
+                            return DropdownMenuItem<String>(
+                              value: unit,
+                              child: Center(child: Text(unit)),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              setState(() {
+                                _selectedUnit = newValue;
+                                _activeRatio = 'Custom';
+                              });
+                            }
+                          },
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -976,27 +1017,12 @@ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
               ),
             ),
           ),
-          const SizedBox(height: 25),
-
-          const Text('RECENT SIZES', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Color(0xFF94A3B8), letterSpacing: 1.0)),
-          const SizedBox(height: 12),
-          
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Row(
-              children: [
-                _buildRecentCard('Square', 1080, 1080),
-                _buildRecentCard('YouTube Thumb', 1920, 1080),
-                _buildRecentCard('Instagram Story', 1080, 1920),
-              ],
-            ),
-          ),
         ],
       ),
     );
   }
 
+  // 🔥 NAYA CODE: Number Input ko points (decimals) ke liye allowed kiya hai taaki '1.5' inch bhi likha ja sake
   Widget _buildInputColumn(String label, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1008,10 +1034,9 @@ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
           decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade200)),
           child: TextField(
             controller: controller,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             textAlign: TextAlign.center,
-            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF1E293B)),
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF1E293B)),
             decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.zero),
             onChanged: (val) => setState(() => _activeRatio = 'Custom'),
           ),
@@ -1040,30 +1065,4 @@ class _NewDesignBottomSheetState extends State<NewDesignBottomSheet> {
       ),
     );
   }
-
-  Widget _buildRecentCard(String title, double w, double h) {
-    return InkWell(
-      onTap: () => _launchDesign(w, h),
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        margin: const EdgeInsets.only(right: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
-        child: Row(
-          children: [
-            Container(width: 24, height: 24, decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(4))),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontSize: 13)),
-                const SizedBox(height: 2),
-                Text('${w.toInt()}×${h.toInt()} px', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
-              ],
-            )
-          ],
-        ),
-      ),
-    );
-  }
-}
+ }
