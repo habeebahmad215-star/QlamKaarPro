@@ -277,6 +277,116 @@ class _HomeScreenState extends State<HomeScreen> {
       debugPrint("Cache error: $e");
     }
   }
+    // 🔥 ADVANCED FEATURE: Pro Creator Profile Dashboard 🔥
+  void _showProfileDashboard(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.65,
+          decoration: const BoxDecoration(
+            color: Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Drag handle
+              Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10))),
+              const SizedBox(height: 20),
+              
+              // Profile Avatar & Info
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]),
+                  boxShadow: [BoxShadow(color: const Color(0xFF8B5CF6).withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 5))],
+                ),
+                child: const CircleAvatar(
+                  radius: 45,
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.history_edu_rounded, size: 45, color: Color(0xFFD4AF37)),
+                ),
+              ),
+              const SizedBox(height: 15),
+              const Text('Qalamkaar Creator', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
+              const Text('Pro Urdu Designer', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 1.0)),
+              const SizedBox(height: 25),
+
+              // Stats Row (Kitne projects banaye hain)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildStatCard('Designs', '${recentProjects.length}', Icons.brush_rounded, const Color(0xFF3B82F6)),
+                  _buildStatCard('Storage', 'Safe', Icons.cloud_done_rounded, const Color(0xFF10B981)),
+                  _buildStatCard('Pro', 'Active', Icons.workspace_premium_rounded, const Color(0xFFD4AF37)),
+                ],
+              ),
+              const SizedBox(height: 30),
+
+              // Settings List
+              Expanded(
+                child: ListView(
+                  physics: const BouncingScrollPhysics(),
+                  children: [
+                    const Text('APP SETTINGS (ترتیبات)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Color(0xFF94A3B8), letterSpacing: 1.0)),
+                    const SizedBox(height: 10),
+                    _buildProfileListTile(Icons.cleaning_services_rounded, 'Clear Cache', 'Free up memory', () => _clearAppCache(context), iconColor: const Color(0xFFEF4444)),
+                    _buildProfileListTile(Icons.dark_mode_rounded, 'Dark Mode', 'Coming in v2.0', _showComingSoon),
+                    _buildProfileListTile(Icons.star_rounded, 'Rate Qalamkaar Pro', 'Support our work', _showComingSoon, iconColor: const Color(0xFFF59E0B)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    );
+  }
+
+  // Dashboard ke chote stat cards bananay ka function
+  Widget _buildStatCard(String title, String val, IconData icon, Color color) {
+    return Container(
+      width: 100,
+      padding: const EdgeInsets.symmetric(vertical: 15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 28),
+          const SizedBox(height: 8),
+          Text(val, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
+          const SizedBox(height: 2),
+          Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+        ],
+      ),
+    );
+  }
+
+  // Dashboard ke options bananay ka function
+  Widget _buildProfileListTile(IconData icon, String title, String subtitle, VoidCallback onTap, {Color? iconColor}) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(color: (iconColor ?? const Color(0xFF6366F1)).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+        child: Icon(icon, color: iconColor ?? const Color(0xFF6366F1)),
+      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+      subtitle: Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
+      onTap: onTap,
+    );
+  }
+
 
   Widget _buildDrawer() {
     return Drawer(
@@ -686,7 +796,8 @@ class _HomeScreenState extends State<HomeScreen> {
               
               _buildBottomNavItem(Icons.support_agent_rounded, 'Help', false, onTap: () => _showHelpBottomSheet(context)),
               
-              _buildBottomNavItem(Icons.person_rounded, 'Profile', false),
+              _buildBottomNavItem(Icons.person_rounded, 'Profile', false, onTap: () => _showProfileDashboard(context)),
+
             ],
           ),
         ),
