@@ -627,48 +627,65 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+    // 🔥 ADVANCED FEATURE: Pro Bouncing Animation for Grid Tools 🔥
   Widget _buildPremiumGridTool(String title, IconData icon, Color iconColor, Color bgColor, VoidCallback onTap, {bool isNew = false}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white, 
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade200, width: 1),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))] 
-            ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10), 
-                    decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
-                    child: Icon(icon, color: iconColor, size: 24), 
+    double scale = 1.0;
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return GestureDetector(
+          onTapDown: (_) => setState(() => scale = 0.90), // Tap karte hi chota hoga
+          onTapUp: (_) {
+            setState(() => scale = 1.0); // Ungli hatate hi wapas bada hoga
+            HapticFeedback.lightImpact(); // Smooth vibration
+            onTap(); // Asli Action trigger
+          },
+          onTapCancel: () => setState(() => scale = 1.0), // Agar ungli bahar fisal jaye
+          child: AnimatedScale(
+            scale: scale,
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOutBack, // Bouncy effect
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white, 
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade200, width: 1),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))] 
                   ),
-                  const SizedBox(height: 6),
-                  Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF1E293B), letterSpacing: 0.2)), 
-                ],
-              ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10), 
+                          decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
+                          child: Icon(icon, color: iconColor, size: 24), 
+                        ),
+                        const SizedBox(height: 6),
+                        Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF1E293B), letterSpacing: 0.2)), 
+                      ],
+                    ),
+                  ),
+                ),
+                if (isNew)
+                  Positioned(
+                    top: -6, right: -6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(color: const Color(0xFFEF4444), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.white, width: 1.5), boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.2), blurRadius: 4)]),
+                      child: const Text('NEW', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                    ),
+                  )
+              ],
             ),
           ),
-          if (isNew)
-            Positioned(
-              top: -6, right: -6,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                decoration: BoxDecoration(color: const Color(0xFFEF4444), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.white, width: 1.5), boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.2), blurRadius: 4)]),
-                child: const Text('NEW', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-              ),
-            )
-        ],
-      ),
+        );
+      }
     );
   }
+
 
   Widget _buildBottomNavItem(IconData icon, String label, bool isSelected, {VoidCallback? onTap}) {
     return InkWell(
