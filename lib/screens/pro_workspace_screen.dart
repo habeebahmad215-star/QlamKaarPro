@@ -3497,32 +3497,27 @@ class _ProWorkspaceScreenState extends State<ProWorkspaceScreen> with WorkspaceM
                 
                 // 🔥 PREMIUM FLOATING HUD 🔥
                 if (!_isExporting) ...[
-                  // 1. CANVAS LOCK ICON (Top Left)
+                                    // 1. CANVAS LOCK ICON (Top Left - Compact & Above Canvas)
                   Positioned(
-                    top: 16,
+                    top: 1,
                     left: 16,
-                    child: InkWell(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onTap: () {
                         HapticFeedback.selectionClick();
                         setState(() => _isCanvasLocked = !_isCanvasLocked);
                       },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.85),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white, width: 1.5),
-                          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
-                        ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                         child: Icon(
                           _isCanvasLocked ? Icons.lock_rounded : Icons.lock_open_rounded, 
-                          size: 20, 
-                          color: _isCanvasLocked ? Colors.redAccent : const Color(0xFF64748B)
+                          size: 14, 
+                          color: _isCanvasLocked ? Colors.redAccent : const Color(0xFF475569),
                         ),
                       ),
                     ),
                   ),
+
 
                   // 2. ZOOM PERCENTAGE & RESET (Top Center - Hidden at 100%)
                   Positioned(
